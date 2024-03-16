@@ -8,7 +8,7 @@ Create an image from the dockerfile
 docker build -t <image_name> .
 ```
 
-Run the container
+Run the container (if you don't have a gpu on your computer, remove the command  `--gpus all -it `)
 ```bash
 docker run --gpus all -it \
     --env="DISPLAY=$DISPLAY" \
