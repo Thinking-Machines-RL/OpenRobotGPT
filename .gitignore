@@ -15,3 +15,6 @@ __pycache__/
 
 # C extensions
 *.so
+
+# workspace for testing
+workspace_fun/*
