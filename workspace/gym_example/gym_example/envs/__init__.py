@@ -1,1 +1,1 @@
-from gym_prova.envs.prova_env import PandaEnv
+from gym_example.envs.prova_env import PandaEnv
