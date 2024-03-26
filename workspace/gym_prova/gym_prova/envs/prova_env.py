@@ -10,7 +10,7 @@ import numpy as np
 import random
 
 class PandaEnv(gym.Env):
-    metadata = {'render_modes': ['human']}
+    metadata = {'render_modes': ['human'], 'render_fps' : 60}
 
     def __init__(self):
         self.step_counter = 0
