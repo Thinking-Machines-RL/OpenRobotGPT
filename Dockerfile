@@ -40,7 +40,7 @@ RUN apt-get install -y python3-pip
 COPY requirements.txt /tmp/requirements.txt
 RUN pip3 install --no-cache-dir -r /tmp/requirements.txt
 
-# Install x11 for graphic forwarding
+# Install x11 for graphic forwardingCannot call `env.render()` before calling `env.reset()`, if this is a intended action, set `disable_render_order_enforcing=True` on the OrderEnforcer wrapper.
 RUN apt-get update && \
     apt-get install -y \
     x11-apps \
@@ -61,17 +61,25 @@ RUN apt-get update && apt-get install -y openssh-server && \
     echo "export LANG=C.UTF-8" >> /etc/profile && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+# Install git
+RUN apt-get update && apt-get install -y git
+
+# Set working directory
+WORKDIR /root/
+
+# Clone repo
+RUN git clone https://github.com/Nicola-Taddei/OpenRobotGPT.git
+
+# Move to correct branch
+# Set working directory
+WORKDIR /root/OpenRobotGPT
+RUN git checkout containerized
+RUN cp setup.sh ../.
+# Set working directory
+WORKDIR /root/
+
 # Expose SSH port
 EXPOSE 22
 
-# Start SSH server
-CMD ["/usr/sbin/sshd", "-D"]
-
-# Install VSCode Server for Remote Development
-# RUN curl -fsSL https://code-server.dev/install.sh | sh
-
-# Expose code-server port
-# EXPOSE 8080
-
-# Start code-server
-# CMD ["code-server", "--host", "0.0.0.0", "--port", "8080", "--auth", "none", "--disable-telemetry"]
+# Add an entrypoint
+ENTRYPOINT ["setup.sh"]
