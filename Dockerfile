@@ -33,9 +33,12 @@ RUN echo "source /opt/ros/$ROS_DISTRO/setup.bash" >> /root/.bashrc
 # Install MoveIt
 RUN apt-get install -y ros-noetic-moveit
 
-# Install PyBullet
+# Install pip
 RUN apt-get install -y python3-pip
-RUN pip3 install pybullet
+
+# Install Python dependencies from requirements.txt
+COPY requirements.txt /tmp/requirements.txt
+RUN pip3 install --no-cache-dir -r /tmp/requirements.txt
 
 # Install x11 for graphic forwarding
 RUN apt-get update && \
@@ -44,11 +47,31 @@ RUN apt-get update && \
     mesa-utils \
     && rm -rf /var/lib/apt/lists/*
 
+
+# Install SSH server
+RUN apt-get update && apt-get install -y openssh-server && \
+    mkdir /var/run/sshd && \
+    echo 'root:password' | chpasswd && \
+    sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
+    sed -i 's/#X11UseLocalhost yes/X11UseLocalhost no/' /etc/ssh/sshd_config && \
+    # Permit X11 forwarding
+    echo "X11Forwarding yes" >> /etc/ssh/sshd_config && \
+    echo "X11DisplayOffset 10" >> /etc/ssh/sshd_config && \
+    # Avoid locale issues
+    echo "export LANG=C.UTF-8" >> /etc/profile && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Expose SSH port
+EXPOSE 22
+
+# Start SSH server
+CMD ["/usr/sbin/sshd", "-D"]
+
 # Install VSCode Server for Remote Development
-RUN curl -fsSL https://code-server.dev/install.sh | sh
+# RUN curl -fsSL https://code-server.dev/install.sh | sh
 
 # Expose code-server port
-EXPOSE 8080
+# EXPOSE 8080
 
 # Start code-server
-CMD ["code-server", "--host", "0.0.0.0", "--port", "8080", "--auth", "none", "--disable-telemetry"]
+# CMD ["code-server", "--host", "0.0.0.0", "--port", "8080", "--auth", "none", "--disable-telemetry"]
