@@ -36,4 +36,4 @@ share/python-wheels/
 *.egg
 MANIFEST
 # workspace for testing
-#workspace_fun/*
+workspace_fun/*
