@@ -1,7 +1,7 @@
-# /bin/bash
+#!/bin/bash
 
 # Install gym_example package
-cd workspace
+cd /root/workspace
 pip3 install -e gym_example
 cd ..
 

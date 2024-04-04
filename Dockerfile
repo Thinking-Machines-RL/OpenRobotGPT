@@ -61,25 +61,8 @@ RUN apt-get update && apt-get install -y openssh-server && \
     echo "export LANG=C.UTF-8" >> /etc/profile && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Install git
-RUN apt-get update && apt-get install -y git
-
-# Set working directory
-WORKDIR /root/
-
-# Clone repo
-RUN git clone https://github.com/Nicola-Taddei/OpenRobotGPT.git
-
-# Move to correct branch
-# Set working directory
-WORKDIR /root/OpenRobotGPT
-RUN git checkout containerized
-RUN cp setup.sh ../.
-# Set working directory
-WORKDIR /root/
-
 # Expose SSH port
 EXPOSE 22
 
 # Add an entrypoint
-ENTRYPOINT ["setup.sh"]
+ENTRYPOINT ["/root/workspace/setup.sh"]
