@@ -1,0 +1,65 @@
+[0.015s] Invoking command in '/root/workspace/ros2_ws/build/panda_env': CMAKE_PREFIX_PATH=/opt/ros/foxy /usr/bin/cmake /root/workspace/ros2_ws/src/panda_env -DCMAKE_INSTALL_PREFIX=/root/workspace/ros2_ws/install/panda_env
+[0.111s] -- The C compiler identification is GNU 9.4.0
+[0.190s] -- The CXX compiler identification is GNU 9.4.0
+[0.195s] -- Check for working C compiler: /usr/bin/cc
+[0.257s] -- Check for working C compiler: /usr/bin/cc -- works
+[0.257s] -- Detecting C compiler ABI info
+[0.317s] -- Detecting C compiler ABI info - done
+[0.328s] -- Detecting C compile features
+[0.329s] -- Detecting C compile features - done
+[0.331s] -- Check for working CXX compiler: /usr/bin/c++
+[0.400s] -- Check for working CXX compiler: /usr/bin/c++ -- works
+[0.401s] -- Detecting CXX compiler ABI info
+[0.470s] -- Detecting CXX compiler ABI info - done
+[0.482s] -- Detecting CXX compile features
+[0.482s] -- Detecting CXX compile features - done
+[0.485s] -- Found ament_cmake: 0.9.12 (/opt/ros/foxy/share/ament_cmake/cmake)
+[0.510s] -- Found PythonInterp: /usr/bin/python3 (found suitable version "3.8.10", minimum required is "3") 
+[0.510s] -- Using PYTHON_EXECUTABLE: /usr/bin/python3
+[0.707s] -- Found rclcpp: 2.4.3 (/opt/ros/foxy/share/rclcpp/cmake)
+[0.754s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[0.761s] -- Found rosidl_adapter: 1.3.1 (/opt/ros/foxy/share/rosidl_adapter/cmake)
+[0.842s] -- Found OpenSSL: /usr/lib/x86_64-linux-gnu/libcrypto.so (found version "1.1.1f")  
+[0.873s] -- Found FastRTPS: /opt/ros/foxy/include  
+[0.958s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[1.016s] -- Found rmw_implementation_cmake: 1.0.4 (/opt/ros/foxy/share/rmw_implementation_cmake/cmake)
+[1.018s] -- Using RMW implementation 'rmw_fastrtps_cpp' as default
+[1.019s] -- Looking for pthread.h
+[1.089s] -- Looking for pthread.h - found
+[1.090s] -- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+[1.157s] -- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Failed
+[1.158s] -- Looking for pthread_create in pthreads
+[1.208s] -- Looking for pthread_create in pthreads - not found
+[1.208s] -- Looking for pthread_create in pthread
+[1.270s] -- Looking for pthread_create in pthread - found
+[1.271s] -- Found Threads: TRUE  
+[1.430s] -- Found ament_lint_auto: 0.9.8 (/opt/ros/foxy/share/ament_lint_auto/cmake)
+[1.507s] -- Added test 'copyright' to check source files copyright and LICENSE
+[1.510s] -- Added test 'flake8' to check Python code syntax and style conventions
+[1.510s] -- Added test 'lint_cmake' to check CMake code style
+[1.511s] -- Added test 'pep257' to check Python code against some of the style conventions in PEP 257
+[1.513s] -- Added test 'xmllint' to check XML markup files
+[1.515s] -- Configuring done
+[1.517s] -- Generating done
+[1.519s] -- Build files have been written to: /root/workspace/ros2_ws/build/panda_env
+[1.527s] Invoked command in '/root/workspace/ros2_ws/build/panda_env' returned '0': CMAKE_PREFIX_PATH=/opt/ros/foxy /usr/bin/cmake /root/workspace/ros2_ws/src/panda_env -DCMAKE_INSTALL_PREFIX=/root/workspace/ros2_ws/install/panda_env
+[1.530s] Invoking command in '/root/workspace/ros2_ws/build/panda_env': CMAKE_PREFIX_PATH=/opt/ros/foxy /usr/bin/cmake --build /root/workspace/ros2_ws/build/panda_env -- -j12 -l12
+[1.564s] Invoked command in '/root/workspace/ros2_ws/build/panda_env' returned '0': CMAKE_PREFIX_PATH=/opt/ros/foxy /usr/bin/cmake --build /root/workspace/ros2_ws/build/panda_env -- -j12 -l12
+[1.592s] Invoking command in '/root/workspace/ros2_ws/build/panda_env': CMAKE_PREFIX_PATH=/opt/ros/foxy /usr/bin/cmake --install /root/workspace/ros2_ws/build/panda_env
+[1.599s] -- Install configuration: ""
+[1.599s] -- Installing: /root/workspace/ros2_ws/install/panda_env/share/ament_index/resource_index/package_run_dependencies/panda_env
+[1.599s] -- Installing: /root/workspace/ros2_ws/install/panda_env/share/ament_index/resource_index/parent_prefix_path/panda_env
+[1.599s] -- Installing: /root/workspace/ros2_ws/install/panda_env/share/panda_env/environment/ament_prefix_path.sh
+[1.600s] -- Installing: /root/workspace/ros2_ws/install/panda_env/share/panda_env/environment/ament_prefix_path.dsv
+[1.600s] -- Installing: /root/workspace/ros2_ws/install/panda_env/share/panda_env/environment/path.sh
+[1.600s] -- Installing: /root/workspace/ros2_ws/install/panda_env/share/panda_env/environment/path.dsv
+[1.600s] -- Installing: /root/workspace/ros2_ws/install/panda_env/share/panda_env/local_setup.bash
+[1.600s] -- Installing: /root/workspace/ros2_ws/install/panda_env/share/panda_env/local_setup.sh
+[1.600s] -- Installing: /root/workspace/ros2_ws/install/panda_env/share/panda_env/local_setup.zsh
+[1.601s] -- Installing: /root/workspace/ros2_ws/install/panda_env/share/panda_env/local_setup.dsv
+[1.601s] -- Installing: /root/workspace/ros2_ws/install/panda_env/share/panda_env/package.dsv
+[1.601s] -- Installing: /root/workspace/ros2_ws/install/panda_env/share/ament_index/resource_index/packages/panda_env
+[1.601s] -- Installing: /root/workspace/ros2_ws/install/panda_env/share/panda_env/cmake/panda_envConfig.cmake
+[1.601s] -- Installing: /root/workspace/ros2_ws/install/panda_env/share/panda_env/cmake/panda_envConfig-version.cmake
+[1.602s] -- Installing: /root/workspace/ros2_ws/install/panda_env/share/panda_env/package.xml
+[1.605s] Invoked command in '/root/workspace/ros2_ws/build/panda_env' returned '0': CMAKE_PREFIX_PATH=/opt/ros/foxy /usr/bin/cmake --install /root/workspace/ros2_ws/build/panda_env

@@ -1,0 +1,4 @@
+Invoking command in '/root/workspace/ros2_ws/build/code_bot': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/foxy /usr/bin/cmake --build /root/workspace/ros2_ws/build/code_bot -- -j12 -l12
+Invoked command in '/root/workspace/ros2_ws/build/code_bot' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/foxy /usr/bin/cmake --build /root/workspace/ros2_ws/build/code_bot -- -j12 -l12
+Invoking command in '/root/workspace/ros2_ws/build/code_bot': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/foxy /usr/bin/cmake --install /root/workspace/ros2_ws/build/code_bot
+Invoked command in '/root/workspace/ros2_ws/build/code_bot' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/foxy /usr/bin/cmake --install /root/workspace/ros2_ws/build/code_bot

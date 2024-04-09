@@ -1,0 +1,20 @@
+[0.021s] Invoking command in '/root/workspace/ros2_ws/build/code_bot': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/foxy /usr/bin/cmake --build /root/workspace/ros2_ws/build/code_bot -- -j12 -l12
+[0.060s] Invoked command in '/root/workspace/ros2_ws/build/code_bot' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/foxy /usr/bin/cmake --build /root/workspace/ros2_ws/build/code_bot -- -j12 -l12
+[0.092s] Invoking command in '/root/workspace/ros2_ws/build/code_bot': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/foxy /usr/bin/cmake --install /root/workspace/ros2_ws/build/code_bot
+[0.100s] -- Install configuration: ""
+[0.100s] -- Up-to-date: /root/workspace/ros2_ws/install/code_bot/share/ament_index/resource_index/package_run_dependencies/code_bot
+[0.100s] -- Up-to-date: /root/workspace/ros2_ws/install/code_bot/share/ament_index/resource_index/parent_prefix_path/code_bot
+[0.100s] -- Up-to-date: /root/workspace/ros2_ws/install/code_bot/share/code_bot/environment/ament_prefix_path.sh
+[0.100s] -- Up-to-date: /root/workspace/ros2_ws/install/code_bot/share/code_bot/environment/ament_prefix_path.dsv
+[0.100s] -- Up-to-date: /root/workspace/ros2_ws/install/code_bot/share/code_bot/environment/path.sh
+[0.100s] -- Up-to-date: /root/workspace/ros2_ws/install/code_bot/share/code_bot/environment/path.dsv
+[0.100s] -- Up-to-date: /root/workspace/ros2_ws/install/code_bot/share/code_bot/local_setup.bash
+[0.100s] -- Up-to-date: /root/workspace/ros2_ws/install/code_bot/share/code_bot/local_setup.sh
+[0.101s] -- Up-to-date: /root/workspace/ros2_ws/install/code_bot/share/code_bot/local_setup.zsh
+[0.101s] -- Up-to-date: /root/workspace/ros2_ws/install/code_bot/share/code_bot/local_setup.dsv
+[0.101s] -- Up-to-date: /root/workspace/ros2_ws/install/code_bot/share/code_bot/package.dsv
+[0.101s] -- Up-to-date: /root/workspace/ros2_ws/install/code_bot/share/ament_index/resource_index/packages/code_bot
+[0.101s] -- Up-to-date: /root/workspace/ros2_ws/install/code_bot/share/code_bot/cmake/code_botConfig.cmake
+[0.101s] -- Up-to-date: /root/workspace/ros2_ws/install/code_bot/share/code_bot/cmake/code_botConfig-version.cmake
+[0.101s] -- Up-to-date: /root/workspace/ros2_ws/install/code_bot/share/code_bot/package.xml
+[0.102s] Invoked command in '/root/workspace/ros2_ws/build/code_bot' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/foxy /usr/bin/cmake --install /root/workspace/ros2_ws/build/code_bot

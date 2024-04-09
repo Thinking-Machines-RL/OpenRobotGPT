@@ -1,0 +1,91 @@
+[0.000000] (-) TimerEvent: {}
+[0.000898] (code_bot) JobQueued: {'identifier': 'code_bot', 'dependencies': OrderedDict()}
+[0.000941] (panda_env) JobQueued: {'identifier': 'panda_env', 'dependencies': OrderedDict()}
+[0.000967] (code_bot) JobStarted: {'identifier': 'code_bot'}
+[0.010900] (panda_env) JobStarted: {'identifier': 'panda_env'}
+[0.100091] (-) TimerEvent: {}
+[0.200420] (-) TimerEvent: {}
+[0.300711] (-) TimerEvent: {}
+[0.401027] (-) TimerEvent: {}
+[0.501299] (-) TimerEvent: {}
+[0.601572] (-) TimerEvent: {}
+[0.701818] (-) TimerEvent: {}
+[0.802059] (-) TimerEvent: {}
+[0.844838] (code_bot) Command: {'cmd': ['/usr/bin/python3', '-W', 'ignore:setup.py install is deprecated', 'setup.py', 'egg_info', '--egg-base', '../build/code_bot', 'build', '--build-base', '/root/workspace/ros2_ws/src/build/code_bot/build', 'install', '--record', '/root/workspace/ros2_ws/src/build/code_bot/install.log', '--install-scripts', '$base/lib/code_bot', '--single-version-externally-managed', 'install_data'], 'cwd': '/root/workspace/ros2_ws/src/code_bot', 'env': {'USER': 'root', 'SSH_CLIENT': '172.17.0.1 43634 22', 'LC_TIME': 'C.UTF-8', 'SHLVL': '1', 'LD_LIBRARY_PATH': '/opt/ros/foxy/opt/yaml_cpp_vendor/lib:/opt/ros/foxy/opt/rviz_ogre_vendor/lib:/opt/ros/foxy/lib/x86_64-linux-gnu:/opt/ros/foxy/lib', 'MOTD_SHOWN': 'pam', 'HOME': '/root', 'OLDPWD': '/root/workspace/ros2_ws', 'SSH_TTY': '/dev/pts/1', 'ROS_PYTHON_VERSION': '3', 'LC_MONETARY': 'C.UTF-8', 'COLCON_PREFIX_PATH': '/root/workspace/ros2_ws/install', 'ROS_DISTRO': 'foxy', 'LOGNAME': 'root', '_': '/usr/local/bin/colcon', 'ROS_VERSION': '2', 'TERM': 'xterm-256color', 'ROS_LOCALHOST_ONLY': '0', 'PATH': '/opt/ros/foxy/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin', 'LC_ADDRESS': 'C.UTF-8', 'DISPLAY': 'e754fe855220:10.0', 'LANG': 'C.UTF-8', 'LC_TELEPHONE': 'C.UTF-8', 'LS_COLORS': 'rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=30;41:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:', 'AMENT_PREFIX_PATH': '/root/workspace/ros2_ws/install/panda_env:/root/workspace/ros2_ws/install/code_bot:/opt/ros/foxy', 'SHELL': '/bin/bash', 'LC_NAME': 'C.UTF-8', 'LC_MEASUREMENT': 'C.UTF-8', 'LC_IDENTIFICATION': 'C.UTF-8', 'PWD': '/root/workspace/ros2_ws/src/build/code_bot', 'SSH_CONNECTION': '172.17.0.1 43634 172.17.0.2 22', 'PYTHONPATH': '/root/workspace/ros2_ws/src/build/code_bot/prefix_override:/root/workspace/ros2_ws/src/install/code_bot/lib/python3.8/site-packages:/opt/ros/foxy/lib/python3.8/site-packages', 'LC_NUMERIC': 'C.UTF-8', 'LC_PAPER': 'C.UTF-8', 'COLCON': '1', 'CMAKE_PREFIX_PATH': '/root/workspace/ros2_ws/install/panda_env:/root/workspace/ros2_ws/install/code_bot'}, 'shell': False}
+[0.852216] (panda_env) Command: {'cmd': ['/usr/bin/python3', '-W', 'ignore:setup.py install is deprecated', 'setup.py', 'egg_info', '--egg-base', '../build/panda_env', 'build', '--build-base', '/root/workspace/ros2_ws/src/build/panda_env/build', 'install', '--record', '/root/workspace/ros2_ws/src/build/panda_env/install.log', '--install-scripts', '$base/lib/panda_env', '--single-version-externally-managed', 'install_data'], 'cwd': '/root/workspace/ros2_ws/src/panda_env', 'env': {'USER': 'root', 'SSH_CLIENT': '172.17.0.1 43634 22', 'LC_TIME': 'C.UTF-8', 'SHLVL': '1', 'LD_LIBRARY_PATH': '/opt/ros/foxy/opt/yaml_cpp_vendor/lib:/opt/ros/foxy/opt/rviz_ogre_vendor/lib:/opt/ros/foxy/lib/x86_64-linux-gnu:/opt/ros/foxy/lib', 'MOTD_SHOWN': 'pam', 'HOME': '/root', 'OLDPWD': '/root/workspace/ros2_ws', 'SSH_TTY': '/dev/pts/1', 'ROS_PYTHON_VERSION': '3', 'LC_MONETARY': 'C.UTF-8', 'COLCON_PREFIX_PATH': '/root/workspace/ros2_ws/install', 'ROS_DISTRO': 'foxy', 'LOGNAME': 'root', '_': '/usr/local/bin/colcon', 'ROS_VERSION': '2', 'TERM': 'xterm-256color', 'ROS_LOCALHOST_ONLY': '0', 'PATH': '/opt/ros/foxy/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin', 'LC_ADDRESS': 'C.UTF-8', 'DISPLAY': 'e754fe855220:10.0', 'LANG': 'C.UTF-8', 'LC_TELEPHONE': 'C.UTF-8', 'LS_COLORS': 'rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=30;41:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:', 'AMENT_PREFIX_PATH': '/root/workspace/ros2_ws/install/panda_env:/root/workspace/ros2_ws/install/code_bot:/opt/ros/foxy', 'SHELL': '/bin/bash', 'LC_NAME': 'C.UTF-8', 'LC_MEASUREMENT': 'C.UTF-8', 'LC_IDENTIFICATION': 'C.UTF-8', 'PWD': '/root/workspace/ros2_ws/src/build/panda_env', 'SSH_CONNECTION': '172.17.0.1 43634 172.17.0.2 22', 'PYTHONPATH': '/root/workspace/ros2_ws/src/build/panda_env/prefix_override:/root/workspace/ros2_ws/src/install/panda_env/lib/python3.8/site-packages:/opt/ros/foxy/lib/python3.8/site-packages', 'LC_NUMERIC': 'C.UTF-8', 'LC_PAPER': 'C.UTF-8', 'COLCON': '1', 'CMAKE_PREFIX_PATH': '/root/workspace/ros2_ws/install/panda_env:/root/workspace/ros2_ws/install/code_bot'}, 'shell': False}
+[0.902155] (-) TimerEvent: {}
+[1.002448] (-) TimerEvent: {}
+[1.066742] (code_bot) StdoutLine: {'line': b'running egg_info\n'}
+[1.067260] (code_bot) StdoutLine: {'line': b'creating ../build/code_bot/code_bot.egg-info\n'}
+[1.067411] (code_bot) StdoutLine: {'line': b'writing ../build/code_bot/code_bot.egg-info/PKG-INFO\n'}
+[1.067585] (code_bot) StdoutLine: {'line': b'writing dependency_links to ../build/code_bot/code_bot.egg-info/dependency_links.txt\n'}
+[1.067707] (code_bot) StdoutLine: {'line': b'writing entry points to ../build/code_bot/code_bot.egg-info/entry_points.txt\n'}
+[1.067856] (code_bot) StdoutLine: {'line': b'writing requirements to ../build/code_bot/code_bot.egg-info/requires.txt\n'}
+[1.067944] (code_bot) StdoutLine: {'line': b'writing top-level names to ../build/code_bot/code_bot.egg-info/top_level.txt\n'}
+[1.068348] (panda_env) StdoutLine: {'line': b'running egg_info\n'}
+[1.068941] (panda_env) StdoutLine: {'line': b'creating ../build/panda_env/panda_env.egg-info\n'}
+[1.069058] (panda_env) StdoutLine: {'line': b'writing ../build/panda_env/panda_env.egg-info/PKG-INFO\n'}
+[1.069285] (panda_env) StdoutLine: {'line': b'writing dependency_links to ../build/panda_env/panda_env.egg-info/dependency_links.txt\n'}
+[1.069441] (panda_env) StdoutLine: {'line': b'writing entry points to ../build/panda_env/panda_env.egg-info/entry_points.txt\n'}
+[1.069599] (panda_env) StdoutLine: {'line': b'writing requirements to ../build/panda_env/panda_env.egg-info/requires.txt\n'}
+[1.069712] (panda_env) StdoutLine: {'line': b'writing top-level names to ../build/panda_env/panda_env.egg-info/top_level.txt\n'}
+[1.069935] (code_bot) StdoutLine: {'line': b"writing manifest file '../build/code_bot/code_bot.egg-info/SOURCES.txt'\n"}
+[1.071471] (panda_env) StdoutLine: {'line': b"writing manifest file '../build/panda_env/panda_env.egg-info/SOURCES.txt'\n"}
+[1.102520] (-) TimerEvent: {}
+[1.106388] (code_bot) StdoutLine: {'line': b"reading manifest file '../build/code_bot/code_bot.egg-info/SOURCES.txt'\n"}
+[1.107131] (code_bot) StdoutLine: {'line': b"writing manifest file '../build/code_bot/code_bot.egg-info/SOURCES.txt'\n"}
+[1.107299] (code_bot) StdoutLine: {'line': b'running build\n'}
+[1.107405] (code_bot) StdoutLine: {'line': b'running build_py\n'}
+[1.107530] (code_bot) StdoutLine: {'line': b'creating /root/workspace/ros2_ws/src/build/code_bot/build\n'}
+[1.107713] (code_bot) StdoutLine: {'line': b'creating /root/workspace/ros2_ws/src/build/code_bot/build/lib\n'}
+[1.107845] (code_bot) StdoutLine: {'line': b'creating /root/workspace/ros2_ws/src/build/code_bot/build/lib/code_bot\n'}
+[1.107919] (code_bot) StdoutLine: {'line': b'copying code_bot/BotNode.py -> /root/workspace/ros2_ws/src/build/code_bot/build/lib/code_bot\n'}
+[1.107990] (code_bot) StdoutLine: {'line': b'copying code_bot/__init__.py -> /root/workspace/ros2_ws/src/build/code_bot/build/lib/code_bot\n'}
+[1.108060] (panda_env) StdoutLine: {'line': b"reading manifest file '../build/panda_env/panda_env.egg-info/SOURCES.txt'\n"}
+[1.108133] (code_bot) StdoutLine: {'line': b'running install\n'}
+[1.108284] (panda_env) StdoutLine: {'line': b"writing manifest file '../build/panda_env/panda_env.egg-info/SOURCES.txt'\n"}
+[1.108577] (panda_env) StdoutLine: {'line': b'running build\n'}
+[1.108753] (panda_env) StdoutLine: {'line': b'running build_py\n'}
+[1.108854] (code_bot) StdoutLine: {'line': b'running install_lib\n'}
+[1.109035] (panda_env) StdoutLine: {'line': b'creating /root/workspace/ros2_ws/src/build/panda_env/build\n'}
+[1.109191] (panda_env) StdoutLine: {'line': b'creating /root/workspace/ros2_ws/src/build/panda_env/build/lib\n'}
+[1.109264] (panda_env) StdoutLine: {'line': b'creating /root/workspace/ros2_ws/src/build/panda_env/build/lib/panda_env\n'}
+[1.109334] (panda_env) StdoutLine: {'line': b'copying panda_env/GymNode.py -> /root/workspace/ros2_ws/src/build/panda_env/build/lib/panda_env\n'}
+[1.109404] (panda_env) StdoutLine: {'line': b'copying panda_env/__init__.py -> /root/workspace/ros2_ws/src/build/panda_env/build/lib/panda_env\n'}
+[1.109475] (panda_env) StdoutLine: {'line': b'running install\n'}
+[1.109820] (code_bot) StdoutLine: {'line': b'creating /root/workspace/ros2_ws/src/install/code_bot/lib/python3.8/site-packages/code_bot\n'}
+[1.109918] (code_bot) StdoutLine: {'line': b'copying /root/workspace/ros2_ws/src/build/code_bot/build/lib/code_bot/BotNode.py -> /root/workspace/ros2_ws/src/install/code_bot/lib/python3.8/site-packages/code_bot\n'}
+[1.110025] (panda_env) StdoutLine: {'line': b'running install_lib\n'}
+[1.110121] (code_bot) StdoutLine: {'line': b'copying /root/workspace/ros2_ws/src/build/code_bot/build/lib/code_bot/__init__.py -> /root/workspace/ros2_ws/src/install/code_bot/lib/python3.8/site-packages/code_bot\n'}
+[1.110677] (code_bot) StdoutLine: {'line': b'byte-compiling /root/workspace/ros2_ws/src/install/code_bot/lib/python3.8/site-packages/code_bot/BotNode.py to BotNode.cpython-38.pyc\n'}
+[1.111082] (panda_env) StdoutLine: {'line': b'creating /root/workspace/ros2_ws/src/install/panda_env/lib/python3.8/site-packages/panda_env\n'}
+[1.111261] (panda_env) StdoutLine: {'line': b'copying /root/workspace/ros2_ws/src/build/panda_env/build/lib/panda_env/GymNode.py -> /root/workspace/ros2_ws/src/install/panda_env/lib/python3.8/site-packages/panda_env\n'}
+[1.111493] (panda_env) StdoutLine: {'line': b'copying /root/workspace/ros2_ws/src/build/panda_env/build/lib/panda_env/__init__.py -> /root/workspace/ros2_ws/src/install/panda_env/lib/python3.8/site-packages/panda_env\n'}
+[1.111882] (panda_env) StdoutLine: {'line': b'byte-compiling /root/workspace/ros2_ws/src/install/panda_env/lib/python3.8/site-packages/panda_env/GymNode.py to GymNode.cpython-38.pyc\n'}
+[1.112235] (code_bot) StdoutLine: {'line': b'byte-compiling /root/workspace/ros2_ws/src/install/code_bot/lib/python3.8/site-packages/code_bot/__init__.py to __init__.cpython-38.pyc\n'}
+[1.112382] (code_bot) StdoutLine: {'line': b'running install_data\n'}
+[1.112529] (code_bot) StdoutLine: {'line': b'creating /root/workspace/ros2_ws/src/install/code_bot/share/ament_index\n'}
+[1.112649] (code_bot) StdoutLine: {'line': b'creating /root/workspace/ros2_ws/src/install/code_bot/share/ament_index/resource_index\n'}
+[1.112727] (code_bot) StdoutLine: {'line': b'creating /root/workspace/ros2_ws/src/install/code_bot/share/ament_index/resource_index/packages\n'}
+[1.112831] (code_bot) StdoutLine: {'line': b'copying resource/code_bot -> /root/workspace/ros2_ws/src/install/code_bot/share/ament_index/resource_index/packages\n'}
+[1.112905] (code_bot) StdoutLine: {'line': b'copying package.xml -> /root/workspace/ros2_ws/src/install/code_bot/share/code_bot\n'}
+[1.112976] (code_bot) StdoutLine: {'line': b'running install_egg_info\n'}
+[1.113250] (panda_env) StdoutLine: {'line': b'byte-compiling /root/workspace/ros2_ws/src/install/panda_env/lib/python3.8/site-packages/panda_env/__init__.py to __init__.cpython-38.pyc\n'}
+[1.113464] (panda_env) StdoutLine: {'line': b'running install_data\n'}
+[1.113587] (panda_env) StdoutLine: {'line': b'creating /root/workspace/ros2_ws/src/install/panda_env/share/ament_index\n'}
+[1.113668] (panda_env) StdoutLine: {'line': b'creating /root/workspace/ros2_ws/src/install/panda_env/share/ament_index/resource_index\n'}
+[1.113766] (panda_env) StdoutLine: {'line': b'creating /root/workspace/ros2_ws/src/install/panda_env/share/ament_index/resource_index/packages\n'}
+[1.113877] (panda_env) StdoutLine: {'line': b'copying resource/panda_env -> /root/workspace/ros2_ws/src/install/panda_env/share/ament_index/resource_index/packages\n'}
+[1.113951] (panda_env) StdoutLine: {'line': b'copying package.xml -> /root/workspace/ros2_ws/src/install/panda_env/share/panda_env\n'}
+[1.114023] (panda_env) StdoutLine: {'line': b'running install_egg_info\n'}
+[1.114890] (code_bot) StdoutLine: {'line': b'Copying ../build/code_bot/code_bot.egg-info to /root/workspace/ros2_ws/src/install/code_bot/lib/python3.8/site-packages/code_bot-0.0.0-py3.8.egg-info\n'}
+[1.115946] (code_bot) StdoutLine: {'line': b'running install_scripts\n'}
+[1.116193] (panda_env) StdoutLine: {'line': b'Copying ../build/panda_env/panda_env.egg-info to /root/workspace/ros2_ws/src/install/panda_env/lib/python3.8/site-packages/panda_env-0.0.0-py3.8.egg-info\n'}
+[1.116872] (panda_env) StdoutLine: {'line': b'running install_scripts\n'}
+[1.134364] (panda_env) StdoutLine: {'line': b"writing list of installed files to '/root/workspace/ros2_ws/src/build/panda_env/install.log'\n"}
+[1.134538] (code_bot) StdoutLine: {'line': b"writing list of installed files to '/root/workspace/ros2_ws/src/build/code_bot/install.log'\n"}
+[1.154716] (panda_env) CommandEnded: {'returncode': 0}
+[1.165819] (panda_env) JobEnded: {'identifier': 'panda_env', 'rc': 0}
+[1.166919] (code_bot) CommandEnded: {'returncode': 0}
+[1.171947] (code_bot) JobEnded: {'identifier': 'code_bot', 'rc': 0}
+[1.172545] (-) EventReactorShutdown: {}

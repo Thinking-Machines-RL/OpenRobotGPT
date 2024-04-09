@@ -1,0 +1,65 @@
+[0.017s] Invoking command in '/root/workspace/ros2_ws/build/code_bot': CMAKE_PREFIX_PATH=/opt/ros/foxy /usr/bin/cmake /root/workspace/ros2_ws/src/code_bot -DCMAKE_INSTALL_PREFIX=/root/workspace/ros2_ws/install/code_bot
+[0.120s] -- The C compiler identification is GNU 9.4.0
+[0.199s] -- The CXX compiler identification is GNU 9.4.0
+[0.204s] -- Check for working C compiler: /usr/bin/cc
+[0.265s] -- Check for working C compiler: /usr/bin/cc -- works
+[0.266s] -- Detecting C compiler ABI info
+[0.325s] -- Detecting C compiler ABI info - done
+[0.337s] -- Detecting C compile features
+[0.337s] -- Detecting C compile features - done
+[0.340s] -- Check for working CXX compiler: /usr/bin/c++
+[0.408s] -- Check for working CXX compiler: /usr/bin/c++ -- works
+[0.409s] -- Detecting CXX compiler ABI info
+[0.479s] -- Detecting CXX compiler ABI info - done
+[0.490s] -- Detecting CXX compile features
+[0.491s] -- Detecting CXX compile features - done
+[0.494s] -- Found ament_cmake: 0.9.12 (/opt/ros/foxy/share/ament_cmake/cmake)
+[0.518s] -- Found PythonInterp: /usr/bin/python3 (found suitable version "3.8.10", minimum required is "3") 
+[0.519s] -- Using PYTHON_EXECUTABLE: /usr/bin/python3
+[0.715s] -- Found rclcpp: 2.4.3 (/opt/ros/foxy/share/rclcpp/cmake)
+[0.763s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[0.770s] -- Found rosidl_adapter: 1.3.1 (/opt/ros/foxy/share/rosidl_adapter/cmake)
+[0.850s] -- Found OpenSSL: /usr/lib/x86_64-linux-gnu/libcrypto.so (found version "1.1.1f")  
+[0.882s] -- Found FastRTPS: /opt/ros/foxy/include  
+[0.967s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[1.026s] -- Found rmw_implementation_cmake: 1.0.4 (/opt/ros/foxy/share/rmw_implementation_cmake/cmake)
+[1.027s] -- Using RMW implementation 'rmw_fastrtps_cpp' as default
+[1.028s] -- Looking for pthread.h
+[1.098s] -- Looking for pthread.h - found
+[1.099s] -- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+[1.164s] -- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Failed
+[1.164s] -- Looking for pthread_create in pthreads
+[1.217s] -- Looking for pthread_create in pthreads - not found
+[1.217s] -- Looking for pthread_create in pthread
+[1.284s] -- Looking for pthread_create in pthread - found
+[1.285s] -- Found Threads: TRUE  
+[1.443s] -- Found ament_lint_auto: 0.9.8 (/opt/ros/foxy/share/ament_lint_auto/cmake)
+[1.519s] -- Added test 'copyright' to check source files copyright and LICENSE
+[1.522s] -- Added test 'flake8' to check Python code syntax and style conventions
+[1.523s] -- Added test 'lint_cmake' to check CMake code style
+[1.524s] -- Added test 'pep257' to check Python code against some of the style conventions in PEP 257
+[1.525s] -- Added test 'xmllint' to check XML markup files
+[1.528s] -- Configuring done
+[1.530s] -- Generating done
+[1.531s] -- Build files have been written to: /root/workspace/ros2_ws/build/code_bot
+[1.540s] Invoked command in '/root/workspace/ros2_ws/build/code_bot' returned '0': CMAKE_PREFIX_PATH=/opt/ros/foxy /usr/bin/cmake /root/workspace/ros2_ws/src/code_bot -DCMAKE_INSTALL_PREFIX=/root/workspace/ros2_ws/install/code_bot
+[1.541s] Invoking command in '/root/workspace/ros2_ws/build/code_bot': CMAKE_PREFIX_PATH=/opt/ros/foxy /usr/bin/cmake --build /root/workspace/ros2_ws/build/code_bot -- -j12 -l12
+[1.576s] Invoked command in '/root/workspace/ros2_ws/build/code_bot' returned '0': CMAKE_PREFIX_PATH=/opt/ros/foxy /usr/bin/cmake --build /root/workspace/ros2_ws/build/code_bot -- -j12 -l12
+[1.603s] Invoking command in '/root/workspace/ros2_ws/build/code_bot': CMAKE_PREFIX_PATH=/opt/ros/foxy /usr/bin/cmake --install /root/workspace/ros2_ws/build/code_bot
+[1.610s] -- Install configuration: ""
+[1.611s] -- Installing: /root/workspace/ros2_ws/install/code_bot/share/ament_index/resource_index/package_run_dependencies/code_bot
+[1.611s] -- Installing: /root/workspace/ros2_ws/install/code_bot/share/ament_index/resource_index/parent_prefix_path/code_bot
+[1.611s] -- Installing: /root/workspace/ros2_ws/install/code_bot/share/code_bot/environment/ament_prefix_path.sh
+[1.611s] -- Installing: /root/workspace/ros2_ws/install/code_bot/share/code_bot/environment/ament_prefix_path.dsv
+[1.611s] -- Installing: /root/workspace/ros2_ws/install/code_bot/share/code_bot/environment/path.sh
+[1.611s] -- Installing: /root/workspace/ros2_ws/install/code_bot/share/code_bot/environment/path.dsv
+[1.611s] -- Installing: /root/workspace/ros2_ws/install/code_bot/share/code_bot/local_setup.bash
+[1.612s] -- Installing: /root/workspace/ros2_ws/install/code_bot/share/code_bot/local_setup.sh
+[1.612s] -- Installing: /root/workspace/ros2_ws/install/code_bot/share/code_bot/local_setup.zsh
+[1.612s] -- Installing: /root/workspace/ros2_ws/install/code_bot/share/code_bot/local_setup.dsv
+[1.612s] -- Installing: /root/workspace/ros2_ws/install/code_bot/share/code_bot/package.dsv
+[1.613s] -- Installing: /root/workspace/ros2_ws/install/code_bot/share/ament_index/resource_index/packages/code_bot
+[1.613s] -- Installing: /root/workspace/ros2_ws/install/code_bot/share/code_bot/cmake/code_botConfig.cmake
+[1.613s] -- Installing: /root/workspace/ros2_ws/install/code_bot/share/code_bot/cmake/code_botConfig-version.cmake
+[1.613s] -- Installing: /root/workspace/ros2_ws/install/code_bot/share/code_bot/package.xml
+[1.628s] Invoked command in '/root/workspace/ros2_ws/build/code_bot' returned '0': CMAKE_PREFIX_PATH=/opt/ros/foxy /usr/bin/cmake --install /root/workspace/ros2_ws/build/code_bot

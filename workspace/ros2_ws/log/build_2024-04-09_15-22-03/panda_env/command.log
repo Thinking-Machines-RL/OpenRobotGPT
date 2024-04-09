@@ -1,0 +1,6 @@
+Invoking command in '/root/workspace/ros2_ws/build/panda_env': CMAKE_PREFIX_PATH=/opt/ros/foxy /usr/bin/cmake /root/workspace/ros2_ws/src/panda_env -DCMAKE_INSTALL_PREFIX=/root/workspace/ros2_ws/install/panda_env
+Invoked command in '/root/workspace/ros2_ws/build/panda_env' returned '0': CMAKE_PREFIX_PATH=/opt/ros/foxy /usr/bin/cmake /root/workspace/ros2_ws/src/panda_env -DCMAKE_INSTALL_PREFIX=/root/workspace/ros2_ws/install/panda_env
+Invoking command in '/root/workspace/ros2_ws/build/panda_env': CMAKE_PREFIX_PATH=/opt/ros/foxy /usr/bin/cmake --build /root/workspace/ros2_ws/build/panda_env -- -j12 -l12
+Invoked command in '/root/workspace/ros2_ws/build/panda_env' returned '0': CMAKE_PREFIX_PATH=/opt/ros/foxy /usr/bin/cmake --build /root/workspace/ros2_ws/build/panda_env -- -j12 -l12
+Invoking command in '/root/workspace/ros2_ws/build/panda_env': CMAKE_PREFIX_PATH=/opt/ros/foxy /usr/bin/cmake --install /root/workspace/ros2_ws/build/panda_env
+Invoked command in '/root/workspace/ros2_ws/build/panda_env' returned '0': CMAKE_PREFIX_PATH=/opt/ros/foxy /usr/bin/cmake --install /root/workspace/ros2_ws/build/panda_env

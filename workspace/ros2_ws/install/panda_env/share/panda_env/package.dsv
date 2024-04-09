@@ -1,0 +1,9 @@
+source;share/panda_env/hook/cmake_prefix_path.ps1
+source;share/panda_env/hook/cmake_prefix_path.dsv
+source;share/panda_env/hook/cmake_prefix_path.sh
+source;share/panda_env/hook/pythonpath.ps1
+source;share/panda_env/hook/pythonpath.dsv
+source;share/panda_env/hook/pythonpath.sh
+source;share/panda_env/hook/ament_prefix_path.ps1
+source;share/panda_env/hook/ament_prefix_path.dsv
+source;share/panda_env/hook/ament_prefix_path.sh
