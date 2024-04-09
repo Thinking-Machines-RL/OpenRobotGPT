@@ -37,3 +37,7 @@ share/python-wheels/
 MANIFEST
 # workspace for testing
 workspace_fun/*
+
+workspace/catkin_ws/src/code_bot/secrets/*
+# exept api_key_template.json
+!workspace/catkin_ws/src/code_bot/secrets/api_key_template.json
