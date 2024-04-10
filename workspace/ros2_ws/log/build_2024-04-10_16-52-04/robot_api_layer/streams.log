@@ -1,0 +1,21 @@
+[1.663s] Invoking command in '/root/workspace/ros2_ws/src/robot_api_layer': PYTHONPATH=/root/workspace/ros2_ws/build/robot_api_layer/prefix_override:/root/workspace/ros2_ws/install/robot_api_layer/lib/python3.8/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated setup.py egg_info --egg-base ../../build/robot_api_layer build --build-base /root/workspace/ros2_ws/build/robot_api_layer/build install --record /root/workspace/ros2_ws/build/robot_api_layer/install.log --install-scripts $base/lib/robot_api_layer --single-version-externally-managed install_data
+[1.976s] running egg_info
+[1.977s] writing ../../build/robot_api_layer/robot_api_layer.egg-info/PKG-INFO
+[1.977s] writing dependency_links to ../../build/robot_api_layer/robot_api_layer.egg-info/dependency_links.txt
+[1.978s] writing entry points to ../../build/robot_api_layer/robot_api_layer.egg-info/entry_points.txt
+[1.978s] writing requirements to ../../build/robot_api_layer/robot_api_layer.egg-info/requires.txt
+[1.978s] writing top-level names to ../../build/robot_api_layer/robot_api_layer.egg-info/top_level.txt
+[2.035s] reading manifest file '../../build/robot_api_layer/robot_api_layer.egg-info/SOURCES.txt'
+[2.036s] writing manifest file '../../build/robot_api_layer/robot_api_layer.egg-info/SOURCES.txt'
+[2.037s] running build
+[2.037s] running build_py
+[2.038s] running install
+[2.038s] running install_lib
+[2.041s] running install_data
+[2.041s] running install_egg_info
+[2.044s] removing '/root/workspace/ros2_ws/install/robot_api_layer/lib/python3.8/site-packages/robot_api_layer-0.0.0-py3.8.egg-info' (and everything under it)
+[2.044s] Copying ../../build/robot_api_layer/robot_api_layer.egg-info to /root/workspace/ros2_ws/install/robot_api_layer/lib/python3.8/site-packages/robot_api_layer-0.0.0-py3.8.egg-info
+[2.046s] running install_scripts
+[2.068s] Installing robot_api script to /root/workspace/ros2_ws/install/robot_api_layer/lib/robot_api_layer
+[2.069s] writing list of installed files to '/root/workspace/ros2_ws/build/robot_api_layer/install.log'
+[2.112s] Invoked command in '/root/workspace/ros2_ws/src/robot_api_layer' returned '0': PYTHONPATH=/root/workspace/ros2_ws/build/robot_api_layer/prefix_override:/root/workspace/ros2_ws/install/robot_api_layer/lib/python3.8/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated setup.py egg_info --egg-base ../../build/robot_api_layer build --build-base /root/workspace/ros2_ws/build/robot_api_layer/build install --record /root/workspace/ros2_ws/build/robot_api_layer/install.log --install-scripts $base/lib/robot_api_layer --single-version-externally-managed install_data

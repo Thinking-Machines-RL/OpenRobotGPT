@@ -1,0 +1,14 @@
+// generated from rosidl_adapter/resource/msg.idl.em
+// with input from robotgpt_interfaces/msg/Action.msg
+// generated code does not contain a copyright notice
+
+
+module robotgpt_interfaces {
+  module msg {
+    @verbatim (language="comment", text=
+      " Message sending action to env")
+    struct Action {
+      sequence<float> action;
+    };
+  };
+};
