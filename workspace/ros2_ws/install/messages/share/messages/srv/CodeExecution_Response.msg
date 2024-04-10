@@ -1,0 +1,2 @@
+
+bool completion_flag

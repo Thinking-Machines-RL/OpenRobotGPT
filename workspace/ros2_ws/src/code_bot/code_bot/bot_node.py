@@ -1,6 +1,6 @@
 import rclpy
 from rclpy.node import Node
-from code_bot.srv import CodeExecution
+from messages.srv import CodeExecution
 from bots import DecisionBot, CorrectionBot, EvaluationBot, ChatGPT
 
 class BotNode(Node):
