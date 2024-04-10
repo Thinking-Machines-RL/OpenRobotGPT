@@ -1,1 +1,0 @@
-from gym_example.envs.prova_env import PandaEnv

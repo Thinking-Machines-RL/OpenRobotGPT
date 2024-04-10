@@ -1,0 +1,51 @@
+[0.000000] (-) TimerEvent: {}
+[0.000352] (code_bot) JobQueued: {'identifier': 'code_bot', 'dependencies': OrderedDict()}
+[0.000740] (code_bot) JobStarted: {'identifier': 'code_bot'}
+[0.100074] (-) TimerEvent: {}
+[0.200404] (-) TimerEvent: {}
+[0.300683] (-) TimerEvent: {}
+[0.400970] (-) TimerEvent: {}
+[0.501234] (-) TimerEvent: {}
+[0.601503] (-) TimerEvent: {}
+[0.681541] (code_bot) Command: {'cmd': ['/usr/bin/python3', '-W', 'ignore:setup.py install is deprecated', 'setup.py', 'egg_info', '--egg-base', '../../build/code_bot', 'build', '--build-base', '/root/workspace/ros2_ws/build/code_bot/build', 'install', '--record', '/root/workspace/ros2_ws/build/code_bot/install.log', '--install-scripts', '$base/lib/code_bot', '--single-version-externally-managed', 'install_data'], 'cwd': '/root/workspace/ros2_ws/src/code_bot', 'env': {'NV_CUDA_COMPAT_PACKAGE': 'cuda-compat-12-3', 'HOSTNAME': '7cac39dd4d25', 'SHLVL': '1', 'LD_LIBRARY_PATH': '/opt/ros/foxy/opt/yaml_cpp_vendor/lib:/opt/ros/foxy/opt/rviz_ogre_vendor/lib:/opt/ros/foxy/lib/x86_64-linux-gnu:/opt/ros/foxy/lib:/usr/local/nvidia/lib:/usr/local/nvidia/lib64', 'HOME': '/root', 'OLDPWD': '/root/workspace/ros2_ws/src', 'ROS_PYTHON_VERSION': '3', 'LC_CTYPE': 'C.UTF-8', 'CUDA_VERSION': '12.3.2', 'ROS_DISTRO': 'foxy', 'NVIDIA_REQUIRE_CUDA': 'cuda>=12.3 brand=tesla,driver>=470,driver<471 brand=unknown,driver>=470,driver<471 brand=nvidia,driver>=470,driver<471 brand=nvidiartx,driver>=470,driver<471 brand=geforce,driver>=470,driver<471 brand=geforcertx,driver>=470,driver<471 brand=quadro,driver>=470,driver<471 brand=quadrortx,driver>=470,driver<471 brand=titan,driver>=470,driver<471 brand=titanrtx,driver>=470,driver<471 brand=tesla,driver>=525,driver<526 brand=unknown,driver>=525,driver<526 brand=nvidia,driver>=525,driver<526 brand=nvidiartx,driver>=525,driver<526 brand=geforce,driver>=525,driver<526 brand=geforcertx,driver>=525,driver<526 brand=quadro,driver>=525,driver<526 brand=quadrortx,driver>=525,driver<526 brand=titan,driver>=525,driver<526 brand=titanrtx,driver>=525,driver<526 brand=tesla,driver>=535,driver<536 brand=unknown,driver>=535,driver<536 brand=nvidia,driver>=535,driver<536 brand=nvidiartx,driver>=535,driver<536 brand=geforce,driver>=535,driver<536 brand=geforcertx,driver>=535,driver<536 brand=quadro,driver>=535,driver<536 brand=quadrortx,driver>=535,driver<536 brand=titan,driver>=535,driver<536 brand=titanrtx,driver>=535,driver<536', '_': '/usr/local/bin/colcon', 'ROS_VERSION': '2', 'NVIDIA_DRIVER_CAPABILITIES': 'compute,utility', 'TERM': 'xterm', 'NV_CUDA_CUDART_VERSION': '12.3.101-1', 'ROS_LOCALHOST_ONLY': '0', 'PATH': '/opt/ros/foxy/bin:/usr/local/nvidia/bin:/usr/local/cuda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin', 'NVARCH': 'x86_64', 'DISPLAY': ':1', 'LS_COLORS': 'rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=30;41:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:', 'AMENT_PREFIX_PATH': '/opt/ros/foxy', 'DEBIAN_FRONTEND': 'noninteractive', 'PWD': '/root/workspace/ros2_ws/build/code_bot', 'PYTHONPATH': '/root/workspace/ros2_ws/build/code_bot/prefix_override:/root/workspace/ros2_ws/install/code_bot/lib/python3.8/site-packages:/opt/ros/foxy/lib/python3.8/site-packages', 'NVIDIA_VISIBLE_DEVICES': 'all', 'COLCON': '1'}, 'shell': False}
+[0.701629] (-) TimerEvent: {}
+[0.801926] (-) TimerEvent: {}
+[0.895534] (code_bot) StdoutLine: {'line': b'running egg_info\n'}
+[0.895979] (code_bot) StdoutLine: {'line': b'creating ../../build/code_bot/code_bot.egg-info\n'}
+[0.896180] (code_bot) StdoutLine: {'line': b'writing ../../build/code_bot/code_bot.egg-info/PKG-INFO\n'}
+[0.896386] (code_bot) StdoutLine: {'line': b'writing dependency_links to ../../build/code_bot/code_bot.egg-info/dependency_links.txt\n'}
+[0.896562] (code_bot) StdoutLine: {'line': b'writing entry points to ../../build/code_bot/code_bot.egg-info/entry_points.txt\n'}
+[0.896664] (code_bot) StdoutLine: {'line': b'writing requirements to ../../build/code_bot/code_bot.egg-info/requires.txt\n'}
+[0.896740] (code_bot) StdoutLine: {'line': b'writing top-level names to ../../build/code_bot/code_bot.egg-info/top_level.txt\n'}
+[0.900766] (code_bot) StdoutLine: {'line': b"writing manifest file '../../build/code_bot/code_bot.egg-info/SOURCES.txt'\n"}
+[0.901992] (-) TimerEvent: {}
+[0.938854] (code_bot) StdoutLine: {'line': b"reading manifest file '../../build/code_bot/code_bot.egg-info/SOURCES.txt'\n"}
+[0.939610] (code_bot) StdoutLine: {'line': b"writing manifest file '../../build/code_bot/code_bot.egg-info/SOURCES.txt'\n"}
+[0.939831] (code_bot) StdoutLine: {'line': b'running build\n'}
+[0.939940] (code_bot) StdoutLine: {'line': b'running build_py\n'}
+[0.940166] (code_bot) StdoutLine: {'line': b'creating /root/workspace/ros2_ws/build/code_bot/build\n'}
+[0.940288] (code_bot) StdoutLine: {'line': b'creating /root/workspace/ros2_ws/build/code_bot/build/lib\n'}
+[0.940364] (code_bot) StdoutLine: {'line': b'creating /root/workspace/ros2_ws/build/code_bot/build/lib/code_bot\n'}
+[0.940436] (code_bot) StdoutLine: {'line': b'copying code_bot/bot_node.py -> /root/workspace/ros2_ws/build/code_bot/build/lib/code_bot\n'}
+[0.940508] (code_bot) StdoutLine: {'line': b'copying code_bot/__init__.py -> /root/workspace/ros2_ws/build/code_bot/build/lib/code_bot\n'}
+[0.940578] (code_bot) StdoutLine: {'line': b'running install\n'}
+[0.940942] (code_bot) StdoutLine: {'line': b'running install_lib\n'}
+[0.941846] (code_bot) StdoutLine: {'line': b'creating /root/workspace/ros2_ws/install/code_bot/lib/python3.8/site-packages/code_bot\n'}
+[0.941971] (code_bot) StdoutLine: {'line': b'copying /root/workspace/ros2_ws/build/code_bot/build/lib/code_bot/bot_node.py -> /root/workspace/ros2_ws/install/code_bot/lib/python3.8/site-packages/code_bot\n'}
+[0.942162] (code_bot) StdoutLine: {'line': b'copying /root/workspace/ros2_ws/build/code_bot/build/lib/code_bot/__init__.py -> /root/workspace/ros2_ws/install/code_bot/lib/python3.8/site-packages/code_bot\n'}
+[0.942509] (code_bot) StdoutLine: {'line': b'byte-compiling /root/workspace/ros2_ws/install/code_bot/lib/python3.8/site-packages/code_bot/bot_node.py to bot_node.cpython-38.pyc\n'}
+[0.943609] (code_bot) StdoutLine: {'line': b'byte-compiling /root/workspace/ros2_ws/install/code_bot/lib/python3.8/site-packages/code_bot/__init__.py to __init__.cpython-38.pyc\n'}
+[0.943780] (code_bot) StdoutLine: {'line': b'running install_data\n'}
+[0.943907] (code_bot) StdoutLine: {'line': b'creating /root/workspace/ros2_ws/install/code_bot/share/ament_index\n'}
+[0.944019] (code_bot) StdoutLine: {'line': b'creating /root/workspace/ros2_ws/install/code_bot/share/ament_index/resource_index\n'}
+[0.944109] (code_bot) StdoutLine: {'line': b'creating /root/workspace/ros2_ws/install/code_bot/share/ament_index/resource_index/packages\n'}
+[0.944181] (code_bot) StdoutLine: {'line': b'copying resource/code_bot -> /root/workspace/ros2_ws/install/code_bot/share/ament_index/resource_index/packages\n'}
+[0.944260] (code_bot) StdoutLine: {'line': b'copying package.xml -> /root/workspace/ros2_ws/install/code_bot/share/code_bot\n'}
+[0.944328] (code_bot) StdoutLine: {'line': b'running install_egg_info\n'}
+[0.945521] (code_bot) StdoutLine: {'line': b'Copying ../../build/code_bot/code_bot.egg-info to /root/workspace/ros2_ws/install/code_bot/lib/python3.8/site-packages/code_bot-0.0.0-py3.8.egg-info\n'}
+[0.946368] (code_bot) StdoutLine: {'line': b'running install_scripts\n'}
+[0.963743] (code_bot) StdoutLine: {'line': b'Installing bot_node script to /root/workspace/ros2_ws/install/code_bot/lib/code_bot\n'}
+[0.964035] (code_bot) StdoutLine: {'line': b"writing list of installed files to '/root/workspace/ros2_ws/build/code_bot/install.log'\n"}
+[0.979797] (code_bot) CommandEnded: {'returncode': 0}
+[0.991106] (code_bot) JobEnded: {'identifier': 'code_bot', 'rc': 0}
+[0.991470] (-) EventReactorShutdown: {}

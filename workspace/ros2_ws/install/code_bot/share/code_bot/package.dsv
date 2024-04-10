@@ -1,6 +1,3 @@
-source;share/code_bot/hook/cmake_prefix_path.ps1
-source;share/code_bot/hook/cmake_prefix_path.dsv
-source;share/code_bot/hook/cmake_prefix_path.sh
 source;share/code_bot/hook/pythonpath.ps1
 source;share/code_bot/hook/pythonpath.dsv
 source;share/code_bot/hook/pythonpath.sh
