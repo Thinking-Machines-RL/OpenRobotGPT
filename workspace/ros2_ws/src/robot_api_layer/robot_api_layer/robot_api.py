@@ -1,6 +1,6 @@
 import rclpy
 from rclpy.node import Node
-from messages.srv import CodeExecution
+from robotgpt_interfaces.srv import CodeExecution
 
 
 class RobotAPINode(Node):
@@ -14,14 +14,14 @@ class RobotAPINode(Node):
         code = request.code
         evaluation_code = request.evaluation_code
 
-        # Define evaluation function
-        local_vars={}
-        exec(evaluation_code, locals=local_vars)
-        evaluation_func = local_vars["evaluation_func"]
-
         # Evaluate code
-        exec(code)
-        completion_flag = evaluation_func(code)
+        exec(code, globals())
+
+        # Define evaluation function
+        scope = {}
+        exec(evaluation_code, globals(), scope)
+
+        completion_flag = scope['evaluation_func']()
 
         response.completion_flag = completion_flag
         return response

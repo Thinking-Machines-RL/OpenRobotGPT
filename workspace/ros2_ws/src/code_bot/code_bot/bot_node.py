@@ -1,7 +1,9 @@
 import rclpy
 from rclpy.node import Node
-from messages.srv import CodeExecution
-from bots import DecisionBot, CorrectionBot, EvaluationBot, ChatGPT
+from robotgpt_interfaces.srv import CodeExecution
+from .bots import DecisionBot, CorrectionBot, EvaluationBot, ChatGPT
+import pkg_resources
+import re
 
 class BotNode(Node):
     def __init__(self):
@@ -18,7 +20,9 @@ class BotNode(Node):
 
     def call_service(self, code: str, evaluation_code: str):
         self.req.code = code
+        self.req.evaluation_code = evaluation_code
         future = self.client.call_async(self.req)
+        rclpy.spin_until_future_complete(self, future)
         return future.result().completion_flag
     
 
@@ -27,41 +31,68 @@ def main(args=None):
     rclpy.init(args=args)
     node = BotNode()
 
-    decision_bot = ChatGPT("config/config_bot.json", "secrets/api_key.json")
-    evaluation_bot = ChatGPT("config/config_bot.json", "secrets/api_key.json")
-    correction_bot = ChatGPT("config/config_bot.json", "secrets/api_key.json")
+    config_path = "/root/workspace/ros2_ws/install/code_bot/share/code_bot/config/config_bot.json"
+    secret_path = "/root/workspace/ros2_ws/install/code_bot/share/code_bot/config/api_key.json"
+    decision_bot = ChatGPT(config_path, secret_path)
+    evaluation_bot = ChatGPT(config_path, secret_path)
+    correction_bot = ChatGPT(config_path, secret_path)
 
-    # Set context for each bot
-    decision_context = "You are a robotics engineer, writing code for a franka robot. Examples: ..."
-    decision_bot.set_context([{"role":"user", "content":decision_context}])
+    while True:
+        task = input("Enter the task: ")
 
-    evaluation_context = "You need to write a function that check if the code given as input is correct. Examples: ..."
-    evaluation_bot.set_context([{"role":"user", "content":evaluation_context}])
+        decision_instructions = "You will be asked to produce code that solves a task. Only write code. Every kind of explanation should be included as python comments. Your entire response should be directly executable in a python shell."
+        decision_bot.set_context([{"role":"user", "content":decision_instructions}])
+        code = decision_bot.chat(task)
 
-    correction_context = "You need to explain why the provided code doesn't work. Examples: ..."
-    correction_bot.set_context([{"role":"user", "content":correction_context}])
+        print("ChatGPT code (raw): ", code)
+        x = input("Press a key to proceed or type 'QUIT' to quit: ")
+        if x.strip().upper() == 'QUIT':
+            break
 
-    # Prompt task
-    task = input("What do you want OpenRobotGPT to do?")
+        # Clean the code from the overhead
+        pattern = r"```python(.*?)```"
+        code = re.findall(pattern, code, re.DOTALL)[0]
 
-    evaluation_code = evaluation_bot.chat("Task: {task}")
+        print("ChatGPT code (cleaned): ", code)
+        x = input("Press a key to proceed or type 'QUIT' to quit: ")
+        if x.strip().upper() == 'QUIT':
+            break
 
-    old_code = ""
-    report = ""
-    code_is_working = False
-    while not code_is_working:
-        code = decision_bot.chat("Task: {task} | Old code: {old_code} | Report: {report}")
+        evaluation_instructions = "You will be prompted with a task. The task has already been solved. Your task is to check if the result is correct, without modifying it. In order to do that we need you to provide a python function (ONLY this function) called evaluation_func() that takes no arguments and checks if the results of the prevoius program (that you do not need to compute and are already available as global variables) are correct. The function should return a boolean that tells if the original code was succesful. Only write code. Every kind of explanation should be included as python comments. Your entire response should be directly executable in a python shell."
+        evaluation_bot.set_context([{"role":"user", "content":evaluation_instructions}])
+        evaluation_code = evaluation_bot.chat(task)
+
+        print("ChatGPT evaluation code (raw): ", evaluation_code)
+        x = input("Press a key to proceed or type 'QUIT' to quit: ")
+        if x.strip().upper() == 'QUIT':
+            break
+
+        # Clean the code from the overhead
+        pattern = r"```python(.*?)```"
+        evaluation_code_list = re.findall(pattern, evaluation_code, re.DOTALL)
+        if evaluation_code_list:
+            evaluation_code = evaluation_code_list[0]
+
+        print("ChatGPT evaluation code (cleaned): ", evaluation_code)
+        x = input("Press a key to proceed or type 'QUIT' to quit: ")
+        if x.strip().upper() == 'QUIT':
+            break
+
         code_is_working = node.call_service(code, evaluation_code)
-        if not code_is_working:
-            old_code = code
-            report = correction_bot.chat("Task: {task} | Code: {code}")
 
-    # Now we have working code in "code" variable
+        if code_is_working:
+            print("WORKING!")
+        else:
+            print("NOT working!")
 
+        x = input("Press a key to proceed or type 'QUIT' to quit: ")
+        if x.strip().upper() == 'QUIT':
+            break
 
 
     rclpy.spin(node)
     rclpy.shutdown()
+
 
 if __name__ == '__main__':
     main()

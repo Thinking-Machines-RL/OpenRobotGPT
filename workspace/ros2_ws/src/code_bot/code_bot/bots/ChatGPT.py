@@ -1,7 +1,7 @@
 import json
 import openai
 from typing import TypeVar, Generic, Dict
-from Bot import Bot
+from .Bot import Bot
 
 BotType = TypeVar('BotType')
 
