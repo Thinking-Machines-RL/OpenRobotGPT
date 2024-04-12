@@ -2,3 +2,7 @@ msg/Action.idl
 msg/Action.msg
 msg/StateReward.idl
 msg/StateReward.msg
+srv/CodeExecution.idl
+srv/CodeExecution.srv
+srv/CodeExecution_Request.msg
+srv/CodeExecution_Response.msg

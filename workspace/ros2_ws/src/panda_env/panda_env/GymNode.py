@@ -60,6 +60,7 @@ class PandaEnvROSNode(Node):
         self.env.close()
 
 def main(args=None):
+    #prova
     rclpy.init(args=args)
     panda_env_node = PandaEnvROSNode()
     
