@@ -1,5 +1,6 @@
 import rclpy
 from rclpy.node import Node
+import copy
 from robotgpt_interfaces.srv import CodeExecution
 
 
@@ -14,16 +15,30 @@ class RobotAPINode(Node):
         code = request.code
         evaluation_code = request.evaluation_code
 
-        # Evaluate code
-        exec(code, globals())
-
-        # Define evaluation function
         scope = {}
+        
+        except_occurred = False
+        completion_flag = False
+        code_except = None
+        eval_except = None
+        try:
+            exec(code, globals(), scope)
+        except Exception as e:
+            except_occurred = True
+            code_except = str(e)
+
         exec(evaluation_code, globals(), scope)
 
-        completion_flag = scope['evaluation_func']()
+        try:
+            completion_flag = scope['evaluation_func']()
+        except Exception as e:
+            except_occurred = True
+            eval_except = str(e)
 
-        response.completion_flag = completion_flag
+
+        response.completion_flag = completion_flag and not except_occurred
+        response.code_except = code_except
+        response.eval_except = eval_except
         return response
 
 

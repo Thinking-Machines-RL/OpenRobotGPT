@@ -38,8 +38,6 @@ MANIFEST
 # workspace for testing
 workspace_fun/*
 
-workspace/ros2_ws/src/code_bot/secrets/*
-workspace/ros2_ws/install/*
-workspace/ros2_ws/log/*
-# exept api_key_template.json
-!workspace/ros2_ws/src/code_bot/secrets/api_key_template.json
+workspace/ros2_ws/install/
+workspace/ros2_ws/log/
+workspace/secrets/*

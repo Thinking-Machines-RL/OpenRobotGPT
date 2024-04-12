@@ -4,6 +4,7 @@ from robotgpt_interfaces.srv import CodeExecution
 from .bots import DecisionBot, CorrectionBot, EvaluationBot, ChatGPT
 import pkg_resources
 import re
+import os
 
 class BotNode(Node):
     def __init__(self):
@@ -23,7 +24,7 @@ class BotNode(Node):
         self.req.evaluation_code = evaluation_code
         future = self.client.call_async(self.req)
         rclpy.spin_until_future_complete(self, future)
-        return future.result().completion_flag
+        return future.result().completion_flag, future.result().code_except, future.result().eval_except
     
 
 
@@ -32,7 +33,7 @@ def main(args=None):
     node = BotNode()
 
     config_path = "/root/workspace/ros2_ws/install/code_bot/share/code_bot/config/config_bot.json"
-    secret_path = "/root/workspace/ros2_ws/install/code_bot/share/code_bot/config/api_key.json"
+    secret_path = os.environ.get("API_KEY_PATH")
     decision_bot = ChatGPT(config_path, secret_path)
     evaluation_bot = ChatGPT(config_path, secret_path)
     correction_bot = ChatGPT(config_path, secret_path)

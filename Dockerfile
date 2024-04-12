@@ -66,6 +66,8 @@ RUN apt-get update && apt-get install -y openssh-server && \
 
 WORKDIR /root
 
+ENV API_KEY_PATH=/root/workspace/secrets/api_key.json
+
 # Expose SSH port
 EXPOSE 22
 
