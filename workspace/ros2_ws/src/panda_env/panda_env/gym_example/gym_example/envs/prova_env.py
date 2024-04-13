@@ -27,21 +27,15 @@ class PandaEnv(gym.Env):
         '''Contains the logic of the environment, computes the state
            of the env after applying a given action'''
         p.configureDebugVisualizer(p.COV_ENABLE_SINGLE_STEP_RENDERING)
-        #we mantain fixed orientation of the EE
-        orientation = p.getQuaternionFromEuler([0.,-math.pi,math.pi/2.])
-        dv = 0.005
-        dx = action[0] * dv
-        dy = action[1] * dv
-        dz = action[2] * dv
-        fingers = action[3]
+        # Get orientation quaternion from action
+        orientation = action[3:6]
+        position = action[:3]
+        fingers = action[7]
 
         #current pose of the end effector
         currentPose = p.getLinkState(self.pandaUid, 11)
-        currentPosition = currentPose[0]
-        newPosition = [currentPosition[0] + dx,
-                       currentPosition[1] + dy,
-                       currentPosition[2] + dz]
-        jointPoses = p.calculateInverseKinematics(self.pandaUid,11,newPosition, orientation)[0:7]
+        
+        jointPoses = p.calculateInverseKinematics(self.pandaUid,11,position, orientation)[0:7]
 
         p.setJointMotorControlArray(self.pandaUid, list(range(7))+[9,10], p.POSITION_CONTROL, list(jointPoses)+2*[fingers])
 

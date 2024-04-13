@@ -20,7 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'robot_api = robot_api_layer.robot_api:main'
+            'robot_api_node = robot_api_layer.robot_api_node:main'
         ],
     },
 )
