@@ -2,6 +2,7 @@ import rclpy
 from rclpy.node import Node
 
 from robotgpt_interfaces.msg import StateReward, Action
+from geometry_msgs.msg import Point
 import gym_example
 import gymnasium
 
@@ -14,17 +15,19 @@ class PandaEnvROSNode(Node):
         self.state_pub = self.create_publisher(StateReward, '/panda_env/state', 10)
 
         # Subscriber for agent actions
-        #self.action_sub = self.create_subscription(Action, '/agent/actions', self.action_callback, 10)
+        self.action_sub = self.create_subscription(Point, 'traj', self.action_callback, 20)
 
         # Initialize action variable
-        self.action = 1
+        self.action = None
         self.run()
 
         # ROS loop rate (decide if needed)
         # self.rate = rospy.Rate(10)  # 10 Hz
 
-    # def action_callback(self, msg):
-    #     self.action = msg.data
+    def action_callback(self, msg):
+        print("msg ricevuto")
+        print(msg)
+        self.action = msg
 
     def run(self):
         while rclpy.ok():
@@ -40,7 +43,8 @@ class PandaEnvROSNode(Node):
             while not done:
                 if self.action is not None:
                     # Step through the environment
-                    action = self.env.action_space.sample()  # For demonstration, sample random actions
+                    # action = self.env.action_space.sample()  # For demonstration, sample random actions
+                    action = np.array(self.action.x, self.action.y, self.action.z, 0)
                     next_state, reward, done, _, info = self.env.step(action)
 
                     # Publish current state
@@ -55,7 +59,7 @@ class PandaEnvROSNode(Node):
                     #self.rate.sleep()
                     
                     #reset the action
-                    self.action = 1
+                    self.action = None
         
         self.env.close()
 

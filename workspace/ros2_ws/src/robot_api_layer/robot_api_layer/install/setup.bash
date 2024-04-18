@@ -1,4 +1,4 @@
-# generated from colcon_zsh/shell/template/prefix_chain.zsh.em
+# generated from colcon_bash/shell/template/prefix_chain.bash.em
 
 # This script extends the environment with the environment of other prefix
 # paths which were sourced when this file was generated as well as all packages
@@ -6,7 +6,7 @@
 
 # function to source another script with conditional trace output
 # first argument: the path of the script
-_colcon_prefix_chain_zsh_source_script() {
+_colcon_prefix_chain_bash_source_script() {
   if [ -f "$1" ]; then
     if [ -n "$COLCON_TRACE" ]; then
       echo "# . \"$1\""
@@ -20,12 +20,15 @@ _colcon_prefix_chain_zsh_source_script() {
 # source chained prefixes
 # setting COLCON_CURRENT_PREFIX avoids determining the prefix in the sourced script
 COLCON_CURRENT_PREFIX="/opt/ros/iron"
-_colcon_prefix_chain_zsh_source_script "$COLCON_CURRENT_PREFIX/local_setup.zsh"
+_colcon_prefix_chain_bash_source_script "$COLCON_CURRENT_PREFIX/local_setup.bash"
+# setting COLCON_CURRENT_PREFIX avoids determining the prefix in the sourced script
+COLCON_CURRENT_PREFIX="/root/workspace/ros2_ws/install"
+_colcon_prefix_chain_bash_source_script "$COLCON_CURRENT_PREFIX/local_setup.bash"
 
 # source this prefix
 # setting COLCON_CURRENT_PREFIX avoids determining the prefix in the sourced script
-COLCON_CURRENT_PREFIX="$(builtin cd -q "`dirname "${(%):-%N}"`" > /dev/null && pwd)"
-_colcon_prefix_chain_zsh_source_script "$COLCON_CURRENT_PREFIX/local_setup.zsh"
+COLCON_CURRENT_PREFIX="$(builtin cd "`dirname "${BASH_SOURCE[0]}"`" > /dev/null && pwd)"
+_colcon_prefix_chain_bash_source_script "$COLCON_CURRENT_PREFIX/local_setup.bash"
 
 unset COLCON_CURRENT_PREFIX
-unset _colcon_prefix_chain_zsh_source_script
+unset _colcon_prefix_chain_bash_source_script

@@ -2,14 +2,37 @@ import rclpy
 from rclpy.node import Node
 import copy
 from robotgpt_interfaces.srv import CodeExecution
-
-
+from robot_api_layer.PlannerInterface import PlannerInterface
+import numpy as np
+from geometry_msgs.msg import Point
+import time
 class RobotAPINode(Node):
 
     def __init__(self):
         super().__init__('test_code')
         print("Hello from test_code!")
+        planner = PlannerInterface()
+        starting_state = np.zeros(7)
+        quat_ending = [1/2, 1/2, 1/2, 1/2]
+        starting_state[3:] = starting_state[3:] + quat_ending
+        ending_state = np.ones(7)
+        ending_state[3:] = ending_state[3:] - quat_ending
+        self.traj = planner.plan_trajectory(starting_state, ending_state)
+        self.state_pub = self.create_publisher(Point, 'traj', 20)
+        timer_period = 1  # seconds
+        self.timer = self.create_timer(timer_period, self.timer_callback)
+        self.i = 0
         self.srv = self.create_service(CodeExecution, 'test_code', self.test_callback)
+
+    def timer_callback(self):
+        point = self.traj[self.i]
+        traj_msg = Point(x=point[0], y= point[1], z=point[2])
+        print(traj_msg)
+        self.state_pub.publish(traj_msg)
+        self.get_logger().info('Publishing: "%s"' % traj_msg)
+        self.i += 1
+        if self.i == (self.traj.shape[0]):
+            self.i = 0
 
     def test_callback(self, request, response):
         code = request.code
@@ -40,6 +63,8 @@ class RobotAPINode(Node):
         response.code_except = code_except
         response.eval_except = eval_except
         return response
+    
+    
 
 
 def main(args=None):
