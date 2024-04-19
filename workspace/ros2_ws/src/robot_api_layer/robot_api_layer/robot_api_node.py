@@ -29,6 +29,7 @@ class RobotAPINode(Node):
         traj_msg = Point(x=point[0], y= point[1], z=point[2])
         print(traj_msg)
         self.state_pub.publish(traj_msg)
+        print("[Info] publishing  ", traj_msg)
         self.get_logger().info('Publishing: "%s"' % traj_msg)
         self.i += 1
         if self.i == (self.traj.shape[0]):

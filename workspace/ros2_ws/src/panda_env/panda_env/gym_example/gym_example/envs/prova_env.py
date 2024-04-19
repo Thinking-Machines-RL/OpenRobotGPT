@@ -19,7 +19,7 @@ class PandaEnv(gym.Env):
         p.resetDebugVisualizerCamera(cameraDistance=1.5, cameraYaw=0, cameraPitch=-40, cameraTargetPosition=[0.55,-0.35,0.2])
 
         #Action space: cartesian pos of the EE and joint variable for both fingers 
-        self.action_space = spaces.Box(np.array([-1]*4), np.array([1]*4))
+        self.action_space = spaces.Box(np.array([-1]*7), np.array([1]*7))
         #Obs space: cartesian position of the EE and j variables of the 2 fingers
         self.observation_space = spaces.Box(np.array([-1]*5), np.array([1]*5))
 
