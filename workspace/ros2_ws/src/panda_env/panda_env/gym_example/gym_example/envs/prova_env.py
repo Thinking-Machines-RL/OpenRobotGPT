@@ -28,7 +28,7 @@ class PandaEnv(gym.Env):
            of the env after applying a given action'''
         p.configureDebugVisualizer(p.COV_ENABLE_SINGLE_STEP_RENDERING)
         # Get orientation quaternion from action
-        orientation = action[3:6]
+        orientation = action[3:7]
         position = action[:3]
         fingers = action[7]
 
@@ -92,8 +92,9 @@ class PandaEnv(gym.Env):
         trayUid = p.loadURDF(os.path.join(urdfRootPath, "tray/traybox.urdf"),basePosition=[0.65,0,0])
         
         #we randomize the position of the object on the table
-        state_object= [random.uniform(0.5,0.8),random.uniform(-0.2,0.2),0.05]
-        self.objectUid = p.loadURDF(os.path.join(urdfRootPath, "random_urdfs/000/000.urdf"), basePosition=state_object)
+        # state_object= [random.uniform(0.5,0.8),random.uniform(-0.2,0.2),0.05]
+        state_object= [0.6,0.1,0.05]
+        self.objectUid = p.loadURDF(os.path.join(urdfRootPath, "cube_small.urdf"), basePosition=state_object)
         info = {'object_position': state_object}
         #we return the first observation
         state_robot = p.getLinkState(self.pandaUid, 11)[0]

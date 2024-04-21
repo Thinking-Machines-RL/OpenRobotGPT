@@ -1,5 +1,6 @@
 import rclpy
 from rclpy.node import Node
+import time
 
 from robotgpt_interfaces.msg import StateReward, Action
 from geometry_msgs.msg import Point
@@ -19,7 +20,7 @@ class PandaEnvROSNode(Node):
 
 
         # Subscriber for agent actions
-        self.action_sub = self.create_subscription(Point, 'traj', self.action_callback, 20)
+        self.action_sub = self.create_subscription(Action, 'traj', self.action_callback, 20)
         print("--------- action created -------")
 
         # Initialize action variable
@@ -31,14 +32,21 @@ class PandaEnvROSNode(Node):
     def action_callback(self, msg):
         print("msg ricevuto")
         print(msg)
-        self.action = msg
-        action = np.array([self.action.x, self.action.y, self.action.z,0,0,0,0, 0])
+        self.action = msg.action
+        action = np.array([self.action[0], self.action[1], self.action[2],
+                           self.action[3], self.action[4], self.action[5], self.action[6],
+                           self.action[7]])
+
         next_state, reward, done, _, info = self.env.step(action)
+        while np.linalg.norm(next_state[0:3] - action[0:3]) > 1e-3:
+            next_state, reward, done, _, info = self.env.step(action)
+        print("state reached")
 
         # Publish current state
         keys = list(info)
         info_value = list(info.values())[0]
         state_msg = StateReward(state=next_state, info_keys=keys, info=info_value, reward=0.1, terminal=False)
+        print("state ", state_msg)
         self.state_pub.publish(state_msg)
 
         # Update current state
@@ -50,6 +58,7 @@ class PandaEnvROSNode(Node):
         keys = list(info)
         info_value = list(info.values())[0]
         state_msg = StateReward(state=state, info_keys=keys, info=info_value, reward=0.1, terminal=False)
+        print(state_msg)
         self.state_pub.publish(state_msg)
 
 def main(args=None):

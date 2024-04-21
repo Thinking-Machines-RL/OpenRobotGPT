@@ -6,7 +6,8 @@
 module robotgpt_interfaces {
   module msg {
     @verbatim (language="comment", text=
-      "Message sending action to env")
+      " Message sending action to env" "\n"
+      "must have 8 components, rotation + gripper")
     struct Action {
       sequence<float> action;
     };

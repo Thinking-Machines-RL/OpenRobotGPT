@@ -8,6 +8,8 @@ Trajectory = TypeVar("Trajectory")
 
 class PlannerInterface:
     def __init__(self):
+        #grip value 0.4 = OPEN, 0 = CLOSE
+        self.grip_value = 0.4
         self.TIMEOUT = 100
         self.NUM_STEPS = 20
         self.eps = 1e-3
@@ -23,7 +25,8 @@ class PlannerInterface:
                       [-axis[1], axis[0], 0]])
         return M
     
-    def _axis_to_mat(self, axis, angle):
+    def _axis_to_mat(self, axis:np.ndarray, angle)-> np.ndarray:
+        #from rotation axis to rotation matrix
         S = self._skew_simm(axis)
         R = np.eye(3) + math.sin(angle)*S + (1-math.cos(angle))*(S @ S)
         return R
@@ -33,22 +36,22 @@ class PlannerInterface:
         axis = (1/2*(math.sin(angle) + self.eps)) * np.array([R[2,1]-R[1,2], R[0,2]-R[2,0], R[1,0]-R [0,1]])
         return axis, angle
     
-    def _quat_to_axis(self, quat):
+    def _quat_to_axis(self, quat:np.ndarray):
         angle = 2*math.acos(quat[0])
         axis = quat[1:]/(math.sin(angle/2) + self.eps)
         return axis, angle
     
-    def _quat_to_mat(self, quat):
+    def _quat_to_mat(self, quat:np.ndarray) -> np.ndarray:
         axis, angle = self._quat_to_axis(quat)
         R = self._axis_to_mat(axis, angle)
         return R
     
-    def _axis_to_quat(self, axis, angle):
+    def _axis_to_quat(self, axis:np.ndarray, angle:float) -> np.ndarray:
         v = math.sin(angle/2) * axis
         quat = np.concatenate(([math.cos(angle/2)], v))
         return quat
     
-    def _matrix_to_quat(self, R):
+    def _matrix_to_quat(self, R:np.ndarray):
         axis, angle = self._mat_to_axis(R)
         quat = self._axis_to_quat(axis, angle)
         return quat
@@ -68,6 +71,7 @@ class PlannerInterface:
         # Store trajectory in a 7xNUM_STEPS ndarray
 
         trajectory = np.zeros((self.NUM_STEPS, 7))
+        grip_array = np.ones(((self.NUM_STEPS, 1))) * self.grip_value
         for i in range(self.NUM_STEPS):
             # Position
             trajectory[i,0] = x_y_z_theta[0][i]
@@ -80,4 +84,27 @@ class PlannerInterface:
             quat = self._matrix_to_quat(R)
             trajectory[i,3:] = quat.T
 
-        return trajectory
+        #return a valid set of action for the robot
+        return np.hstack((trajectory, grip_array))
+    
+    def pick_cube(self, A):
+        '''
+        A: must be the position of the cube we want to pick
+        return a valid action and change the value of the gripper for the future generation
+        of trajectories 
+        '''
+        self.grip_value = 0.02
+        wait_state = np.hstack((A, 0.4))
+        gripping_state = np.hstack((A, self.grip_value)) 
+        return np.vstack((wait_state, gripping_state))
+
+    def release_cube(self, A):
+        '''
+        A: must be the position of the cube we want to pick
+        return a valid action and change the value of the gripper for the future generation
+        of trajectories 
+        '''
+        self.grip_value = 0.04
+        wait_state = np.hstack((A, 0.2))
+        degripping_state = np.hstack((A, self.grip_value)) 
+        return np.vstack((wait_state, degripping_state))
