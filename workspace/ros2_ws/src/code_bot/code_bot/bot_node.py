@@ -3,6 +3,7 @@ from rclpy.node import Node
 from robotgpt_interfaces.srv import CodeExecution
 from .bots import DecisionBot, CorrectionBot, EvaluationBot, ChatGPT
 import pkg_resources
+import json
 import re
 import os
 
@@ -25,15 +26,15 @@ class BotNode(Node):
         future = self.client.call_async(self.req)
         rclpy.spin_until_future_complete(self, future)
         return future.result().completion_flag, future.result().code_except, future.result().eval_except
-    
-def read_json_to_dict(json_file):
-    with open(json_file, 'r') as f:
-        data = json.load(f)
-    return data
 
 def main(args=None):
     rclpy.init(args=args)
     node = BotNode()
+
+    def read_json_to_dict(json_file):
+        with open(json_file, 'r') as f:
+            data = json.load(f)
+        return data
 
     config_path = "/root/workspace/ros2_ws/install/code_bot/share/code_bot/config/config_bot.json"
     secret_path = os.environ.get("API_KEY_PATH")

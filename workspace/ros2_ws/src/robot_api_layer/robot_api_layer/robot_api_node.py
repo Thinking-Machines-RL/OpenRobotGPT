@@ -46,6 +46,9 @@ class RobotAPINode(Node):
         #chatgpt service
         self.srv = self.create_service(CodeExecution, 'test_code', self.test_callback)
 
+    def move_to(self, final_pose):
+        pass
+
     def timer_callback(self):
         if self.traj is not None:
             if self.i < (self.traj.shape[0]):
@@ -71,8 +74,8 @@ class RobotAPINode(Node):
         
         except_occurred = False
         completion_flag = False
-        code_except = None
-        eval_except = None
+        code_except = ""
+        eval_except = ""
 
         exec(code, globals(), scope)
         try:
