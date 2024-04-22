@@ -2,7 +2,7 @@ import rclpy
 from rclpy.node import Node
 import copy
 from robotgpt_interfaces.srv import CodeExecution
-from robotgpt_interfaces.msg import StateReward, Action
+from robotgpt_interfaces.msg import StateReward, Action, State
 from robot_api_layer.PlannerInterface import PlannerInterface
 import numpy as np
 from geometry_msgs.msg import Point
@@ -16,7 +16,7 @@ class RobotAPINode(Node):
 
         #create service for current position
         planner = PlannerInterface()
-        self.cur_state_sub = self.create_subscription(StateReward, '/panda_env/state', self.starting_state_callback, 10)
+        self.cur_state_sub = self.create_subscription(State, '/panda_env/state', self.state_callback, 10)
         self.cur_state = np.array([0.4315144419670105, -5.4939169533141374e-12, 0.2346152812242508, 1, 0, 0, 0])
 
         '''
@@ -68,9 +68,8 @@ class RobotAPINode(Node):
                 self.get_logger().info('Publishing: "%s"' % traj_msg)
                 self.i += 1
 
-    def starting_state_callback(self, msg):
-        self.starting_state = np.zeros(7)
-        self.starting_state[0:3] = msg.state[0:3]
+    def state_callback(self, msg):
+        self.curr_state =  msg.state
 
 
     def test_callback(self, request, response):

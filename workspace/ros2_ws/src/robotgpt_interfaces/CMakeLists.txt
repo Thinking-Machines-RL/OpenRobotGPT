@@ -37,6 +37,7 @@ find_package(rosidl_default_generators REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Action.msg"
   "msg/StateReward.msg"
+  "msg/State.msg"
   "srv/CodeExecution.srv"
 )
 

@@ -2,7 +2,7 @@ import rclpy
 from rclpy.node import Node
 import time
 
-from robotgpt_interfaces.msg import StateReward, Action
+from robotgpt_interfaces.msg import StateReward, Action, State
 from geometry_msgs.msg import Point
 import gym_example
 import gymnasium
@@ -15,7 +15,10 @@ class PandaEnvROSNode(Node):
         self.env = gymnasium.make('PandaEnv-v0')
 
         #publisher for environment state
-        self.state_pub = self.create_publisher(StateReward, '/panda_env/state', 10)
+        self.curr_state = None
+        self.state_pub = self.create_publisher(State, '/panda_env/state', 10)
+        timer_period = 0.5 # seconds
+        self.timer = self.create_timer(timer_period, self.timer_callback)
         print("--------- state pub created -------")
 
 
@@ -28,6 +31,12 @@ class PandaEnvROSNode(Node):
 
         # ROS loop rate (decide if needed)
         # self.rate = rospy.Rate(10)  # 10 Hz
+    def timer_callback(self):
+        if self.curr_state is not None:
+            state_msg = State(state=self.curr_state)
+            print("state ", state_msg)
+            self.state_pub.publish(state_msg)
+
 
     def action_callback(self, msg):
         print("msg ricevuto")
@@ -47,7 +56,8 @@ class PandaEnvROSNode(Node):
         # Publish current state
         keys = list(info)
         info_value = list(info.values())[0]
-        state_msg = StateReward(state=next_state, info_keys=keys, info=info_value, reward=0.1, terminal=False)
+        self.curr_state = next_state[0:8]
+        state_msg = State(state=self.curr_state)
         print("state ", state_msg)
         self.state_pub.publish(state_msg)
 
@@ -57,10 +67,11 @@ class PandaEnvROSNode(Node):
     def initialize(self):
         print("Initialising the env .....")
         state, info = self.env.reset()
+        self.curr_state = state[0:8]
         self.env.render()
         keys = list(info)
         info_value = list(info.values())[0]
-        state_msg = StateReward(state=state, info_keys=keys, info=info_value, reward=0.1, terminal=False)
+        state_msg = State(state=state)
         print(state_msg)
         self.state_pub.publish(state_msg)
 

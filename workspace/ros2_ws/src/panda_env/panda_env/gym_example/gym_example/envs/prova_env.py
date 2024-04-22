@@ -22,7 +22,7 @@ class PandaEnv(gym.Env):
         #Action space: cartesian pos of the EE and joint variable for both fingers 
         self.action_space = spaces.Box(np.array([-1]*7), np.array([1]*7))
         #Obs space: cartesian position of the EE and j variables of the 2 fingers
-        self.observation_space = spaces.Box(np.array([-1]*5), np.array([1]*5))
+        self.observation_space = spaces.Box(np.array([-1]*9), np.array([1]*9))
 
     def step(self, action):
         '''Contains the logic of the environment, computes the state
@@ -44,6 +44,7 @@ class PandaEnv(gym.Env):
 
         state_object, _ = p.getBasePositionAndOrientation(self.objectUid)
         state_robot = p.getLinkState(self.pandaUid, 11)[0]
+        orientation_robot = p.getLinkState(self.pandaUid, 11)[1]
         state_fingers = (p.getJointState(self.pandaUid,9)[0], p.getJointState(self.pandaUid, 10)[0])
 
         #TODO: random goal, must be changed
@@ -61,7 +62,7 @@ class PandaEnv(gym.Env):
 
         #info on the things that are not the agent
         info = {'object_position': state_object}
-        self.observation = state_robot + state_fingers
+        self.observation = state_robot + orientation_robot + state_fingers
         #time limit is handled by the time wrapper
         return np.array(self.observation).astype(np.float32), reward, done, False, info
 
@@ -99,8 +100,9 @@ class PandaEnv(gym.Env):
         info = {'object_position': state_object}
         #we return the first observation
         state_robot = p.getLinkState(self.pandaUid, 11)[0]
+        orientation_robot = p.getLinkState(self.pandaUid, 11)[1]
         state_fingers = (p.getJointState(self.pandaUid,9)[0], p.getJointState(self.pandaUid, 10)[0])
-        self.observation = state_robot + state_fingers
+        self.observation = state_robot + orientation_robot + state_fingers
         #Now that everything is done, we can load 
         p.configureDebugVisualizer(p.COV_ENABLE_RENDERING,1)
         return np.array(self.observation).astype(np.float32), info

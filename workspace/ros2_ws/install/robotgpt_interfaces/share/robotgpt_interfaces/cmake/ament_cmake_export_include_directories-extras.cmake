@@ -1,6 +1,6 @@
 # generated from ament_cmake_export_include_directories/cmake/ament_cmake_export_include_directories-extras.cmake.in
 
-set(_exported_include_dirs "${robotgpt_interfaces_DIR}/../../../include")
+set(_exported_include_dirs "${robotgpt_interfaces_DIR}/../../../include/robotgpt_interfaces")
 
 # append include directories to robotgpt_interfaces_INCLUDE_DIRS
 # warn about not existing paths
