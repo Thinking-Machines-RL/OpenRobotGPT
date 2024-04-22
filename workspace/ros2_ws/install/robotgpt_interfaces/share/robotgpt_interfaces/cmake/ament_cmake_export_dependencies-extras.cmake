@@ -1,6 +1,6 @@
 # generated from ament_cmake_export_dependencies/cmake/ament_cmake_export_dependencies-extras.cmake.in
 
-set(_exported_dependencies "service_msgs;rosidl_runtime_c;rosidl_typesupport_interface;rcutils;fastrtps_cmake_module;fastcdr;rosidl_runtime_c;rosidl_runtime_cpp;rosidl_typesupport_fastrtps_c;rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_interface;rosidl_runtime_c;rosidl_typesupport_c;rosidl_typesupport_interface;rosidl_runtime_cpp;fastrtps_cmake_module;fastcdr;rmw;rosidl_runtime_c;rosidl_runtime_cpp;rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_interface;rosidl_runtime_c;rosidl_runtime_cpp;rosidl_typesupport_c;rosidl_typesupport_cpp;rosidl_typesupport_interface")
+set(_exported_dependencies "rosidl_runtime_c;rosidl_typesupport_interface")
 
 find_package(ament_cmake_libraries QUIET REQUIRED)
 
@@ -56,7 +56,7 @@ if(NOT _exported_dependencies STREQUAL "")
                   list(APPEND _libraries "${_imported_location}")
                 endif()
               endif()
-            endforeach()
+            endforeach() 
           endif()
 
           get_target_property(_link_libraries ${_target} INTERFACE_LINK_LIBRARIES)

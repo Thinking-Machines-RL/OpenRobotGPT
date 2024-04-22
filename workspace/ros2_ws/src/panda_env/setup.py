@@ -11,7 +11,7 @@ setup(
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
     ],
-    install_requires=['setuptools'],
+    install_requires=['setuptools', 'gym_example'],
     zip_safe=True,
     maintainer='Riccardo Maggioni',
     maintainer_email='rmaggioni@ethz.ch',
