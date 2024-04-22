@@ -95,7 +95,7 @@ class PlannerInterface:
         '''
         self.grip_value = 0.02
         gripping_state = np.hstack((A, self.grip_value)) 
-        return np.vstack((wait_state, gripping_state))
+        return gripping_state
 
     def release_cube(self, A):
         '''
@@ -104,6 +104,5 @@ class PlannerInterface:
         of trajectories 
         '''
         self.grip_value = 0.04
-        wait_state = np.hstack((A, 0.2))
         degripping_state = np.hstack((A, self.grip_value)) 
-        return np.vstack((wait_state, degripping_state))
+        return degripping_state
