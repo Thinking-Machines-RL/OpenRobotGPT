@@ -94,7 +94,6 @@ class PlannerInterface:
         of trajectories 
         '''
         self.grip_value = 0.02
-        wait_state = np.hstack((A, 0.04))
         gripping_state = np.hstack((A, self.grip_value)) 
         return np.vstack((wait_state, gripping_state))
 

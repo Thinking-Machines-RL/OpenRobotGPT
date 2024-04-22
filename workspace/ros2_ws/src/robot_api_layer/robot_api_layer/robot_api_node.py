@@ -15,7 +15,7 @@ class RobotAPINode(Node):
         #implement argument for chosing between use with chatgpt and use with imitation learning
 
         #create service for current position
-        planner = PlannerInterface()
+        self.planner = PlannerInterface()
         self.cur_state_sub = self.create_subscription(State, '/panda_env/state', self.state_callback, 10)
         self.cur_state = np.array([0.4315144419670105, -5.4939169533141374e-12, 0.2346152812242508, 1, 0, 0, 0])
 
@@ -45,16 +45,25 @@ class RobotAPINode(Node):
         #chatgpt service
         self.srv = self.create_service(CodeExecution, 'test_code', self.test_callback)
 
-    def move_to(self, final_pose):
+    def move_to(self, final_pose:np.ndarray):
+        # final pose must be a numpy array of dimension 7 (3+4)
+        traj = self.planner.plan_trajectory(self.cur_state[0:7], final_pose)
         pass
 
     def get_state(self):
         pass
 
-    def pick_cube(self):
+    def pick_cube(self, cube_position: np.ndarray):
+        # cube positionis the 3d position of the cube + 4 components
+        # that are the quaternion related to the grip orientation
+        # in order to pick the cube
+        traj = self.planner.pick_cube(cube_position)
         pass
 
-    def release_cube(self):
+    def release_cube(self, cube_position: np.ndarray):
+        #  cube_position: np array of 7: where and with witch orientation
+        #  to release the cube
+        traj = self.plan_trajectory.release_cube(cube_position)
         pass
 
     def timer_callback(self):
