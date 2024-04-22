@@ -47,14 +47,15 @@ class RobotAPINode(Node):
         self.srv = self.create_service(CodeExecution, 'test_code', self.test_callback)
 
     def timer_callback(self):
-        if self.i < (self.traj.shape[0]):
-            action = self.traj[self.i]
-            traj_msg = Action(action=action)
-            print(traj_msg)
-            self.state_pub.publish(traj_msg)
-            print("[Info] publishing  ", traj_msg)
-            self.get_logger().info('Publishing: "%s"' % traj_msg)
-            self.i += 1
+        if self.traj is not None:
+            if self.i < (self.traj.shape[0]):
+                action = self.traj[self.i]
+                traj_msg = Action(action=action)
+                print(traj_msg)
+                self.state_pub.publish(traj_msg)
+                print("[Info] publishing  ", traj_msg)
+                self.get_logger().info('Publishing: "%s"' % traj_msg)
+                self.i += 1
 
     def starting_state_callback(self, msg):
         self.starting_state = np.zeros(7)
