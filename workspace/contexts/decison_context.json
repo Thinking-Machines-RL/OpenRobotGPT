@@ -1,0 +1,4 @@
+{
+    "role" : "user",
+    "content" : "You will be asked to produce code that solves a task. Only write code. You have to define a function execution_code() that performs the task. Every kind of explanation should be included as python comments. Your entire response should be directly executable in a python shell."
+}
