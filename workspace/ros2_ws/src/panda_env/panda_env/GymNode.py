@@ -38,8 +38,10 @@ class PandaEnvROSNode(Node):
                            self.action[7]])
 
         next_state, reward, done, _, info = self.env.step(action)
+        self.env.render()
         while np.linalg.norm(next_state[0:3] - action[0:3]) > 1e-3:
             next_state, reward, done, _, info = self.env.step(action)
+            self.env.render()
         print("state reached")
 
         # Publish current state
@@ -55,6 +57,7 @@ class PandaEnvROSNode(Node):
     def initialize(self):
         print("Initialising the env .....")
         state, info = self.env.reset()
+        self.env.render()
         keys = list(info)
         info_value = list(info.values())[0]
         state_msg = StateReward(state=state, info_keys=keys, info=info_value, reward=0.1, terminal=False)

@@ -8,6 +8,7 @@ import pybullet_data
 import math
 import numpy as np
 import random
+import matplotlib.pyplot as plt
 
 class PandaEnv(gym.Env):
     metadata = {'render_modes': ['human'], 'render_fps' : 60}
@@ -115,8 +116,8 @@ class PandaEnv(gym.Env):
         proj_matrix = p.computeProjectionMatrixFOV(fov=60,
                                                      aspect=float(960) /720,
                                                      nearVal=0.1,
-                                                     farVal=100.0)
-        (_, _, px, _, _) = p.getCameraImage(width=960,
+                                                     farVal=10.0)
+        (_, _, px, depth_px, _) = p.getCameraImage(width=960,
                                               height=720,
                                               viewMatrix=view_matrix,
                                               projectionMatrix=proj_matrix,
@@ -126,7 +127,15 @@ class PandaEnv(gym.Env):
         rgb_array = np.reshape(rgb_array, (720,960, 4))
 
         rgb_array = rgb_array[:, :, :3]
-        return rgb_array
+
+        far = 10.0
+        near = 0.1
+        depth_buffer_opengl = np.reshape(depth_px, (720,960))
+        depth_opengl = far * near / (far - (far - near) * depth_buffer_opengl)
+        #depth image to publish as state 
+
+        return rgb_array, depth_buffer_opengl
+
 
     def _get_state(self):
         return self.observation
