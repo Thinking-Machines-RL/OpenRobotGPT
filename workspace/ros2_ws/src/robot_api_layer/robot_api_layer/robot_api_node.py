@@ -23,8 +23,9 @@ class RobotAPINode(Node):
         #Example of trajectory generation, done by chatgpt
         # API available:
         #     - plan_trajectory(stateA, stateB)
+        #     - move_to(stateA)
         #     - pick_cube(stateA)
-        #     - release cube(stateA) 
+        #     - release_cube(stateA) 
 
         #test ending point ---
         ending_state = np.array([0.6,0.1,0.05, 1, 0, 0, 0])

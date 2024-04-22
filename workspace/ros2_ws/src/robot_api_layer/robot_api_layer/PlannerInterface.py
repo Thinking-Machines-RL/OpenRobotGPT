@@ -8,8 +8,8 @@ Trajectory = TypeVar("Trajectory")
 
 class PlannerInterface:
     def __init__(self):
-        #grip value 0.4 = OPEN, 0 = CLOSE
-        self.grip_value = 0.4
+        #grip value 0.04 = OPEN, 0 = CLOSE
+        self.grip_value = 0.04
         self.TIMEOUT = 100
         self.NUM_STEPS = 20
         self.eps = 1e-3
@@ -94,7 +94,7 @@ class PlannerInterface:
         of trajectories 
         '''
         self.grip_value = 0.02
-        wait_state = np.hstack((A, 0.4))
+        wait_state = np.hstack((A, 0.04))
         gripping_state = np.hstack((A, self.grip_value)) 
         return np.vstack((wait_state, gripping_state))
 
