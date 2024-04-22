@@ -17,12 +17,11 @@ class RobotAPINode(Node):
         #create service for current position
         planner = PlannerInterface()
         self.cur_state_sub = self.create_subscription(StateReward, '/panda_env/state', self.starting_state_callback, 10)
-        self.starting_state =np.array([0.4315144419670105, -5.4939169533141374e-12, 0.2346152812242508, 1, 0, 0, 0])
+        self.cur_state = np.array([0.4315144419670105, -5.4939169533141374e-12, 0.2346152812242508, 1, 0, 0, 0])
 
         '''
         #Example of trajectory generation, done by chatgpt
         # API available:
-        #     - plan_trajectory(stateA, stateB)
         #     - move_to(stateA)
         #     - pick_cube(stateA)
         #     - release_cube(stateA) 
@@ -47,6 +46,15 @@ class RobotAPINode(Node):
         self.srv = self.create_service(CodeExecution, 'test_code', self.test_callback)
 
     def move_to(self, final_pose):
+        pass
+
+    def get_state(self):
+        pass
+
+    def pick_cube(self):
+        pass
+
+    def release_cube(self):
         pass
 
     def timer_callback(self):
