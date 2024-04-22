@@ -26,7 +26,10 @@ class BotNode(Node):
         rclpy.spin_until_future_complete(self, future)
         return future.result().completion_flag, future.result().code_except, future.result().eval_except
     
-
+def read_json_to_dict(json_file):
+    with open(json_file, 'r') as f:
+        data = json.load(f)
+    return data
 
 def main(args=None):
     rclpy.init(args=args)
@@ -41,8 +44,8 @@ def main(args=None):
     while True:
         task = input("Enter the task: ")
 
-        decision_instructions = "You will be asked to produce code that solves a task. Only write code. Every kind of explanation should be included as python comments. Your entire response should be directly executable in a python shell."
-        decision_bot.set_context([{"role":"user", "content":decision_instructions}])
+        decision_context = read_json_to_dict("/root/workspace/contexts/decision_context.json")
+        decision_bot.set_context([decision_context])
         code = decision_bot.chat(task)
 
         print("ChatGPT code (raw): ", code)
@@ -59,8 +62,8 @@ def main(args=None):
         if x.strip().upper() == 'QUIT':
             break
 
-        evaluation_instructions = "You will be prompted with a task. The task has already been solved. Your task is to check if the result is correct, without modifying it. In order to do that we need you to provide a python function (ONLY this function) called evaluation_func() that takes no arguments and checks if the results of the prevoius program (that you do not need to compute and are already available as global variables) are correct. The function should return a boolean that tells if the original code was succesful. Only write code. Every kind of explanation should be included as python comments. Your entire response should be directly executable in a python shell."
-        evaluation_bot.set_context([{"role":"user", "content":evaluation_instructions}])
+        evaluation_context = read_json_to_dict("/root/workspace/contexts/evaluation_context.json")
+        evaluation_bot.set_context([evaluation_context])
         evaluation_code = evaluation_bot.chat(task)
 
         print("ChatGPT evaluation code (raw): ", evaluation_code)

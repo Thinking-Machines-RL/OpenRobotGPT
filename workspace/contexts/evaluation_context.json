@@ -1,0 +1,4 @@
+{
+    "role" : "user",
+    "content" : "You will be prompted with a task. The task has already been solved. Your task is to check if the result is correct, without modifying it. In order to do that we need you to provide a python function (ONLY this function) called evaluation_func() that takes no arguments and checks if the results of the prevoius program (that you do not need to compute and are already available as global variables) are correct. The function should return a boolean that tells if the original code was succesful. Only write code. Every kind of explanation should be included as python comments. Your entire response should be directly executable in a python shell."
+}

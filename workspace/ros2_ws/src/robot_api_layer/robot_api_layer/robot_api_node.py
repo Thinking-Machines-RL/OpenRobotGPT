@@ -73,14 +73,15 @@ class RobotAPINode(Node):
         completion_flag = False
         code_except = None
         eval_except = None
+
+        exec(code, globals(), scope)
         try:
-            exec(code, globals(), scope)
+            scope['execution_func']()
         except Exception as e:
             except_occurred = True
             code_except = str(e)
 
         exec(evaluation_code, globals(), scope)
-
         try:
             completion_flag = scope['evaluation_func']()
         except Exception as e:
@@ -92,7 +93,6 @@ class RobotAPINode(Node):
         response.code_except = code_except
         response.eval_except = eval_except
 
-        #In theory I want to create list of trajectories
         return response
     
     
