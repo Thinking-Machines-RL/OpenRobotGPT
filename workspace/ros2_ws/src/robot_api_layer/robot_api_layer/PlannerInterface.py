@@ -2,6 +2,7 @@ from typing import TypeVar
 import numpy as np
 import math
 from numpy.linalg import inv
+from collections import deque
 
 Pose = TypeVar("Pose")
 Trajectory = TypeVar("Trajectory")
@@ -70,22 +71,23 @@ class PlannerInterface:
 
         # Store trajectory in a 7xNUM_STEPS ndarray
 
-        trajectory = np.zeros((self.NUM_STEPS, 7))
-        grip_array = np.ones(((self.NUM_STEPS, 1))) * self.grip_value
+        trajectory = deque()
+        grip = np.ones(((1))) * self.grip_value
         for i in range(self.NUM_STEPS):
             # Position
-            trajectory[i,0] = x_y_z_theta[0][i]
-            trajectory[i,1] = x_y_z_theta[1][i]
-            trajectory[i,2] = x_y_z_theta[2][i]
+            position = np.array([x_y_z_theta[0][i], x_y_z_theta[1][i], x_y_z_theta[2][i]])
 
             # Orientation
             R_theta = self._axis_to_mat(axis, x_y_z_theta[3][i])
             R = A_rot @ R_theta
             quat = self._matrix_to_quat(R)
-            trajectory[i,3:] = quat.T
+
+            orientation = quat.T
+            traj_point = np.concatenate((position, orientation, grip))
+            trajectory += deque([traj_point])
 
         #return a valid set of action for the robot
-        return np.hstack((trajectory, grip_array))
+        return trajectory
     
     def pick_cube(self, A):
         '''
@@ -95,7 +97,7 @@ class PlannerInterface:
         '''
         self.grip_value = 0.02
         gripping_state = np.hstack((A, self.grip_value)) 
-        return gripping_state
+        return deque([gripping_state])
 
     def release_cube(self, A):
         '''
@@ -105,4 +107,4 @@ class PlannerInterface:
         '''
         self.grip_value = 0.04
         degripping_state = np.hstack((A, self.grip_value)) 
-        return degripping_state
+        return deque([degripping_state])

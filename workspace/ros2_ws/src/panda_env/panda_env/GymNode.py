@@ -48,10 +48,6 @@ class PandaEnvROSNode(Node):
 
         next_state, reward, done, _, info = self.env.step(action)
         self.env.render()
-        while np.linalg.norm(next_state[0:3] - action[0:3]) > 1e-3:
-            next_state, reward, done, _, info = self.env.step(action)
-            self.env.render()
-        print("state reached")
 
         # Publish current state
         keys = list(info)
