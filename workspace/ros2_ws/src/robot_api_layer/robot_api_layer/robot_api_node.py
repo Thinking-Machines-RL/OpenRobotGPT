@@ -40,6 +40,7 @@ class RobotAPINode(Node):
 
         #initialize trajectory list
         self.traj = None
+        self.vel_traj = None
         #publisher for point of the trajectory to follow
         self.state_pub = self.create_publisher(Action, 'traj', 20)
         timer_period = 0.1 # seconds
@@ -50,18 +51,20 @@ class RobotAPINode(Node):
 
     def move_to(self, final_pose:np.ndarray):
         # final pose must be a numpy array of dimension 7 (3+4)
-        traj = self.planner.plan_trajectory(self.cur_state[0:7], final_pose)
+        traj, vel_traj = self.planner.plan_trajectory(self.cur_state[0:7], final_pose)
         self.traj = traj
+        self.vel_traj = vel_traj
         print("mode_to")
         #while np.linalg.norm(self.cur_state - self.traj[-1][0:8]) < self.EPSILON:
         #    pass
 
-    def pick_cube(self):
+    def pick_cube(self, cube_position):
         # cube position is the 3d position of the cube + 4 components
         # that are the quaternion related to the grip orientation
         # in order to pick the cube
-        traj = self.planner.pick_cube(self.cur_state)
+        traj, vel_traj = self.planner.pick_cube(cube_position)
         self.traj += traj
+        self.vel_traj += vel_traj
         print("pick_cube")
         #while np.linalg.norm(self.cur_state - self.traj[-1][:8]) < self.EPSILON:
         #    pass
@@ -69,8 +72,9 @@ class RobotAPINode(Node):
     def release_cube(self):
         #  cube_position: np array of 7: where and with witch orientation
         #  to release the cube
-        traj = self.planner.release_cube(self.cur_state)
+        traj, vel_traj = self.planner.release_cube(self.cur_state)
         self.traj += traj
+        self.vel_traj += ve
         print("release_cube")
         #while np.linalg.norm(self.cur_state - self.traj[-1][:8]) < self.EPSILON:
         #    pass
@@ -78,9 +82,15 @@ class RobotAPINode(Node):
     def timer_callback(self):
         if self.traj is not None:
             if len(self.traj) > 0:
+
                 action = self.traj[0]
                 self.traj.popleft()
-                traj_msg = Action(action=action)
+
+                vel_action = self.vel_traj[0]
+                self.vel_traj.popleft()
+                print("vel action", vel_action)
+                print("action", action)
+                traj_msg = Action(action=action, vel=vel_action)
                 print(traj_msg)
                 self.state_pub.publish(traj_msg)
                 print("[Info] publishing  ", traj_msg)
@@ -132,6 +142,7 @@ def main(args=None):
 
     # ***** DEBUG *****
     node.move_to(np.array([0.6,0.1,0.05, 1, 0, 0, 0]))
+    node.pick_cube(np.array([0.6,0.1,0.05, 1, 0, 0, 0]))
     # *****************
 
     rclpy.spin(node)

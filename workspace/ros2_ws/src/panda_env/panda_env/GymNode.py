@@ -42,13 +42,14 @@ class PandaEnvROSNode(Node):
         print("msg ricevuto")
         print(msg)
         self.action = msg.action
+        vel_action = msg.vel
         action = np.array([self.action[0], self.action[1], self.action[2],
                            self.action[3], self.action[4], self.action[5], self.action[6],
-                           self.action[7]])
+                           self.action[7],
+                           vel_action[0], vel_action[1], vel_action[2]])
 
         next_state, reward, done, _, info = self.env.step(action)
         self.env.render()
-
         # Publish current state
         keys = list(info)
         info_value = list(info.values())[0]

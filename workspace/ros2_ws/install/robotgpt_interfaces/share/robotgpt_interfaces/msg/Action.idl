@@ -10,6 +10,8 @@ module robotgpt_interfaces {
       "must have 8 components, rotation + gripper")
     struct Action {
       sequence<float> action;
+
+      sequence<float> vel;
     };
   };
 };

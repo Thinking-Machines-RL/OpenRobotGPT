@@ -12,7 +12,7 @@ class PlannerInterface:
         #grip value 0.04 = OPEN, 0 = CLOSE
         self.grip_value = 0.04
         self.TIMEOUT = 100
-        self.NUM_STEPS = 20
+        self.NUM_STEPS = 20 #must be an even number
         self.eps = 1e-3
 
     def set_pose(self, A: np.ndarray):
@@ -68,10 +68,16 @@ class PlannerInterface:
         x_y_z_theta_0 = np.concatenate((A[:3],np.array([0])))
         x_y_z_theta_f = np.concatenate((B[:3],np.array([theta_f])))
         x_y_z_theta = [np.linspace(start, stop, num=self.NUM_STEPS) for start, stop in zip(x_y_z_theta_0, x_y_z_theta_f)]
-
+        
+        vel_in = np.linspace(0, 2, num = int(self.NUM_STEPS/2))
+        vel_fin = np.linspace(2, 0, num = int(self.NUM_STEPS/2))
+        vel = np.hstack((vel_in, vel_fin))
+        vel_array = np.vstack((vel, vel))
+        vel_array = np.vstack((vel_array, vel))
         # Store trajectory in a 7xNUM_STEPS ndarray
 
         trajectory = deque()
+        vel_deq = deque()
         grip = np.ones(((1))) * self.grip_value
         for i in range(self.NUM_STEPS):
             # Position
@@ -81,13 +87,17 @@ class PlannerInterface:
             R_theta = self._axis_to_mat(axis, x_y_z_theta[3][i])
             R = A_rot @ R_theta
             quat = self._matrix_to_quat(R)
+            print("quat ", quat)
 
             orientation = quat.T
             traj_point = np.concatenate((position, orientation, grip))
             trajectory += deque([traj_point])
+            vel_t = vel_array[:,i].T
+            print("vel t", vel_t)
+            vel_deq += deque([vel_array[:,i].T])
 
         #return a valid set of action for the robot
-        return trajectory
+        return trajectory, vel_deq
     
     def pick_cube(self, A):
         '''
@@ -97,7 +107,12 @@ class PlannerInterface:
         '''
         self.grip_value = 0.02
         gripping_state = np.hstack((A, self.grip_value)) 
-        return deque([gripping_state])
+        vel_traj = deque([np.array([0.0, 0.0, 0.0])])
+        gp_state = deque([gripping_state])
+        for i in range(5):
+            gp_state += deque([gripping_state])
+            vel_traj += deque([np.array([0.0, 0.0, 0.0])])
+        return gp_state, vel_traj
 
     def release_cube(self, A):
         '''
@@ -106,5 +121,10 @@ class PlannerInterface:
         of trajectories 
         '''
         self.grip_value = 0.04
-        degripping_state = np.hstack((A, self.grip_value)) 
-        return deque([degripping_state])
+        degripping_state = np.hstack((A, self.grip_value))
+        vel_traj = deque([np.array([0.0, 0.0, 0.0])])
+        dgp_state = deque([degripping_state])
+        for i in range(5):
+            dgp_state += deque([degripping_state])
+            vel_traj += deque([np.array([0.0, 0.0, 0.0])])
+        return dgp_state, vel_traj

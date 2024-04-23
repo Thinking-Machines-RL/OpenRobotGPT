@@ -7,7 +7,7 @@ module robotgpt_interfaces {
   module msg {
     @verbatim (language="comment", text=
       "Credits: RL ROS package" "\n"
-      " Message for returning the current sensation vector" "\n"
+      " Message for returning the current sensation vector " "\n"
       " (i.e. state or observation or sensor readings) and a" "\n"
       " reward from an  environment")
     struct StateReward {
