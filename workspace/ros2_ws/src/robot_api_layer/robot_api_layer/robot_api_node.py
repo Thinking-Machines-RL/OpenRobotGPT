@@ -103,40 +103,48 @@ class RobotAPINode(Node):
 
 
     def test_callback(self, request, response):
-        #chat GPT generates code for traj generation
         print("received code")
         code = request.code
         evaluation_code = request.evaluation_code
 
+        # Create a dictionary to hold the local scope
+        scope = {'self': self}
 
-        scope = {} #local
-        
         except_occurred = False
         completion_flag = False
         code_except = ""
         eval_except = ""
 
-        exec(code, globals(), scope)
+        # Define wrapper functions for your instance methods in the scope
+        #scope['move_to'] = lambda pos: self.move_to(pos)
+        #scope['pick_cube'] = lambda pos: self.pick_cube(pos)
+
+        # Execute the received code
         try:
-            scope['execution_func']()
+            exec(code, globals(), scope)
+            if 'execution_func' in scope:
+                # Convert the `execution_func` in the scope to a method of self
+                from types import MethodType
+                execution_func = MethodType(scope['execution_func'], self)
+                execution_func()
         except Exception as e:
-            print("esception occured")
             except_occurred = True
             code_except = str(e)
-            print("Code except: ", code_except)
+            print("Code exception: ", code_except)
 
-        exec(evaluation_code, globals(), scope)
+        # Execute the evaluation code
         try:
-            completion_flag = scope['evaluation_func']()
+            exec(evaluation_code, globals(), scope)
+            if 'evaluation_func' in scope:
+                evaluation_func = MethodType(scope['evaluation_func'], self)
+                completion_flag = evaluation_func()
         except Exception as e:
             except_occurred = True
             eval_except = str(e)
-            print("Eval except: ", eval_except)
-
+            print("Eval exception: ", eval_except)
 
         response.completion_flag = completion_flag and not except_occurred
         response.code_except = code_except
-        print("Code except: ", code_except)
         response.eval_except = eval_except
 
         return response

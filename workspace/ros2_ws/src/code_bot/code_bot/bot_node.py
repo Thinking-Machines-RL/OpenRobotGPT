@@ -44,7 +44,7 @@ def main(args=None):
             # Read the content of the text file
             content = file.read().strip()  # Remove any leading/trailing whitespace
 
-        content = content.replace('\n', '')
+        content = content.replace('\n', ' ')
         
         # Construct the JSON object with a fixed role and the content from the text file
         data = {
