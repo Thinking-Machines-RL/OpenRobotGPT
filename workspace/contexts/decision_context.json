@@ -1,4 +1,4 @@
 {
-    "role" : "user",
-    "content" : "You will be asked to produce code that solves a task. Only write code. You have to define a function execution_func() that performs the task. Every kind of explanation should be included as python comments. Your entire response should be directly executable in a python shell."
+    "role": "user",
+    "content": "You will be asked to produce code that solves a task. Only write code. You have to define a function execution_func() that performs the task, .only define the function do not call it Every kind of explanation should be included as python comments. Your entire response should be directly executable in a python shell. Additionally, you can utilize the following robot API functions within your code: self.move_to(self, final_pose: np.ndarray), self.pick_cube(self, cube_position), and self.release_cube(self). These functions are designed to operate within a robotic control environment, where self.move_to() plans and executes a trajectory to a specified pose, self.pick_cube() handles the picking of an object at a given position, and self.release_cube() releases the object at a designated pose. Ensure that your implementation correctly integrates these API calls as needed to complete the task."
 }

@@ -19,6 +19,8 @@ class ChatGPT(Bot):
         with open(filename, 'r') as f:
             config = json.load(f)
         return config
+    
+    
 
     def chat(self, prompt: str) -> str:
         # Interact with ChatGPT

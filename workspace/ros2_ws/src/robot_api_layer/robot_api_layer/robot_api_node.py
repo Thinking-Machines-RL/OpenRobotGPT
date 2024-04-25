@@ -8,6 +8,7 @@ import numpy as np
 from geometry_msgs.msg import Point
 import time
 from collections import deque
+
 class RobotAPINode(Node):
 
     def __init__(self):
@@ -62,6 +63,7 @@ class RobotAPINode(Node):
         # cube position is the 3d position of the cube + 4 components
         # that are the quaternion related to the grip orientation
         # in order to pick the cube
+        
         traj, vel_traj = self.planner.pick_cube(cube_position)
         self.traj += traj
         self.vel_traj += vel_traj
@@ -74,7 +76,7 @@ class RobotAPINode(Node):
         #  to release the cube
         traj, vel_traj = self.planner.release_cube(self.cur_state)
         self.traj += traj
-        self.vel_traj += ve
+        self.vel_traj += vel_traj
         print("release_cube")
         #while np.linalg.norm(self.cur_state - self.traj[-1][:8]) < self.EPSILON:
         #    pass
@@ -102,10 +104,12 @@ class RobotAPINode(Node):
 
     def test_callback(self, request, response):
         #chat GPT generates code for traj generation
+        print("received code")
         code = request.code
         evaluation_code = request.evaluation_code
 
-        scope = {}
+
+        scope = {} #local
         
         except_occurred = False
         completion_flag = False
@@ -116,8 +120,10 @@ class RobotAPINode(Node):
         try:
             scope['execution_func']()
         except Exception as e:
+            print("esception occured")
             except_occurred = True
             code_except = str(e)
+            print("Code except: ", code_except)
 
         exec(evaluation_code, globals(), scope)
         try:
@@ -125,24 +131,24 @@ class RobotAPINode(Node):
         except Exception as e:
             except_occurred = True
             eval_except = str(e)
+            print("Eval except: ", eval_except)
 
 
         response.completion_flag = completion_flag and not except_occurred
         response.code_except = code_except
+        print("Code except: ", code_except)
         response.eval_except = eval_except
 
         return response
     
-    
-
 
 def main(args=None):
     rclpy.init(args=args)
     node = RobotAPINode()
 
     # ***** DEBUG *****
-    node.move_to(np.array([0.6,0.1,0.05, 1, 0, 0, 0]))
-    node.pick_cube(np.array([0.6,0.1,0.05, 1, 0, 0, 0]))
+    #node.move_to(np.array([0.6, 0.1, 0.05, 1, 0, 0, 0]))
+    #node.pick_cube(np.array([0.6, 0.1, 0.05, 1, 0, 0, 0]))
     # *****************
 
     rclpy.spin(node)
