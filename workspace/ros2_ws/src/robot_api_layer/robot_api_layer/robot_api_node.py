@@ -52,19 +52,28 @@ class RobotAPINode(Node):
 
     def move_to(self, final_pose:np.ndarray):
         # final pose must be a numpy array of dimension 7 (3+4)
-        traj, vel_traj = self.planner.plan_trajectory(self.cur_state[0:7], final_pose)
+        if self.traj is None:
+            cur_state = self.cur_state[0:7]
+        else:
+            cur_state = self.traj[-1]
+
+        traj, vel_traj = self.planner.plan_trajectory(cur_state, final_pose)
         self.traj = traj
         self.vel_traj = vel_traj
         print("mode_to")
         #while np.linalg.norm(self.cur_state - self.traj[-1][0:8]) < self.EPSILON:
         #    pass
 
-    def pick_cube(self, cube_position):
+    def pick_cube(self):
         # cube position is the 3d position of the cube + 4 components
         # that are the quaternion related to the grip orientation
         # in order to pick the cube
+        if self.traj is None:
+            cur_state = self.cur_state[0:7]
+        else:
+            cur_state = self.traj[-1]
         
-        traj, vel_traj = self.planner.pick_cube(cube_position)
+        traj, vel_traj = self.planner.pick_cube(cur_state)
         self.traj += traj
         self.vel_traj += vel_traj
         print("pick_cube")
@@ -74,7 +83,12 @@ class RobotAPINode(Node):
     def release_cube(self):
         #  cube_position: np array of 7: where and with witch orientation
         #  to release the cube
-        traj, vel_traj = self.planner.release_cube(self.cur_state)
+        if self.traj is None:
+            cur_state = self.cur_state[0:7]
+        else:
+            cur_state = self.traj[-1]
+
+        traj, vel_traj = self.planner.release_cube(cur_state)
         self.traj += traj
         self.vel_traj += vel_traj
         print("release_cube")
@@ -155,8 +169,11 @@ def main(args=None):
     node = RobotAPINode()
 
     # ***** DEBUG *****
-    #node.move_to(np.array([0.6, 0.1, 0.05, 1, 0, 0, 0]))
-    #node.pick_cube(np.array([0.6, 0.1, 0.05, 1, 0, 0, 0]))
+    node.move_to(np.array([0.6, 0.1, 0.05, 1, 0, 0, 0]))
+    node.pick_cube()
+
+    node.move_to(np.array([0.7, 0.1, 0.05, 1, 0, 0, 0]))
+    node.release_cube()
     # *****************
 
     rclpy.spin(node)

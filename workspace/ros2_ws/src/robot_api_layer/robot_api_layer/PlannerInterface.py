@@ -12,7 +12,7 @@ class PlannerInterface:
         #grip value 0.04 = OPEN, 0 = CLOSE
         self.grip_value = 0.04
         self.TIMEOUT = 100
-        self.NUM_STEPS = 20 #must be an even number
+        self.NUM_STEPS = 40 #must be an even number
         self.eps = 1e-3
 
     def set_pose(self, A: np.ndarray):
@@ -69,8 +69,8 @@ class PlannerInterface:
         x_y_z_theta_f = np.concatenate((B[:3],np.array([theta_f])))
         x_y_z_theta = [np.linspace(start, stop, num=self.NUM_STEPS) for start, stop in zip(x_y_z_theta_0, x_y_z_theta_f)]
         
-        vel_in = np.linspace(0, 2, num = int(self.NUM_STEPS/2))
-        vel_fin = np.linspace(2, 0, num = int(self.NUM_STEPS/2))
+        vel_in = np.linspace(0, 1.5, num = int(self.NUM_STEPS/2))
+        vel_fin = np.linspace(1.5, 0, num = int(self.NUM_STEPS/2))
         vel = np.hstack((vel_in, vel_fin))
         vel_array = np.vstack((vel, vel))
         vel_array = np.vstack((vel_array, vel))
