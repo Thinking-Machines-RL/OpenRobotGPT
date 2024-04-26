@@ -1,0 +1,21 @@
+[1.693s] Invoking command in '/root/workspace/ros2_ws/src/code_bot': PYTHONPATH=/root/workspace/ros2_ws/build/code_bot/prefix_override:/root/workspace/ros2_ws/install/code_bot/lib/python3.8/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated setup.py egg_info --egg-base ../../build/code_bot build --build-base /root/workspace/ros2_ws/build/code_bot/build install --record /root/workspace/ros2_ws/build/code_bot/install.log --install-scripts $base/lib/code_bot --single-version-externally-managed install_data
+[2.010s] running egg_info
+[2.011s] writing ../../build/code_bot/code_bot.egg-info/PKG-INFO
+[2.011s] writing dependency_links to ../../build/code_bot/code_bot.egg-info/dependency_links.txt
+[2.011s] writing entry points to ../../build/code_bot/code_bot.egg-info/entry_points.txt
+[2.012s] writing requirements to ../../build/code_bot/code_bot.egg-info/requires.txt
+[2.012s] writing top-level names to ../../build/code_bot/code_bot.egg-info/top_level.txt
+[2.067s] reading manifest file '../../build/code_bot/code_bot.egg-info/SOURCES.txt'
+[2.069s] writing manifest file '../../build/code_bot/code_bot.egg-info/SOURCES.txt'
+[2.069s] running build
+[2.070s] running build_py
+[2.070s] running install
+[2.071s] running install_lib
+[2.074s] running install_data
+[2.074s] running install_egg_info
+[2.077s] removing '/root/workspace/ros2_ws/install/code_bot/lib/python3.8/site-packages/code_bot-0.0.0-py3.8.egg-info' (and everything under it)
+[2.078s] Copying ../../build/code_bot/code_bot.egg-info to /root/workspace/ros2_ws/install/code_bot/lib/python3.8/site-packages/code_bot-0.0.0-py3.8.egg-info
+[2.079s] running install_scripts
+[2.101s] Installing bot_node script to /root/workspace/ros2_ws/install/code_bot/lib/code_bot
+[2.102s] writing list of installed files to '/root/workspace/ros2_ws/build/code_bot/install.log'
+[2.155s] Invoked command in '/root/workspace/ros2_ws/src/code_bot' returned '0': PYTHONPATH=/root/workspace/ros2_ws/build/code_bot/prefix_override:/root/workspace/ros2_ws/install/code_bot/lib/python3.8/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated setup.py egg_info --egg-base ../../build/code_bot build --build-base /root/workspace/ros2_ws/build/code_bot/build install --record /root/workspace/ros2_ws/build/code_bot/install.log --install-scripts $base/lib/code_bot --single-version-externally-managed install_data

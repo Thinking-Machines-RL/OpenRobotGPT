@@ -1,0 +1,37 @@
+[0.681s] Invoking command in '/root/workspace/ros2_ws/src/code_bot': PYTHONPATH=/root/workspace/ros2_ws/build/code_bot/prefix_override:/root/workspace/ros2_ws/install/code_bot/lib/python3.8/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated setup.py egg_info --egg-base ../../build/code_bot build --build-base /root/workspace/ros2_ws/build/code_bot/build install --record /root/workspace/ros2_ws/build/code_bot/install.log --install-scripts $base/lib/code_bot --single-version-externally-managed install_data
+[0.895s] running egg_info
+[0.895s] creating ../../build/code_bot/code_bot.egg-info
+[0.895s] writing ../../build/code_bot/code_bot.egg-info/PKG-INFO
+[0.895s] writing dependency_links to ../../build/code_bot/code_bot.egg-info/dependency_links.txt
+[0.896s] writing entry points to ../../build/code_bot/code_bot.egg-info/entry_points.txt
+[0.896s] writing requirements to ../../build/code_bot/code_bot.egg-info/requires.txt
+[0.896s] writing top-level names to ../../build/code_bot/code_bot.egg-info/top_level.txt
+[0.900s] writing manifest file '../../build/code_bot/code_bot.egg-info/SOURCES.txt'
+[0.938s] reading manifest file '../../build/code_bot/code_bot.egg-info/SOURCES.txt'
+[0.939s] writing manifest file '../../build/code_bot/code_bot.egg-info/SOURCES.txt'
+[0.939s] running build
+[0.939s] running build_py
+[0.939s] creating /root/workspace/ros2_ws/build/code_bot/build
+[0.939s] creating /root/workspace/ros2_ws/build/code_bot/build/lib
+[0.939s] creating /root/workspace/ros2_ws/build/code_bot/build/lib/code_bot
+[0.939s] copying code_bot/bot_node.py -> /root/workspace/ros2_ws/build/code_bot/build/lib/code_bot
+[0.940s] copying code_bot/__init__.py -> /root/workspace/ros2_ws/build/code_bot/build/lib/code_bot
+[0.940s] running install
+[0.940s] running install_lib
+[0.941s] creating /root/workspace/ros2_ws/install/code_bot/lib/python3.8/site-packages/code_bot
+[0.941s] copying /root/workspace/ros2_ws/build/code_bot/build/lib/code_bot/bot_node.py -> /root/workspace/ros2_ws/install/code_bot/lib/python3.8/site-packages/code_bot
+[0.941s] copying /root/workspace/ros2_ws/build/code_bot/build/lib/code_bot/__init__.py -> /root/workspace/ros2_ws/install/code_bot/lib/python3.8/site-packages/code_bot
+[0.942s] byte-compiling /root/workspace/ros2_ws/install/code_bot/lib/python3.8/site-packages/code_bot/bot_node.py to bot_node.cpython-38.pyc
+[0.943s] byte-compiling /root/workspace/ros2_ws/install/code_bot/lib/python3.8/site-packages/code_bot/__init__.py to __init__.cpython-38.pyc
+[0.943s] running install_data
+[0.943s] creating /root/workspace/ros2_ws/install/code_bot/share/ament_index
+[0.943s] creating /root/workspace/ros2_ws/install/code_bot/share/ament_index/resource_index
+[0.943s] creating /root/workspace/ros2_ws/install/code_bot/share/ament_index/resource_index/packages
+[0.943s] copying resource/code_bot -> /root/workspace/ros2_ws/install/code_bot/share/ament_index/resource_index/packages
+[0.943s] copying package.xml -> /root/workspace/ros2_ws/install/code_bot/share/code_bot
+[0.943s] running install_egg_info
+[0.945s] Copying ../../build/code_bot/code_bot.egg-info to /root/workspace/ros2_ws/install/code_bot/lib/python3.8/site-packages/code_bot-0.0.0-py3.8.egg-info
+[0.945s] running install_scripts
+[0.963s] Installing bot_node script to /root/workspace/ros2_ws/install/code_bot/lib/code_bot
+[0.963s] writing list of installed files to '/root/workspace/ros2_ws/build/code_bot/install.log'
+[0.979s] Invoked command in '/root/workspace/ros2_ws/src/code_bot' returned '0': PYTHONPATH=/root/workspace/ros2_ws/build/code_bot/prefix_override:/root/workspace/ros2_ws/install/code_bot/lib/python3.8/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated setup.py egg_info --egg-base ../../build/code_bot build --build-base /root/workspace/ros2_ws/build/code_bot/build install --record /root/workspace/ros2_ws/build/code_bot/install.log --install-scripts $base/lib/code_bot --single-version-externally-managed install_data

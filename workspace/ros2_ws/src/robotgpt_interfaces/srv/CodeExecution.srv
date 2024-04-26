@@ -1,0 +1,6 @@
+string code
+string evaluation_code
+---
+bool completion_flag
+string code_except
+string eval_except

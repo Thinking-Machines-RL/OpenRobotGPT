@@ -36,6 +36,9 @@ RUN apt-get install -y ros-$ROS_DISTRO-moveit
 # Install pip
 RUN apt-get install -y python3-pip
 
+# Install colcon
+RUN pip install -U colcon-common-extensions
+
 # Install Python dependencies from requirements.txt
 COPY requirements.txt /tmp/requirements.txt
 RUN pip3 install --no-cache-dir -r /tmp/requirements.txt
@@ -60,6 +63,10 @@ RUN apt-get update && apt-get install -y openssh-server && \
     # Avoid locale issues
     echo "export LANG=C.UTF-8" >> /etc/profile && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+WORKDIR /root
+
+ENV API_KEY_PATH=/root/workspace/secrets/api_key.json
 
 # Expose SSH port
 EXPOSE 22

@@ -1,0 +1,25 @@
+// generated from rosidl_adapter/resource/msg.idl.em
+// with input from robotgpt_interfaces/msg/StateReward.msg
+// generated code does not contain a copyright notice
+
+
+module robotgpt_interfaces {
+  module msg {
+    @verbatim (language="comment", text=
+      "Credits: RL ROS package" "\n"
+      " Message for returning the current sensation vector " "\n"
+      " (i.e. state or observation or sensor readings) and a" "\n"
+      " reward from an  environment")
+    struct StateReward {
+      sequence<float> state;
+
+      sequence<string> info_keys;
+
+      sequence<float> info;
+
+      float reward;
+
+      boolean terminal;
+    };
+  };
+};

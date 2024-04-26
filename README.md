@@ -29,3 +29,8 @@ Every time you need to reconnect to the container the SHA key will change. You c
 ```bash
 ssh-keygen -f "/home/nicola/.ssh/known_hosts" -R "[localhost]:2222"
 ```
+
+In order to be able to connect from an Ubuntu machine use the following command
+```bash
+xhost +
+```

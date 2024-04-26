@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Install gym_example package
-cd /root/workspace
+cd workspace/ros2_ws/src/panda_env/panda_env
 pip3 install -e gym_example
 cd ..
 
