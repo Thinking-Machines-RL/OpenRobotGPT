@@ -62,6 +62,7 @@ class RobotAPINode(Node):
     #     return future.result().accepted_request
 
     def pick(self, object_pose:np.ndarray):
+        print("[INFO] requested pick")
         # final pose must be a numpy array of dimension 7 (3+4)
         # What I should get is traj + at the end grip aktion
         print("obj pos", object_pose )
@@ -71,10 +72,12 @@ class RobotAPINode(Node):
         future = self.client_trajectory.call_async(self.req)
         #you spin the ros node until the done parameter of future is TRUE
         rclpy.spin_until_future_complete(self, future)
-        return future.result().completion_flag, future.result().height_map, future.result().in_hand_image, future.result().in_hand_map, future.result().gripper_state 
+        print("[INFO] future completed")
+        return future.result().completion_flag, future.result().height_map, future.result().in_hand_image, future.result().gripper_state 
      
     
     def place(self, object_pose:np.ndarray):
+        print("[INFO] requested place")
         # final pose must be a numpy array of dimension 7 (3+4)
         # What I should get is traj + at the end grip aktion
         self.req.target_state = object_pose
@@ -82,7 +85,8 @@ class RobotAPINode(Node):
         future = self.client_trajectory.call_async(self.req)
         #you spin the ros node until the done parameter of future is TRUE
         rclpy.spin_until_future_complete(self, future)
-        return future.result().completion_flag, future.result().height_map, future.result().in_hand_image, future.result().in_hand_map, future.result().gripper_state 
+        print("[INFO] future completed")
+        return future.result().completion_flag, future.result().height_map, future.result().in_hand_image,  future.result().gripper_state 
 
     def pick_cube(self):
         # cube position is the 3d position of the cube + 4 components
@@ -197,6 +201,8 @@ def main(args=None):
 
     # ***** DEBUG *****
     node.pick(np.array([0.6, 0.1, 0.05, 1, 0, 0, 0]))
+
+    rclpy.spin_once(node)
 
     node.place(np.array([0.7, 0.1, 0.05, 1, 0, 0, 0]))
     # *****************

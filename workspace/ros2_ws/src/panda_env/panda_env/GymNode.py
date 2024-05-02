@@ -19,12 +19,13 @@ class PandaEnvROSNode(Node):
         self.env = gymnasium.make('PandaEnv-v0')
 
         self.SERVICE_TIMEOUT = 60
-        client_cb_group = MutuallyExclusiveCallbackGroup()
+        client_cb_group = ReentrantCallbackGroup()
+        service_group = MutuallyExclusiveCallbackGroup()
         #publisher for environment state
         self.curr_state = None
         self.state_pub = self.create_publisher(State, '/panda_env/state', 10)
-        timer_period = 0.5 # seconds
-        self.timer = self.create_timer(timer_period, self.timer_callback)
+        # timer_period = 0.5 # seconds
+        # self.timer = self.create_timer(timer_period, self.timer_callback)
         print("--------- state pub created -------")
 
 
@@ -37,13 +38,13 @@ class PandaEnvROSNode(Node):
 
         #Action service
         #Service to be called by the API or the Agent to step the environment
-        self.action_service = self.create_service(EECommands, 'trajectory_execution', self.step_callback)
+        self.action_service = self.create_service(EECommands, 'trajectory_execution', self.step_callback, callback_group=service_group)
 
     def timer_callback(self):
         #timer to publish the current state of the robot end effector
         if self.curr_state is not None:
             state_msg = State(state=self.curr_state)
-            print("state ", state_msg)
+            #print("state ", state_msg)
             self.state_pub.publish(state_msg)
 
     def _traj_generation(self, goal_position, gripper_state):
@@ -59,15 +60,10 @@ class PandaEnvROSNode(Node):
         #you spin the ros node until the done parameter of future is TRUE
         rclpy.spin_until_future_complete(self, future)
         print("spin future completed")
-        print("future results ", future.result())
         position_array = np.array(future.result().position)
-        print("pos")
         vel_array = np.array(future.result().vel)
-        print("vel")
         traj_pos = np.reshape(position_array, (int(position_array.size/8), 8))
-        print("traj pso")
         traj_vel = np.reshape(vel_array, (int(vel_array.size/3), 3))
-        print("traj vel")
         traj = np.hstack((traj_pos, traj_vel))
         print("[INFO] trajectory obtained")
         return future.result().completion_flag, traj
@@ -93,7 +89,7 @@ class PandaEnvROSNode(Node):
             self.env.render()
             self.curr_state = next_state[0:8]
             state_msg = State(state=self.curr_state)
-            print("state ", state_msg)
+            # print("state ", state_msg)
             self.state_pub.publish(state_msg)
 
         response.completion_flag = done

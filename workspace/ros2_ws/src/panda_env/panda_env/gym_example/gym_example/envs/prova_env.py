@@ -44,18 +44,19 @@ class PandaEnv(gym.Env):
         joint_velocities = np.array([state[1] for state in joint_states])
 
         jointPoses = p.calculateInverseKinematics(self.pandaUid,11,position, orientation)[0:7]
-        print("pandauid ", self.pandaUid)
-        print("joint_positions", list(joint_positions))
-        print("joint_velocities", list(joint_velocities))
-        print("ero", list(np.zeros_like(joint_positions)))
+        # print("pandauid ", self.pandaUid)
+        # print("joint_positions", list(joint_positions))
+        # print("joint_velocities", list(joint_velocities))
+        # print("ero", list(np.zeros_like(joint_positions)))
         jacobian_p, jacobian_r = p.calculateJacobian(self.pandaUid, 11, [0.0, 0.0, 0.0], list(joint_positions), list(joint_velocities), list(np.zeros_like(joint_positions)))
         P_jacobian = np.linalg.pinv(jacobian_p)
-        print("vel_ee ", vel_ee.T)
-        print("P matrix ", P_jacobian)
+        # print("vel_ee ", vel_ee.T)
+        # print("P matrix ", P_jacobian)
         jointVelocities = np.linalg.pinv(jacobian_p) @ vel_ee.T
         jointVelocities[7:9] = 0
 
-        p.setJointMotorControlArray(self.pandaUid, list(range(7))+[9,10], p.POSITION_CONTROL, list(jointPoses)+2*[fingers], list(jointVelocities), positionGains=list(np.ones_like(joint_positions)*0.3), velocityGains=list(np.ones_like(joint_positions)*0.5))
+        p.setJointMotorControlArray(self.pandaUid, list(range(7))+[9,10], p.POSITION_CONTROL, list(jointPoses)+2*[fingers], list(jointVelocities), positionGains=list(np.ones_like(joint_positions)*1), velocityGains=list(np.ones_like(joint_positions)*0.5))
+        # p.setJointMotorControlArray(self.pandaUid, list(range(7))+[9,10], p.POSITION_CONTROL, list(jointPoses)+2*[fingers])
 
         #The default timestep is 1/240 second, it can be changed using the setTimeStep
         p.stepSimulation()

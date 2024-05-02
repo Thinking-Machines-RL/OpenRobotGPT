@@ -30,19 +30,22 @@ class MoveNodeBasic(Node):
         curr_state = np.array(curr_state)
         final_pose = np.array(final_pose)
         traj, vel_traj = self.planner.plan_trajectory(curr_state, final_pose)
-        print("traj shape ", traj.shape)
-        print("vel_traj shape", vel_traj.shape)
+        # print("traj shape ", traj.shape)
+        # print("vel_traj shape", vel_traj.shape)
         if grip is True:
-            traj_p, vel_traj_p = self.planner.pick_cube(curr_state)
+            traj_p, vel_traj_p = self.planner.pick_cube(final_pose)
             traj = np.hstack((traj, traj_p))
             vel_traj_p = np.hstack((vel_traj, vel_traj_p))
-
+        else:
+            traj_p, vel_traj_p = self.planner.release_cube(final_pose)
+            traj = np.hstack((traj, traj_p))
+            vel_traj_p = np.hstack((vel_traj, vel_traj_p))
         response.completion_flag = True
         response.position = traj
         response.vel = vel_traj_p
         print("[INFO] trajectory generated")
         print("[INFO] response sent ----------")
-        print(response)
+        # print(response)
         print("----------------------")
         return response
     

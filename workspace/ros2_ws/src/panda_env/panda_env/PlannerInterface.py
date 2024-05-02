@@ -35,7 +35,10 @@ class PlannerInterface:
         return R
     
     def _mat_to_axis(self, R):
-        angle = math.acos((R[0,0] + R[1,1] + R[2,2] - 1)/2)
+        diag_sum = R[0,0] + R[1,1] + R[2,2]
+        if diag_sum > 3:
+            diag_sum = 3
+        angle = math.acos((diag_sum - 1)/2)
         axis = (1/2*(math.sin(angle) + self.eps)) * np.array([R[2,1]-R[1,2], R[0,2]-R[2,0], R[1,0]-R [0,1]])
         return axis, angle
     
@@ -63,7 +66,7 @@ class PlannerInterface:
         print("[INFO] calculating the trajectory")
         # Plan direct path from A to B
         A_rot = self._quat_to_mat(A[3:])
-        B_rot = self._quat_to_mat(A[3:])
+        B_rot = self._quat_to_mat(B[3:])
         AB_rot = inv(A_rot) @ B_rot
 
         axis, theta_f = self._mat_to_axis(AB_rot)
@@ -180,10 +183,10 @@ class PlannerInterface:
         of trajectories 
         '''
         self.grip_value = 0.04
-        degripping_state = np.hstack((A, self.grip_value))
-        vel_traj = deque([np.array([0.0, 0.0, 0.0])])
-        dgp_state = deque([degripping_state])
+        degripping_state = np.hstack((A, self.grip_value)) 
+        vel_traj = np.array([0.0, 0.0, 0.0])
+        gp_state = degripping_state
         for i in range(5):
-            dgp_state += deque([degripping_state])
-            vel_traj += deque([np.array([0.0, 0.0, 0.0])])
-        return dgp_state, vel_traj
+            gp_state = np.hstack((degripping_state, gp_state))
+            vel_traj = np.hstack((vel_traj,np.array([0.0, 0.0, 0.0])))
+        return gp_state, vel_traj
