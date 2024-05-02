@@ -57,6 +57,7 @@ class PandaEnv(gym.Env):
 
         p.setJointMotorControlArray(self.pandaUid, list(range(7))+[9,10], p.POSITION_CONTROL, list(jointPoses)+2*[fingers], list(jointVelocities), positionGains=list(np.ones_like(joint_positions)*0.3), velocityGains=list(np.ones_like(joint_positions)*0.5))
 
+        #The default timestep is 1/240 second, it can be changed using the setTimeStep
         p.stepSimulation()
 
         state_object, _ = p.getBasePositionAndOrientation(self.objectUid)

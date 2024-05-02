@@ -1,7 +1,7 @@
 import rclpy
 from rclpy.node import Node
 import copy
-from robotgpt_interfaces.srv import CodeExecution
+from robotgpt_interfaces.srv import CodeExecution, EECommands
 from robotgpt_interfaces.msg import StateReward, Action, State
 from robot_api_layer.PlannerInterface import PlannerInterface
 import numpy as np
@@ -26,9 +26,8 @@ class RobotAPINode(Node):
         '''
         #Example of trajectory generation, done by chatgpt
         # API available:
-        #     - move_to(stateA)
-        #     - pick_cube(stateA)
-        #     - release_cube(stateA) 
+        #     - pick(stateA)
+        #     - place(stateA)
 
         #test ending point ---
         ending_state = np.array([0.6,0.1,0.05, 1, 0, 0, 0])
@@ -38,31 +37,52 @@ class RobotAPINode(Node):
         self.traj = np.vstack((self.traj, planner.pick_cube([0.6,0.1,0.05, 1, 0, 0, 0])))
         self.traj = np.vstack((self.traj, planner.plan_trajectory(ending_state, self.starting_state)))
         '''
-
-        #initialize trajectory list
-        self.traj = None
-        self.vel_traj = None
-        #publisher for point of the trajectory to follow
-        self.state_pub = self.create_publisher(Action, 'traj', 20)
-        timer_period = 0.1 # seconds
-        self.timer = self.create_timer(timer_period, self.timer_callback)
+        self.SERVICE_TIMEOUT = 60
 
         #chatgpt service
         self.srv = self.create_service(CodeExecution, 'test_code', self.test_callback)
+        #trajectory execution service
+        self.client_trajectory = self.create_client(EECommands, 'trajectory_execution')
 
-    def move_to(self, final_pose:np.ndarray):
+        while not self.client_trajectory.wait_for_service(timeout_sec=self.SERVICE_TIMEOUT):
+            self.get_logger().info('Trajectory execution service not available, waiting again...')
+        self.req = EECommands.Request()
+
+    # def pick_deque(self, object_pose:np.ndarray):
+    #     # final pose must be a numpy array of dimension 7 (3+4)
+    #     # What I should get is traj + at the end grip aktion
+    #     print("obj pos", object_pose )
+    #     self.req.target_state = object_pose
+    #     self.req.pick_or_place = True
+    #     self.req_deque += deque([self.req])
+    #     #To avoid deadlock you call client async and obtain a future value
+    #     future = self.client_trajectory.call_async(self.req)
+    #     #you spin the ros node until the done parameter of future is TRUE
+    #     rclpy.spin_until_future_complete(self, future)
+    #     return future.result().accepted_request
+
+    def pick(self, object_pose:np.ndarray):
         # final pose must be a numpy array of dimension 7 (3+4)
-        if self.traj is None:
-            cur_state = self.cur_state[0:7]
-        else:
-            cur_state = self.traj[-1]
-
-        traj, vel_traj = self.planner.plan_trajectory(cur_state, final_pose)
-        self.traj = traj
-        self.vel_traj = vel_traj
-        print("mode_to")
-        #while np.linalg.norm(self.cur_state - self.traj[-1][0:8]) < self.EPSILON:
-        #    pass
+        # What I should get is traj + at the end grip aktion
+        print("obj pos", object_pose )
+        self.req.target_state = object_pose
+        self.req.pick_or_place = True
+        #To avoid deadlock you call client async and obtain a future value
+        future = self.client_trajectory.call_async(self.req)
+        #you spin the ros node until the done parameter of future is TRUE
+        rclpy.spin_until_future_complete(self, future)
+        return future.result().completion_flag, future.result().height_map, future.result().in_hand_image, future.result().in_hand_map, future.result().gripper_state 
+     
+    
+    def place(self, object_pose:np.ndarray):
+        # final pose must be a numpy array of dimension 7 (3+4)
+        # What I should get is traj + at the end grip aktion
+        self.req.target_state = object_pose
+        self.req.pick_or_place = False
+        future = self.client_trajectory.call_async(self.req)
+        #you spin the ros node until the done parameter of future is TRUE
+        rclpy.spin_until_future_complete(self, future)
+        return future.result().completion_flag, future.result().height_map, future.result().in_hand_image, future.result().in_hand_map, future.result().gripper_state 
 
     def pick_cube(self):
         # cube position is the 3d position of the cube + 4 components
@@ -94,6 +114,13 @@ class RobotAPINode(Node):
         print("release_cube")
         #while np.linalg.norm(self.cur_state - self.traj[-1][:8]) < self.EPSILON:
         #    pass
+
+    def send_request(self, ):
+        self.req.a = a
+        self.req.b = b
+        self.future = self.cli.call_async(self.req)
+        rclpy.spin_until_future_complete(self, self.future)
+        return self.future.result()
 
     def timer_callback(self):
         if self.traj is not None:
@@ -169,11 +196,9 @@ def main(args=None):
     node = RobotAPINode()
 
     # ***** DEBUG *****
-    node.move_to(np.array([0.6, 0.1, 0.05, 1, 0, 0, 0]))
-    node.pick_cube()
+    node.pick(np.array([0.6, 0.1, 0.05, 1, 0, 0, 0]))
 
-    node.move_to(np.array([0.7, 0.1, 0.05, 1, 0, 0, 0]))
-    node.release_cube()
+    node.place(np.array([0.7, 0.1, 0.05, 1, 0, 0, 0]))
     # *****************
 
     rclpy.spin(node)

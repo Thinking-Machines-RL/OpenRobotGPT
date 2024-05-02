@@ -1,9 +1,13 @@
 import rclpy
+from rclpy.executors import MultiThreadedExecutor
+from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallbackGroup
 from rclpy.node import Node
 import time
 
 from robotgpt_interfaces.msg import StateReward, Action, State
+from robotgpt_interfaces.srv import EECommands, Trajectory
 from geometry_msgs.msg import Point
+
 import gym_example
 import gymnasium
 import numpy as np
@@ -14,6 +18,8 @@ class PandaEnvROSNode(Node):
 
         self.env = gymnasium.make('PandaEnv-v0')
 
+        self.SERVICE_TIMEOUT = 60
+        client_cb_group = MutuallyExclusiveCallbackGroup()
         #publisher for environment state
         self.curr_state = None
         self.state_pub = self.create_publisher(State, '/panda_env/state', 10)
@@ -22,62 +28,89 @@ class PandaEnvROSNode(Node):
         print("--------- state pub created -------")
 
 
-        # Subscriber for agent actions
-        self.action_sub = self.create_subscription(Action, 'traj', self.action_callback, 20)
-        print("--------- action created -------")
+        # Client for robot movement
+        self.move_client = self.create_client(Trajectory, 'traj', callback_group=client_cb_group)
+        while not self.move_client.wait_for_service(timeout_sec=self.SERVICE_TIMEOUT):
+            self.get_logger().info('move service not available, waiting again...')
+        self.req = Trajectory.Request()
+        print("--------- movement sub created -------")
 
-        # Initialize action variable
-        self.action = None
+        #Action service
+        #Service to be called by the API or the Agent to step the environment
+        self.action_service = self.create_service(EECommands, 'trajectory_execution', self.step_callback)
 
-        # ROS loop rate (decide if needed)
-        # self.rate = rospy.Rate(10)  # 10 Hz
     def timer_callback(self):
+        #timer to publish the current state of the robot end effector
         if self.curr_state is not None:
             state_msg = State(state=self.curr_state)
             print("state ", state_msg)
             self.state_pub.publish(state_msg)
 
+    def _traj_generation(self, goal_position, gripper_state):
+        print("[INFO] asking for trajectory generation")
+        self.req.current_position = self.curr_state[0:7]
+        self.req.ending_position = goal_position
+        self.req.gripper_state = gripper_state
 
-    def action_callback(self, msg):
-        print("msg ricevuto")
-        print(msg)
-        self.action = msg.action
-        vel_action = msg.vel
-        action = np.array([self.action[0], self.action[1], self.action[2],
-                           self.action[3], self.action[4], self.action[5], self.action[6],
-                           self.action[7],
-                           vel_action[0], vel_action[1], vel_action[2]])
+        #To avoid deadlock you call client async and obtain a future value
+        print("[info] creating future")
+        future = self.move_client.call_async(self.req)
+        print("future ", future)
+        #you spin the ros node until the done parameter of future is TRUE
+        rclpy.spin_until_future_complete(self, future)
+        print("spin future completed")
+        print("future results ", future.result())
+        position_array = np.array(future.result().position)
+        print("pos")
+        vel_array = np.array(future.result().vel)
+        print("vel")
+        traj_pos = np.reshape(position_array, (int(position_array.size/8), 8))
+        print("traj pso")
+        traj_vel = np.reshape(vel_array, (int(vel_array.size/3), 3))
+        print("traj vel")
+        traj = np.hstack((traj_pos, traj_vel))
+        print("[INFO] trajectory obtained")
+        return future.result().completion_flag, traj
 
-        next_state, reward, done, _, info = self.env.step(action)
-        self.env.render()
-        # Publish current state
-        keys = list(info)
-        info_value = list(info.values())[0]
-        self.curr_state = next_state[0:8]
-        state_msg = State(state=self.curr_state)
-        print("state ", state_msg)
-        self.state_pub.publish(state_msg)
-
-        # Update current state
-        state = next_state
-
-    def initialize(self):
+    def reset(self):
         print("Initialising the env .....")
         state, info = self.env.reset()
         self.curr_state = state[0:8]
         self.env.render()
-        keys = list(info)
-        info_value = list(info.values())[0]
         state_msg = State(state=state)
         print(state_msg)
         self.state_pub.publish(state_msg)
+
+    def step_callback(self, request, response):
+        print("received action")
+        position = request.target_state
+        gripper = request.pick_or_place
+
+        print("[INFO] calling traj_generation")
+        done, traj = self._traj_generation(position, gripper)
+        for step in traj:
+            next_state, reward, done, _, info = self.env.step(step)
+            self.env.render()
+            self.curr_state = next_state[0:8]
+            state_msg = State(state=self.curr_state)
+            print("state ", state_msg)
+            self.state_pub.publish(state_msg)
+
+        response.completion_flag = done
+        response.height_map = []
+        response.in_hand_image = []
+        response.gripper_state = gripper
+
+        return response
 
 def main(args=None):
     #prova
     rclpy.init(args=args)
     panda_env_node = PandaEnvROSNode()
-    panda_env_node.initialize()
-    rclpy.spin(panda_env_node)
+    executor = MultiThreadedExecutor()
+    executor.add_node(panda_env_node)
+    panda_env_node.reset()
+    executor.spin()
     # Destroy the node explicitly
     # (optional - otherwise it will be done automatically
     # when the garbage collector destroys the node object)

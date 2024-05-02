@@ -18,9 +18,9 @@ def generate_launch_description():
             output='screen'  # Output behavior
         ),
         Node(
-            package='code_bot',  # Package name containing GymNode
-            executable='bot_node',  # Executable name for GymNode
-            name='bot_node',  # Node name
+            package='panda_env',  # Package name containing GymNode
+            executable='MoveNodeBasic',  # Executable name for GymNode
+            name='MoveNodeBasic',  # Node name
             output='screen'  # Output behavior
-        )
+        ),
     ])

@@ -8,3 +8,11 @@ srv/CodeExecution.idl
 srv/CodeExecution.srv
 srv/CodeExecution_Request.msg
 srv/CodeExecution_Response.msg
+srv/EECommands.idl
+srv/EECommands.srv
+srv/EECommands_Request.msg
+srv/EECommands_Response.msg
+srv/Trajectory.idl
+srv/Trajectory.srv
+srv/Trajectory_Request.msg
+srv/Trajectory_Response.msg

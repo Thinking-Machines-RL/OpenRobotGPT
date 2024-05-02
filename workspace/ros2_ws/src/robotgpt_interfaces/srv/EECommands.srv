@@ -1,3 +1,11 @@
-float32[] required_state
+#the required state is a 7 size array
+# 3 pos + 4 orientation 
+float32[] target_state
+#True if pick, False if place
+bool pick_or_place 
 ---
+uint8[] height_map
+uint8[] in_hand_image
+#True if holding an object, False if not
+bool gripper_state
 bool completion_flag

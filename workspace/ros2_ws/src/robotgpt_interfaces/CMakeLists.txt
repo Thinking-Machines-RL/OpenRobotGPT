@@ -39,6 +39,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/StateReward.msg"
   "msg/State.msg"
   "srv/CodeExecution.srv"
+  "srv/EECommands.srv"
+  "srv/Trajectory.srv"
 )
 
 ament_package()
