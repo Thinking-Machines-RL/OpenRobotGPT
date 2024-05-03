@@ -1,5 +1,7 @@
 import rclpy
 from rclpy.node import Node
+from rclpy.executors import MultiThreadedExecutor
+from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallbackGroup
 import copy
 from robotgpt_interfaces.srv import CodeExecution, EECommands, Trajectory
 from robotgpt_interfaces.msg import StateReward, Action, State
@@ -17,9 +19,10 @@ class MoveNodeBasic(Node):
         self.EPSILON = 1e-3
         self.planner = PlannerInterface()
 
+        traj_group = ReentrantCallbackGroup()
         env_time = 1/240
         #Service for EE trajectory generation
-        self.trajectory_service = self.create_service(Trajectory, 'traj', self.traj_callback)
+        self.trajectory_service = self.create_service(Trajectory, 'traj', self.traj_callback, callback_group= traj_group)
 
     def traj_callback(self, request, response):
         print("received request for trajectory")
@@ -53,8 +56,11 @@ class MoveNodeBasic(Node):
 def main(args=None):
     rclpy.init(args=args)
     node = MoveNodeBasic()
+    executor = MultiThreadedExecutor(num_threads=4)
+    executor.add_node(node)
 
-    rclpy.spin(node)
+    executor.spin()
+    node.destroy_node()
     rclpy.shutdown()
 
 

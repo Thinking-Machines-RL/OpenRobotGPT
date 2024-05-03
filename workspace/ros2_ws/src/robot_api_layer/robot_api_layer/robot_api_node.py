@@ -1,5 +1,7 @@
 import rclpy
 from rclpy.node import Node
+from rclpy.executors import MultiThreadedExecutor
+from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallbackGroup
 import copy
 from robotgpt_interfaces.srv import CodeExecution, EECommands
 from robotgpt_interfaces.msg import StateReward, Action, State
@@ -22,6 +24,7 @@ class RobotAPINode(Node):
         self.cur_state = np.array([0.4315144419670105, -5.4939169533141374e-12, 0.2346152812242508, 1, 0, 0, 0, 0])
         self.EPSILON = 1e-3
 
+        service_group = MutuallyExclusiveCallbackGroup()
 
         '''
         #Example of trajectory generation, done by chatgpt
@@ -40,7 +43,7 @@ class RobotAPINode(Node):
         self.SERVICE_TIMEOUT = 60
 
         #chatgpt service
-        self.srv = self.create_service(CodeExecution, 'test_code', self.test_callback)
+        self.srv = self.create_service(CodeExecution, 'test_code', self.test_callback, callback_group = service_group)
         #trajectory execution service
         self.client_trajectory = self.create_client(EECommands, 'trajectory_execution')
 
@@ -68,11 +71,15 @@ class RobotAPINode(Node):
         print("obj pos", object_pose )
         self.req.target_state = object_pose
         self.req.pick_or_place = True
+        while not self.client_trajectory.wait_for_service(timeout_sec=self.SERVICE_TIMEOUT):
+            print("service not available")
         #To avoid deadlock you call client async and obtain a future value
         future = self.client_trajectory.call_async(self.req)
+        print("future requested")
         #you spin the ros node until the done parameter of future is TRUE
         rclpy.spin_until_future_complete(self, future)
         print("[INFO] future completed")
+        # self.client_trajectory.remove_pending_request(future)
         return future.result().completion_flag, future.result().height_map, future.result().in_hand_image, future.result().gripper_state 
      
     
@@ -82,7 +89,10 @@ class RobotAPINode(Node):
         # What I should get is traj + at the end grip aktion
         self.req.target_state = object_pose
         self.req.pick_or_place = False
+        while not self.client_trajectory.wait_for_service(timeout_sec=self.SERVICE_TIMEOUT):
+            print("service not available")
         future = self.client_trajectory.call_async(self.req)
+        print("future requested")
         #you spin the ros node until the done parameter of future is TRUE
         rclpy.spin_until_future_complete(self, future)
         print("[INFO] future completed")
@@ -150,6 +160,7 @@ class RobotAPINode(Node):
     def test_callback(self, request, response):
         print("received code")
         code = request.code
+        print(code)
         evaluation_code = request.evaluation_code
 
         # Create a dictionary to hold the local scope
@@ -198,16 +209,18 @@ class RobotAPINode(Node):
 def main(args=None):
     rclpy.init(args=args)
     node = RobotAPINode()
+    executor = MultiThreadedExecutor()
+    executor.add_node(node)
 
     # ***** DEBUG *****
-    node.pick(np.array([0.6, 0.1, 0.05, 1, 0, 0, 0]))
+    # node.pick(np.array([0.6, 0.1, 0.05, 1, 0, 0, 0]))
 
-    rclpy.spin_once(node)
+    # rclpy.spin_once(node)
 
-    node.place(np.array([0.7, 0.1, 0.05, 1, 0, 0, 0]))
+    # node.place(np.array([0.7, 0.1, 0.05, 1, 0, 0, 0]))
     # *****************
 
-    rclpy.spin(node)
+    executor.spin()
     rclpy.shutdown()
 
 
