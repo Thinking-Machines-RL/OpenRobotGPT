@@ -33,8 +33,8 @@ def main(args=None):
     node = TestNode()
 
     code = """def execution_func(self):
-        _, _ , _ , done =self.pick(np.array([0.6, 0.1, 0.05, 1, 0, 0, 0]))
-        self.place(np.array([0.7, 0.1, 0.05, 1, 0, 0, 0]))
+        _, _ , _ , done =self.pick([0.6, 0.1, 0.05, 1, 0, 0, 0])
+        self.place([0.7, 0.1, 0.05, 1, 0, 0, 0])
     """
     evaluation_code = """def valuation_func(self):
         return True
