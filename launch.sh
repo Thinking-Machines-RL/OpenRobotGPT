@@ -1,83 +1,56 @@
 #!/bin/bash
 
-# Add localhost:22 to list of known hosts, ssh and colcon build
-gnome-terminal --wait --bash -c "
-  ssh-keygen -f '/home/$USER/.ssh/known_hosts' -R '[localhost]:2222' &&
-  expect -c '
-    spawn ssh -X -p 2222 root@localhost
-    expect \"Are you sure you want to continue connecting (yes/no/[fingerprint])?\" {
-      send \"yes\r\"
-      expect \"root@localhost's password\"
-      send \"password\r\"
-      interact
-    }
-  ';
-  cd workspace/ros2_ws;
-  colcon build;
-  bash;
+gnome-terminal --wait -- bash -c "
+echo \"ssh\"
+ssh-keygen -f '/home/$USER/.ssh/known_hosts' -R '[localhost]:2222'
+ssh -X -p 2222 root@localhost << EOF
+cd workspace/ros2_ws;
+colcon build;
+EOF;
 "
 
-# Start GymNode shell
-gnome-terminal --tab --wait --bash -c "expect -c '
-    spawn ssh -X -p 2222 root@localhost
-    expect \"Are you sure you want to continue connecting (yes/no/[fingerprint])?\" {
-      send \"yes\r\"
-      expect \"root@localhost's password\"
-      send \"password\r\"
-      interact
-    }
-  ';
-  cd workspace/ros2_ws;
-  source ./install/setup.sh;
-  ros2 run panda_env GymNode;
-  bash;
+gnome-terminal -- bash -c "
+echo \"GymNode\"
+ssh -X -p 2222 root@localhost << EOF
+echo \"Succesful ssh\"
+cd workspace/ros2_ws;
+source ./install/setup.sh;
+bash -i
+ros2 run panda_env GymNode;
+EOF;
 "
 
-# Start MoveNodebasic shell
-gnome-terminal --tab --wait --bash -c "expect -c '
-    spawn ssh -X -p 2222 root@localhost
-    expect \"Are you sure you want to continue connecting (yes/no/[fingerprint])?\" {
-      send \"yes\r\"
-      expect \"root@localhost's password\"
-      send \"password\r\"
-      interact
-    }
-  ';
-  cd workspace/ros2_ws;
-  source ./install/setup.sh;
-  ros2 run panda_env MoveNodebasic;
-  bash;
+gnome-terminal -- bash -c "
+echo \"MoveNodeBasic\"
+ssh -X -p 2222 root@localhost << EOF
+echo \"Succesful ssh\"
+cd workspace/ros2_ws;
+source ./install/setup.sh;
+bash -i
+ros2 run panda_env MoveNodeBasic;
+EOF;
 "
 
-# Start robot_api_node shell
-gnome-terminal --tab --wait --bash -c "expect -c '
-    spawn ssh -X -p 2222 root@localhost
-    expect \"Are you sure you want to continue connecting (yes/no/[fingerprint])?\" {
-      send \"yes\r\"
-      expect \"root@localhost's password\"
-      send \"password\r\"
-      interact
-    }
-  ';
-  cd workspace/ros2_ws;
-  source ./install/setup.sh;
-  ros2 run robot_api_layer robot_api_node;
-  bash;
+gnome-terminal -- bash -c "
+echo \"robot_api_node\"
+ssh -X -p 2222 root@localhost << EOF
+echo \"Succesful ssh\"
+cd workspace/ros2_ws;
+source ./install/setup.sh;
+bash -i
+ros2 run robot_api_layer robot_api_node;
+EOF;
 "
 
-# Start bot_node shell
-gnome-terminal --tab --wait --bash -c "expect -c '
-    spawn ssh -X -p 2222 root@localhost
-    expect \"Are you sure you want to continue connecting (yes/no/[fingerprint])?\" {
-      send \"yes\r\"
-      expect \"root@localhost's password\"
-      send \"password\r\"
-      interact
-    }
-  ';
-  cd workspace/ros2_ws;
-  source ./install/setup.sh;
-  ros2 run code_bot bot_node;
-  bash;
+gnome-terminal -- bash -c "
+echo \"test_node\"
+ssh -X -p 2222 root@localhost << EOF
+echo \"Succesful ssh\"
+cd workspace/ros2_ws;
+source ./install/setup.sh;
+bash -i
+ros2 run code_bot test_node;
+EOF;
 "
+
 
