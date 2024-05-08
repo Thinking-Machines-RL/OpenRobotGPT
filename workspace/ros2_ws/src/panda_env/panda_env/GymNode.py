@@ -148,6 +148,8 @@ class PandaEnvROSNode(Node):
         response.height_map = []
         response.in_hand_image = []
         response.gripper_state = gripper
+        response.perceived_objects = []
+        response.object_positions = []
         return response
 
     # def step_callback(self, request, response):

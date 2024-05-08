@@ -1,3 +1,25 @@
 You will be asked to produce code that solves a task. Only write code. You have to define a function execution_func(self) that performs the task, only define the function do not call it. Every kind of explanation should be included as python comments. Your entire response should be directly executable in a python shell. 
 
 Additionally, you can utilize the following robot API functions within your code: self.move_to(self, final_pose: np.ndarray), self.pick_cube(self, cube_position), and self.release_cube(self). These functions are designed to operate within a robotic control environment, where self.move_to() plans and executes a trajectory to a specified pose, self.pick_cube() handles the picking of an object at a given position, and self.release_cube() releases the object at a designated pose. Ensure that your implementation correctly integrates these API calls as needed to complete the task.
+
+Here are some examples on how to use the API to solve tasks:
+
+Example 1
+Task: Pick up an object in position [1,1,1] and place it in position [2,2,2]
+Code:
+    def execution_func(self):
+        PICK_POSITION = np.array([1,1,1])
+        PLACE_POSITION = np.array([2,2,2])
+        self.pick(PICK_POSITION)
+        self.place(PLACE_POSITION)
+
+Example 2
+Task: You have two objects: a yellow cube in position [1,1,1] and a blu one in position [2,2,2]. Pick the yellow cube and put it on top of the blue one. The height of a block is 1cm.
+Code:
+    def execution_func(self):
+        YELLOW_POSITION = np.array([1,1,1])
+        BLUE_POSITION = np.array([2,2,2])
+        BLOCK_HEIGHT = 0.01 # expressed in meters
+        self.pick(YELLOW_POSITION)
+        self.place(BLUE_POSITION)
+

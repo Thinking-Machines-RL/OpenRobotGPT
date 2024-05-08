@@ -116,12 +116,14 @@ def main(args=None):
         if x.strip().upper() == 'QUIT':
             break
 
-        code_is_working = node.call_service(code, evaluation_code)
+        code_is_working, code_error, eval_error = node.call_service(code, evaluation_code)
 
         if code_is_working:
             print("WORKING!")
         else:
             print("NOT working!")
+            print("Code error: ", code_error)
+            print("Evaluation error: ", eval_error)
 
         x = input("Press a key to proceed or type 'QUIT' to quit: ")
         if x.strip().upper() == 'QUIT':
