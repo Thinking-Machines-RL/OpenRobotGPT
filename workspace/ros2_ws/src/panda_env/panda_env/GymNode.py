@@ -4,7 +4,7 @@ from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallb
 from rclpy.node import Node
 import time
 
-from robotgpt_interfaces.msg import StateReward, Action, State
+from robotgpt_interfaces.msg import StateReward, Action, State, ObjectStatesRequest, ObjectStates, ObjectPose
 from robotgpt_interfaces.srv import EECommands, Trajectory
 from geometry_msgs.msg import Point
 
@@ -43,10 +43,28 @@ class PandaEnvROSNode(Node):
         #Service to be called by the API or the Agent to step the environment
         self.action_service = self.create_service(EECommands, 'trajectory_execution', self.step_callback, callback_group=service_group)
 
+        # Perception
+        # Request for object states handler
+        self.ObjectStatesRequests = self.create_subscription(ObjectStatesRequest, 'ObjectStatesRequests', self.objReq_callback, 1)
+        # Object states pusblisher
+        self.ObjectStatesPublisher = self.create_publisher(ObjectStates, '/panda_env/ObjectStates', 1)
+
         self.executing_trajectory = False
         self.lock = threading.Lock()
         self.request_queue = Queue()
         self.height_map = []
+
+    def objReq_callback(self, req):
+        objStates = self.env.getObjStates()
+        msg = ObjectStates()
+        msg.objects = objStates.keys()
+        states = []
+        for state in objStates.values():
+            op = ObjectPose()
+            op.pose = state
+            states.append(op)
+        msg.states = states
+        self.ObjectStatesPublisher.publish(msg)
 
     def timer_callback(self):
         #timer to publish the current state of the robot end effector
@@ -148,8 +166,6 @@ class PandaEnvROSNode(Node):
         response.height_map = []
         response.in_hand_image = []
         response.gripper_state = gripper
-        response.perceived_objects = []
-        response.object_positions = []
         return response
 
     # def step_callback(self, request, response):

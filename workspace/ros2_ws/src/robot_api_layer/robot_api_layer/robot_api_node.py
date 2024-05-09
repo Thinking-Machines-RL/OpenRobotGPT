@@ -4,7 +4,7 @@ from rclpy.executors import MultiThreadedExecutor
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallbackGroup
 import copy
 from robotgpt_interfaces.srv import CodeExecution, EECommands
-from robotgpt_interfaces.msg import StateReward, Action, State
+from robotgpt_interfaces.msg import StateReward, Action, State, ObjectStatesRequest, ObjectStates
 from robot_api_layer.PlannerInterface import PlannerInterface
 import numpy as np
 from geometry_msgs.msg import Point
@@ -41,6 +41,12 @@ class RobotAPINode(Node):
         self.traj = np.vstack((self.traj, planner.plan_trajectory(ending_state, self.starting_state)))
         '''
         self.SERVICE_TIMEOUT = 60
+
+        # Perception
+        # Request for object states publisher
+        self.objStatesRequests = self.create_publisher(ObjectStatesRequest, 'ObjectStatesRequests', 1)
+        # Object states subscriber
+        self.objStatesSubscriber = self.create_subscription(ObjectStates, '/panda_env/ObjectStates', self.objectStates_callback, 1)
 
         #chatgpt service
         self.srv = self.create_service(CodeExecution, 'test_code', self.test_callback, callback_group = service_group)
@@ -128,6 +134,25 @@ class RobotAPINode(Node):
         print("release_cube")
         #while np.linalg.norm(self.cur_state - self.traj[-1][:8]) < self.EPSILON:
         #    pass
+
+    def getObjectStates(self):
+        self.wait_for_obj_states = True
+        msg = ObjectStatesRequest()
+        # The following line fills a useless bool. The message doesn't have to contain any information. 
+        # It is just a request for states
+        msg.useless = True
+        self.objStatesRequests.publish(msg)
+        while self.wait_for_obj_states:
+            pass
+        return self.objStates
+
+    # Object states
+    def objectStates_callback(self, msg):
+        objects = msg.objects
+        states = msg.states
+        states = [states[i].pose for i in range(len(states))]
+        self.objStates = {object:list(state) for object,state in zip(objects, states)}
+        self.wait_for_obj_states = False
 
     def send_request(self, ):
         self.req.a = a

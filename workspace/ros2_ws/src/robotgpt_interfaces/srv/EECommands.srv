@@ -9,5 +9,3 @@ uint8[] in_hand_image
 #True if holding an object, False if not
 bool gripper_state
 bool completion_flag
-string[] perceived_objects
-float32[][] object_positions

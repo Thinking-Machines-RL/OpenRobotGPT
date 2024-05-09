@@ -24,6 +24,14 @@ class PandaEnv(gym.Env):
         #Obs space: cartesian position of the EE and j variables of the 2 fingers
         self.observation_space = spaces.Box(np.array([-1]*9), np.array([1]*9))
 
+    def getObjStates(self):
+        object_obs = {}
+        for object in self.objects.keys():
+            object_state, _ = p.getBasePositionAndOrientation(self.objectUid[object])
+            object_obs[object] = object_state
+
+        return object_obs
+
     def step(self, action):
         '''Contains the logic of the environment, computes the state
            of the env after applying a given action'''
@@ -61,14 +69,17 @@ class PandaEnv(gym.Env):
         #The default timestep is 1/240 second, it can be changed using the setTimeStep
         p.stepSimulation()
 
-        state_object, _ = p.getBasePositionAndOrientation(self.objectUid)
+        object_obs = {}
+        for object in self.objects.keys():
+            state_object, _ = p.getBasePositionAndOrientation(self.objectUid[object])
+            object_obs[object] = state_object
         state_robot = p.getLinkState(self.pandaUid, 11)[0]
         orientation_robot = p.getLinkState(self.pandaUid, 11)[1]
         state_fingers = (p.getJointState(self.pandaUid,9)[0], p.getJointState(self.pandaUid, 10)[0])
 
         #TODO: random goal, must be changed
         #we moved the object at a certain altitude 
-        if state_object[2]>0.45:
+        if object_obs["blue_cube"][-1]>0.45:
             reward = 1
             done = True
         else:
@@ -114,9 +125,19 @@ class PandaEnv(gym.Env):
         
         #we randomize the position of the object on the table
         # state_object= [random.uniform(0.5,0.8),random.uniform(-0.2,0.2),0.05]
-        state_object= [0.6,0.1,0.05]
-        self.objectUid = p.loadURDF(os.path.join(urdfRootPath, "cube_small.urdf"), basePosition=state_object)
-        info = {'object_position': state_object}
+        # state_object= [0.6,0.1,0.05]
+        # self.objectUid = p.loadURDF(os.path.join(urdfRootPath, "cube_small.urdf"), basePosition=state_object)
+        objects = {"blue_cube":[0.6,0.1,0.05],
+                   "yellow_cube":[0.1,0.3,0.6],
+                   "green_cube": [0.7,0.6,0.1]}
+        self.objectUid = {}
+        for object,position in zip(objects.keys(), objects.values()):
+            self.objectUid[object] = p.loadURDF(os.path.join(urdfRootPath, "cube_small.urdf"), basePosition=position)
+        
+        self.objects = {}
+        for obj in self.objectUid.keys():
+            self.objects[obj], _ = p.getBasePositionAndOrientation(self.objectUid[obj])
+
         #we return the first observation
         state_robot = p.getLinkState(self.pandaUid, 11)[0]
         orientation_robot = p.getLinkState(self.pandaUid, 11)[1]
@@ -124,6 +145,7 @@ class PandaEnv(gym.Env):
         self.observation = state_robot + orientation_robot + state_fingers
         #Now that everything is done, we can load 
         p.configureDebugVisualizer(p.COV_ENABLE_RENDERING,1)
+        info = {"object_position" : objects}
         return np.array(self.observation).astype(np.float32), info
 
     def render(self, mode='human'):
