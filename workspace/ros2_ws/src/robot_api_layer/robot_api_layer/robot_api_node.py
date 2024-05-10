@@ -58,7 +58,7 @@ class RobotAPINode(Node):
         self.req = EECommands.Request()
 
         # Subscriber to the trajectory completion topic
-        self.TrajComplSub = self.create_subscription(TrajCompletionMsg, 'traj_completion', self.traj_completion_callback, 1)
+        self.TrajComplSub = self.create_subscription(TrajCompletionMsg, 'traj_completion', self.traj_completion_callback, 10)
 
     # def pick_deque(self, object_pose:np.ndarray):
     #     # final pose must be a numpy array of dimension 7 (3+4)
@@ -185,6 +185,7 @@ class RobotAPINode(Node):
         self.wait_for_obj_states = False
 
     def traj_completion_callback(self, msg):
+        print("Trajectory completion callback activated")
         self.execution = False
 
     def send_request(self, ):

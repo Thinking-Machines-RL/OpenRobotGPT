@@ -22,6 +22,7 @@ class PandaEnvROSNode(Node):
 
         self.SERVICE_TIMEOUT = 60
         client_cb_group = MutuallyExclusiveCallbackGroup()
+        completion_cb_group = MutuallyExclusiveCallbackGroup()
         service_group = ReentrantCallbackGroup()
         timer_group = ReentrantCallbackGroup()
         #publisher for environment state
@@ -50,7 +51,7 @@ class PandaEnvROSNode(Node):
         self.ObjectStatesPublisher = self.create_publisher(ObjectStates, '/panda_env/ObjectStates', 1)
 
         # Trajectory completion
-        self.trajCompletionPub = self.create_publisher(TrajCompletionMsg, 'traj_completion', 1)
+        self.trajCompletionPub = self.create_publisher(TrajCompletionMsg, 'traj_completion', 10, callback_group=completion_cb_group)
 
         self.executing_trajectory = False
         self.lock = threading.Lock()
@@ -99,7 +100,9 @@ class PandaEnvROSNode(Node):
                 # Signal trajectory completion to the API node
                 msg = TrajCompletionMsg()
                 msg.flag = True
+                print("Starting to publish trajectory completion message")
                 self.trajCompletionPub.publish(msg)
+                print("Trajectory completion message published")
                 if not self.request_queue.empty():
                     # Process next request in the queue
                     position, gripper = self.request_queue.get()
@@ -112,7 +115,9 @@ class PandaEnvROSNode(Node):
                 # Signal trajectory completion to the API node
                 msg = TrajCompletionMsg()
                 msg.flag = True
+                print("Starting to publish trajectory completion message")
                 self.trajCompletionPub.publish(msg)
+                print("Trajectory completion message published")
 
     def _handle_trajectory(self, done, traj):
         print("Starting trajectory")
