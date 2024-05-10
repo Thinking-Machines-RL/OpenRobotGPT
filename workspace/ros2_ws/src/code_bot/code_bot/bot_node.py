@@ -89,7 +89,12 @@ def main(args=None):
 
         # Clean the code from the overhead
         pattern = r"```python(.*?)```"
-        code = re.findall(pattern, code, re.DOTALL)[0]
+        matches = re.findall(pattern, code, re.DOTALL)
+
+        if matches:
+            code = matches[0]
+        else:
+            pass
 
         print("ChatGPT code (cleaned): \n", code)
         x = input("Press a key to proceed or type 'QUIT' to quit: ")
