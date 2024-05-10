@@ -4,7 +4,7 @@ from rclpy.executors import MultiThreadedExecutor
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallbackGroup
 import copy
 from robotgpt_interfaces.srv import CodeExecution, EECommands
-from robotgpt_interfaces.msg import StateReward, Action, State, ObjectStatesRequest, ObjectStates
+from robotgpt_interfaces.msg import StateReward, Action, State, ObjectStatesRequest, ObjectStates, TrajCompletionMsg
 from robot_api_layer.PlannerInterface import PlannerInterface
 import numpy as np
 from geometry_msgs.msg import Point
@@ -57,6 +57,9 @@ class RobotAPINode(Node):
             self.get_logger().info('Trajectory execution service not available, waiting again...')
         self.req = EECommands.Request()
 
+        # Subscriber to the trajectory completion topic
+        self.TrajComplSub = self.create_subscription(TrajCompletionMsg, 'traj_completion', self.traj_completion_callback, 1)
+
     # def pick_deque(self, object_pose:np.ndarray):
     #     # final pose must be a numpy array of dimension 7 (3+4)
     #     # What I should get is traj + at the end grip aktion
@@ -77,6 +80,10 @@ class RobotAPINode(Node):
         print("obj pos", object_pose )
         self.req.target_state = object_pose
         self.req.pick_or_place = True
+
+        # Mark trajectory as in execution
+        self.execution = True
+
         while not self.client_trajectory.wait_for_service(timeout_sec=self.SERVICE_TIMEOUT):
             print("service not available")
         #To avoid deadlock you call client async and obtain a future value
@@ -85,6 +92,16 @@ class RobotAPINode(Node):
         #you spin the ros node until the done parameter of future is TRUE
         rclpy.spin_until_future_complete(self, future)
         print("[INFO] future completed")
+
+        # Wait for trajectory completion
+        i = 1
+        while self.execution:
+            print(f"Waiting for PICK execution {i} ...")
+            i += 1
+            time.sleep(1)
+
+        print("PICK action completed")
+
         # self.client_trajectory.remove_pending_request(future)
         return future.result().completion_flag, future.result().height_map, future.result().in_hand_image, future.result().gripper_state 
      
@@ -95,6 +112,10 @@ class RobotAPINode(Node):
         # What I should get is traj + at the end grip aktion
         self.req.target_state = object_pose
         self.req.pick_or_place = False
+
+        # Mark trajectory as in execution
+        self.execution = True
+
         while not self.client_trajectory.wait_for_service(timeout_sec=self.SERVICE_TIMEOUT):
             print("service not available")
         future = self.client_trajectory.call_async(self.req)
@@ -102,6 +123,15 @@ class RobotAPINode(Node):
         #you spin the ros node until the done parameter of future is TRUE
         rclpy.spin_until_future_complete(self, future)
         print("[INFO] future completed")
+
+        i = 1
+        while self.execution:
+            print(f"Waiting for PLACE execution {i} ...")
+            i += 1
+            time.sleep(1)
+
+        print("PLACE action completed")
+
         return future.result().completion_flag, future.result().height_map, future.result().in_hand_image,  future.result().gripper_state 
 
     def pick_cube(self):
@@ -153,6 +183,9 @@ class RobotAPINode(Node):
         states = [states[i].pose for i in range(len(states))]
         self.objStates = {object:list(state) for object,state in zip(objects, states)}
         self.wait_for_obj_states = False
+
+    def traj_completion_callback(self, msg):
+        self.execution = False
 
     def send_request(self, ):
         self.req.a = a

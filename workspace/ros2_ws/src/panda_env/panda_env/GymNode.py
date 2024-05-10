@@ -4,7 +4,7 @@ from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallb
 from rclpy.node import Node
 import time
 
-from robotgpt_interfaces.msg import StateReward, Action, State, ObjectStatesRequest, ObjectStates, ObjectPose
+from robotgpt_interfaces.msg import StateReward, Action, State, ObjectStatesRequest, ObjectStates, ObjectPose, TrajCompletionMsg
 from robotgpt_interfaces.srv import EECommands, Trajectory
 from geometry_msgs.msg import Point
 
@@ -48,6 +48,9 @@ class PandaEnvROSNode(Node):
         self.ObjectStatesRequests = self.create_subscription(ObjectStatesRequest, 'ObjectStatesRequests', self.objReq_callback, 1)
         # Object states pusblisher
         self.ObjectStatesPublisher = self.create_publisher(ObjectStates, '/panda_env/ObjectStates', 1)
+
+        # Trajectory completion
+        self.trajCompletionPub = self.create_publisher(TrajCompletionMsg, 'traj_completion', 1)
 
         self.executing_trajectory = False
         self.lock = threading.Lock()
@@ -93,6 +96,10 @@ class PandaEnvROSNode(Node):
             self._handle_trajectory(result.completion_flag, traj)
             with self.lock:
                 self.executing_trajectory = False  # Mark trajectory execution as completed
+                # Signal trajectory completion to the API node
+                msg = TrajCompletionMsg()
+                msg.flag = True
+                self.trajCompletionPub.publish(msg)
                 if not self.request_queue.empty():
                     # Process next request in the queue
                     position, gripper = self.request_queue.get()
@@ -102,6 +109,10 @@ class PandaEnvROSNode(Node):
             self.get_logger().error('Failed to get trajectory')
             with self.lock:
                 self.executing_trajectory = False  # Mark trajectory execution as completed
+                # Signal trajectory completion to the API node
+                msg = TrajCompletionMsg()
+                msg.flag = True
+                self.trajCompletionPub.publish(msg)
 
     def _handle_trajectory(self, done, traj):
         print("Starting trajectory")

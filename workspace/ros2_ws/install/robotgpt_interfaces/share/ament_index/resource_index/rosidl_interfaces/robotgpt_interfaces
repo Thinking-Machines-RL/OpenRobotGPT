@@ -10,6 +10,8 @@ msg/State.idl
 msg/State.msg
 msg/StateReward.idl
 msg/StateReward.msg
+msg/TrajCompletionMsg.idl
+msg/TrajCompletionMsg.msg
 srv/CodeExecution.idl
 srv/CodeExecution.srv
 srv/CodeExecution_Request.msg

@@ -128,7 +128,7 @@ class PandaEnv(gym.Env):
         # state_object= [0.6,0.1,0.05]
         # self.objectUid = p.loadURDF(os.path.join(urdfRootPath, "cube_small.urdf"), basePosition=state_object)
         objects = {"blue_cube":[0.6,0.1,0.05],
-                   "yellow_cube":[0.5,-0.2,0.05],
+                   "yellow_cube":[0.5,-0.1,0.05],
                    "green_cube": [0.7,0.1,0.05]}
         self.objectUid = {}
         for object,position in zip(objects.keys(), objects.values()):

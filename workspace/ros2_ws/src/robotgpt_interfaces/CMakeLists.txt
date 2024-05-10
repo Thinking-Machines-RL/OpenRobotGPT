@@ -41,6 +41,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/ObjectPose.msg"
   "msg/ObjectStatesRequest.msg"
   "msg/ObjectStates.msg"
+  "msg/TrajCompletionMsg.msg"
   "srv/CodeExecution.srv"
   "srv/EECommands.srv"
   "srv/Trajectory.srv"
