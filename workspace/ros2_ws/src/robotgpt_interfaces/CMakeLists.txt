@@ -42,9 +42,14 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/ObjectStatesRequest.msg"
   "msg/ObjectStates.msg"
   "msg/TrajCompletionMsg.msg"
+  "msg/ResultEvaluation.msg"
+  "msg/EECommandsM.msg"
+  "msg/CodeExecutionM.msg"
   "srv/CodeExecution.srv"
   "srv/EECommands.srv"
   "srv/Trajectory.srv"
+  "srv/EvaluationCode.srv"
+  "srv/ObjectStatesR.srv"
 )
 
 ament_package()

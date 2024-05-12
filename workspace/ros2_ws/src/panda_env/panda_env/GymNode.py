@@ -4,8 +4,8 @@ from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallb
 from rclpy.node import Node
 import time
 
-from robotgpt_interfaces.msg import StateReward, Action, State, ObjectStatesRequest, ObjectStates, ObjectPose, TrajCompletionMsg
-from robotgpt_interfaces.srv import EECommands, Trajectory
+from robotgpt_interfaces.msg import StateReward, Action, State, ObjectStatesRequest, ObjectStates, ObjectPose, TrajCompletionMsg, EECommandsM
+from robotgpt_interfaces.srv import EECommands, Trajectory, ObjectStatesR
 from geometry_msgs.msg import Point
 
 import gym_example
@@ -25,10 +25,11 @@ class PandaEnvROSNode(Node):
         completion_cb_group = MutuallyExclusiveCallbackGroup()
         service_group = ReentrantCallbackGroup()
         timer_group = ReentrantCallbackGroup()
+
         #publisher for environment state
         self.curr_state = None
         self.state_pub = self.create_publisher(State, '/panda_env/state', 10)
-        timer_period = 0.2 # seconds
+        timer_period = 1 # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback, timer_group)
         print("--------- state pub created -------")
 
@@ -42,11 +43,11 @@ class PandaEnvROSNode(Node):
 
         #Action service
         #Service to be called by the API or the Agent to step the environment
-        self.action_service = self.create_service(EECommands, 'trajectory_execution', self.step_callback, callback_group=service_group)
+        # self.action_service = self.create_service(EECommands, 'trajectory_execution', self.step_callback, callback_group=service_group)
+        self.action_sub = self.create_subscription(EECommandsM, 'trajectory_execution', self.step_callback, 10, callback_group=service_group)
+        self.initial_object_states = self.create_service(ObjectStatesR, '/panda_env/InitialObjectStates', self.InObj_callback, callback_group=service_group)
 
         # Perception
-        # Request for object states handler
-        self.ObjectStatesRequests = self.create_subscription(ObjectStatesRequest, 'ObjectStatesRequests', self.objReq_callback, 1)
         # Object states pusblisher
         self.ObjectStatesPublisher = self.create_publisher(ObjectStates, '/panda_env/ObjectStates', 1)
 
@@ -54,31 +55,34 @@ class PandaEnvROSNode(Node):
         self.trajCompletionPub = self.create_publisher(TrajCompletionMsg, 'traj_completion', 10, callback_group=completion_cb_group)
 
         self.executing_trajectory = False
+        self.end_task = False
         self.lock = threading.Lock()
         self.request_queue = Queue()
         self.height_map = []
 
-    def objReq_callback(self, req):
+    def InObj_callback(self, request, response):
         objStates = self.env.getObjStates()
-        msg = ObjectStates()
-        msg.objects = objStates.keys()
+        response.objects = objStates.keys()
         states = []
         for state in objStates.values():
             op = ObjectPose()
             op.pose = state
             states.append(op)
-        msg.states = states
-        self.ObjectStatesPublisher.publish(msg)
+        response.states = states
+        return response
+
 
     def timer_callback(self):
         #timer to publish the current state of the robot end effector
         # print("spinning")
         if self.curr_state is not None:
             state_msg = State(state=self.curr_state)
+            print("state")
             self.state_pub.publish(state_msg)
     
-    def _traj_generation(self, goal_position, gripper_state):
+    def _traj_generation(self, goal_position, gripper_state, end_task):
         request = Trajectory.Request()
+        self.end_task = end_task
         request.current_position = self.curr_state[0:7]
         print("current position ", self.curr_state[0:7])
         request.ending_position = goal_position
@@ -105,23 +109,17 @@ class PandaEnvROSNode(Node):
                 print("Trajectory completion message published")
                 if not self.request_queue.empty():
                     # Process next request in the queue
-                    position, gripper = self.request_queue.get()
-                    self._traj_generation(position, gripper)
+                    position, gripper, end_task = self.request_queue.get()
+                    self._traj_generation(position, gripper, end_task)
                     
         else:
             self.get_logger().error('Failed to get trajectory')
             with self.lock:
                 self.executing_trajectory = False  # Mark trajectory execution as completed
                 # Signal trajectory completion to the API node
-                msg = TrajCompletionMsg()
-                msg.flag = True
-                print("Starting to publish trajectory completion message")
-                self.trajCompletionPub.publish(msg)
-                print("Trajectory completion message published")
 
     def _handle_trajectory(self, done, traj):
         print("Starting trajectory")
-        print("trajectory size ",traj.shape)
         # curr_state = traj[-1,0:7]
         for step in traj:
             # print("step")
@@ -129,29 +127,19 @@ class PandaEnvROSNode(Node):
             self.env.render()
             self.curr_state = next_state[0:8]
         
-
-    # def _traj_generation(self, goal_position, gripper_state):
-    #     print("[INFO] asking for trajectory generation")
-    #     self.req.current_position = self.curr_state[0:7]
-    #     self.req.ending_position = goal_position
-    #     self.req.gripper_state = gripper_state
-
-    #     #To avoid deadlock you call client async and obtain a future value
-    #     print("[info] creating future")
-    #     future = self.move_client.call_async(self.req)
-    #     print("future ", future)
-    #     #you spin the ros node until the done parameter of future is TRUE
-    #     rclpy.spin_until_future_complete(self, future)
-    #     print("spin future completed")
-    #     position_array = np.array(future.result().position)
-    #     vel_array = np.array(future.result().vel)
-    #     traj_pos = np.reshape(position_array, (int(position_array.size/8), 8))
-    #     traj_vel = np.reshape(vel_array, (int(vel_array.size/3), 3))
-    #     traj = np.hstack((traj_pos, traj_vel))
-    #     print("[INFO] trajectory obtained")
-    #     flag = future.result().completion_flag
-    #     future.cancel()
-    #     return flag, traj
+        if self.end_task == True:
+            objStates = self.env.getObjStates()
+            msg = ObjectStates()
+            msg.objects = objStates.keys()
+            states = []
+            for state in objStates.values():
+                op = ObjectPose()
+                op.pose = state
+                states.append(op)
+            msg.states = states
+            self.ObjectStatesPublisher.publish(msg)
+            print("[INFO] buplishe message")
+            print(msg)
 
     def reset(self):
         print("Initialising the env .....")
@@ -162,27 +150,21 @@ class PandaEnvROSNode(Node):
         print(state_msg)
         # self.state_pub.publish(state_msg)
     
-    def step_callback(self, request, response):
-        position = request.target_state
-        gripper = request.pick_or_place
+    def step_callback(self, msg):
+        position = msg.target_state
+        gripper = msg.pick_or_place
+        end_task = msg.end_task
         with self.lock:
             if self.executing_trajectory:
                 # Another trajectory is already in progress, queue the request
-                self.request_queue.put((position, gripper))
-                response.completion_flag = True
-                response.height_map = []
-                response.in_hand_image = []
-                response.gripper_state = gripper
-                return response
+                self.request_queue.put((position, gripper, end_task))
+                return True
 
             # Mark trajectory execution as in progress
             self.executing_trajectory = True
-        self._traj_generation(position, gripper)
-        response.completion_flag = True
-        response.height_map = []
-        response.in_hand_image = []
-        response.gripper_state = gripper
-        return response
+        self._traj_generation(position, gripper, end_task)
+        # response.completion_flag = True
+        return True
 
     # def step_callback(self, request, response):
     #     print("received action")

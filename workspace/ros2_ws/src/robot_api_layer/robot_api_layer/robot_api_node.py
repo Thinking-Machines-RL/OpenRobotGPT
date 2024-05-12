@@ -3,13 +3,14 @@ from rclpy.node import Node
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallbackGroup
 import copy
-from robotgpt_interfaces.srv import CodeExecution, EECommands
-from robotgpt_interfaces.msg import StateReward, Action, State, ObjectStatesRequest, ObjectStates, TrajCompletionMsg
+from robotgpt_interfaces.srv import CodeExecution, EECommands, EvaluationCode, ObjectStatesR
+from robotgpt_interfaces.msg import StateReward, Action, State, ObjectStates, ResultEvaluation, EECommandsM, CodeExecutionM
 from robot_api_layer.PlannerInterface import PlannerInterface
 import numpy as np
 from geometry_msgs.msg import Point
 import time
 from collections import deque
+import threading
 
 class RobotAPINode(Node):
 
@@ -18,13 +19,14 @@ class RobotAPINode(Node):
         print("Hello from test_code!")
         #implement argument for chosing between use with chatgpt and use with imitation learning
 
+        service_group = ReentrantCallbackGroup()
+        topic_group = ReentrantCallbackGroup()
+
         #create service for current position
         self.planner = PlannerInterface()
-        self.cur_state_sub = self.create_subscription(State, '/panda_env/state', self.state_callback, 10)
+        self.cur_state_sub = self.create_subscription(State, '/panda_env/state', self.state_callback, 10, callback_group = topic_group)
         self.cur_state = np.array([0.4315144419670105, -5.4939169533141374e-12, 0.2346152812242508, 1, 0, 0, 0, 0])
         self.EPSILON = 1e-3
-
-        service_group = MutuallyExclusiveCallbackGroup()
 
         '''
         #Example of trajectory generation, done by chatgpt
@@ -43,150 +45,134 @@ class RobotAPINode(Node):
         self.SERVICE_TIMEOUT = 60
 
         # Perception
-        # Request for object states publisher
-        self.objStatesRequests = self.create_publisher(ObjectStatesRequest, 'ObjectStatesRequests', 1)
         # Object states subscriber
-        self.objStatesSubscriber = self.create_subscription(ObjectStates, '/panda_env/ObjectStates', self.objectStates_callback, 1)
+        self.objStatesSubscriber = self.create_subscription(ObjectStates, '/panda_env/ObjectStates', self.objectStates_callback, 1, callback_group = service_group)
+        self.objects_states = self.create_client(ObjectStatesR, '/panda_env/InitialObjectStates')
+        while not self.objects_states.wait_for_service(timeout_sec=self.SERVICE_TIMEOUT):
+            self.get_logger().info('objects_states service not available, waiting again...')
+        self.req_states = ObjectStatesR.Request()
 
-        #chatgpt service
-        self.srv = self.create_service(CodeExecution, 'test_code', self.test_callback, callback_group = service_group)
+        self.getInitialObjectStates()
+
+        #CHATGPT client and service -----
+        # self.srv = self.create_service(CodeExecution, 'chat_gpt_bot/test_code', self.test_callback, callback_group = service_group)
+        self.sub_exec = self.create_subscription(CodeExecutionM, 'chat_gpt_bot/test_code', self.test_callback,10, callback_group = service_group)
+        self.client_evaluation_code = self.create_client(EvaluationCode, 'chat_gpt_bot/evaluation_code', callback_group = service_group)
+        while not self.client_evaluation_code.wait_for_service(timeout_sec=self.SERVICE_TIMEOUT):
+            self.get_logger().info('Evaluation code service not available, waiting again...')
+        self.req_eval = EvaluationCode.Request()
+        self.eval_publisher = self.create_publisher(ResultEvaluation, 'chat_gpt_bot/evaluation_results', 10)
+        #--------------------------------
+
         #trajectory execution service
-        self.client_trajectory = self.create_client(EECommands, 'trajectory_execution')
+        # self.client_trajectory = self.create_client(EECommands, 'trajectory_execution', callback_group = service_group)
+        self.traj_pub = self.create_publisher(EECommandsM,'trajectory_execution', 10, callback_group = service_group)
+        # while not self.client_trajectory.wait_for_service(timeout_sec=self.SERVICE_TIMEOUT):
+        #     self.get_logger().info('Trajectory execution service not available, waiting again...')
+        # self.req = EECommands.Request()
+        print("Node ready")
 
-        while not self.client_trajectory.wait_for_service(timeout_sec=self.SERVICE_TIMEOUT):
-            self.get_logger().info('Trajectory execution service not available, waiting again...')
-        self.req = EECommands.Request()
-
-        # Subscriber to the trajectory completion topic
-        self.TrajComplSub = self.create_subscription(TrajCompletionMsg, 'traj_completion', self.traj_completion_callback, 10)
-
-    # def pick_deque(self, object_pose:np.ndarray):
-    #     # final pose must be a numpy array of dimension 7 (3+4)
-    #     # What I should get is traj + at the end grip aktion
-    #     print("obj pos", object_pose )
-    #     self.req.target_state = object_pose
-    #     self.req.pick_or_place = True
-    #     self.req_deque += deque([self.req])
-    #     #To avoid deadlock you call client async and obtain a future value
-    #     future = self.client_trajectory.call_async(self.req)
-    #     #you spin the ros node until the done parameter of future is TRUE
-    #     rclpy.spin_until_future_complete(self, future)
-    #     return future.result().accepted_request
-
-    def pick(self, object_pose:np.ndarray):
+    def pick(self, object_pose:np.ndarray, end_task = False):
         print("[INFO] requested pick")
         # final pose must be a numpy array of dimension 7 (3+4)
         # What I should get is traj + at the end grip aktion
         print("obj pos", object_pose )
-        self.req.target_state = object_pose
-        self.req.pick_or_place = True
+        msg = EECommandsM()
+        msg.target_state = object_pose
+        msg.pick_or_place = True
+        msg.end_task = end_task
+
+        self.traj_pub.publish(msg)
 
         # Mark trajectory as in execution
         self.execution = True
 
-        while not self.client_trajectory.wait_for_service(timeout_sec=self.SERVICE_TIMEOUT):
-            print("service not available")
-        #To avoid deadlock you call client async and obtain a future value
-        future = self.client_trajectory.call_async(self.req)
-        print("future requested")
-        #you spin the ros node until the done parameter of future is TRUE
-        rclpy.spin_until_future_complete(self, future)
-        print("[INFO] future completed")
-
-        # Wait for trajectory completion
-        i = 1
-        while self.execution:
-            print(f"Waiting for PICK execution {i} ...")
-            i += 1
-            time.sleep(1)
-
-        print("PICK action completed")
+        # while not self.client_trajectory.wait_for_service(timeout_sec=self.SERVICE_TIMEOUT):
+        #     print("service not available")
+        # #To avoid deadlock you call client async and obtain a future value
+        # future = self.client_trajectory.call_async(self.req)
+        # print("future requested")
+        # #you spin the ros node until the done parameter of future is TRUE
+        # rclpy.spin_until_future_complete(self, future)
+        # print("[INFO] future completed")
 
         # self.client_trajectory.remove_pending_request(future)
-        return future.result().completion_flag, future.result().height_map, future.result().in_hand_image, future.result().gripper_state 
+        # return future.result().completion_flag
      
     
-    def place(self, object_pose:np.ndarray):
+    def place(self, object_pose:np.ndarray, end_task = False):
         print("[INFO] requested place")
         # final pose must be a numpy array of dimension 7 (3+4)
         # What I should get is traj + at the end grip aktion
-        self.req.target_state = object_pose
-        self.req.pick_or_place = False
+        msg = EECommandsM()
+        msg.target_state = object_pose
+        msg.pick_or_place = True
+        msg.end_task = end_task
 
-        # Mark trajectory as in execution
-        self.execution = True
+        self.traj_pub.publish(msg)
 
-        while not self.client_trajectory.wait_for_service(timeout_sec=self.SERVICE_TIMEOUT):
-            print("service not available")
-        future = self.client_trajectory.call_async(self.req)
-        print("future requested")
-        #you spin the ros node until the done parameter of future is TRUE
+        # while not self.client_trajectory.wait_for_service(timeout_sec=self.SERVICE_TIMEOUT):
+        #     print("service not available")
+        # future = self.client_trajectory.call_async(self.req)
+        # print("future requested")
+        # #you spin the ros node until the done parameter of future is TRUE
+        # rclpy.spin_until_future_complete(self, future)
+        # print("[INFO] future completed")
+
+        # return future.result().completion_flag
+    
+    def getInitialObjectStates(self):
+        print("[INFO] requested initial state objects")
+        future = self.objects_states.call_async(self.req_states)
         rclpy.spin_until_future_complete(self, future)
-        print("[INFO] future completed")
-
-        i = 1
-        while self.execution:
-            print(f"Waiting for PLACE execution {i} ...")
-            i += 1
-            time.sleep(1)
-
-        print("PLACE action completed")
-
-        return future.result().completion_flag, future.result().height_map, future.result().in_hand_image,  future.result().gripper_state 
-
-    def pick_cube(self):
-        # cube position is the 3d position of the cube + 4 components
-        # that are the quaternion related to the grip orientation
-        # in order to pick the cube
-        if self.traj is None:
-            cur_state = self.cur_state[0:7]
-        else:
-            cur_state = self.traj[-1]
-        
-        traj, vel_traj = self.planner.pick_cube(cur_state)
-        self.traj += traj
-        self.vel_traj += vel_traj
-        print("pick_cube")
-        #while np.linalg.norm(self.cur_state - self.traj[-1][:8]) < self.EPSILON:
-        #    pass
-
-    def release_cube(self):
-        #  cube_position: np array of 7: where and with witch orientation
-        #  to release the cube
-        if self.traj is None:
-            cur_state = self.cur_state[0:7]
-        else:
-            cur_state = self.traj[-1]
-
-        traj, vel_traj = self.planner.release_cube(cur_state)
-        self.traj += traj
-        self.vel_traj += vel_traj
-        print("release_cube")
-        #while np.linalg.norm(self.cur_state - self.traj[-1][:8]) < self.EPSILON:
-        #    pass
-
-    def getObjectStates(self):
-        self.wait_for_obj_states = True
-        msg = ObjectStatesRequest()
-        # The following line fills a useless bool. The message doesn't have to contain any information. 
-        # It is just a request for states
-        msg.useless = True
-        self.objStatesRequests.publish(msg)
-        while self.wait_for_obj_states:
-            pass
-        return self.objStates
+        objects =  future.result().objects
+        states =  future.result().states
+        states = [states[i].pose for i in range(len(states))]
+        objStates = {object:list(state) for object,state in zip(objects, states)}
+        self.objStates = objStates
 
     # Object states
     def objectStates_callback(self, msg):
+        print("[INFO] received object end task")
         objects = msg.objects
         states = msg.states
         states = [states[i].pose for i in range(len(states))]
         self.objStates = {object:list(state) for object,state in zip(objects, states)}
-        self.wait_for_obj_states = False
 
-    def traj_completion_callback(self, msg):
-        print("Trajectory completion callback activated")
-        self.execution = False
+        future = self.client_evaluation_code.call_async(self.req_eval)
+        future.add_done_callback(self.code_eval_callback)
+    
+    def code_eval_callback(self, future):
+        evaluation_code =  future.result().evaluation_code
+        print(evaluation_code)
+        # Create a dictionary to hold the local scope
+        scope = {'self': self}
+
+        except_occurred = False
+        completion_flag = False
+        eval_except = ""
+
+        # Define wrapper functions for your instance methods in the scope
+
+        # Execute the evaluation code
+        try:
+            exec(evaluation_code, globals(), scope)
+            if 'evaluation_func' in scope:
+                evaluation_func = MethodType(scope['evaluation_func'], self)
+                completion_flag = evaluation_func()
+        except Exception as e:
+            except_occurred = True
+            eval_except = str(e)
+            print("Eval exception: ", eval_except)
+
+        msg = ResultEvaluation()
+        msg.completion_flag = completion_flag and not except_occurred
+        msg.eval_except = eval_except
+        self.eval_publisher.publish(msg)
+        print("Published message end task")
+        print(msg)
+
+
 
     def send_request(self, ):
         self.req.a = a
@@ -214,70 +200,45 @@ class RobotAPINode(Node):
 
     def state_callback(self, msg):
         self.curr_state =  msg.state
+        print("state")
+
+    def execute_code(self, code, scope):
+        # try:
+        #     exec(code, globals(), scope)
+        #     if 'execution_func' in scope:
+        #         # Convert the `execution_func` in the scope to a method of self
+        #         from types import MethodType
+        #         execution_func = MethodType(scope['execution_func'], scope['self'])
+        #         execution_func()
+        # except Exception as e:
+        #     print("Code exception: ", e)
+        objStates = self.getInitialObjectStates()
+        blue_cube_pos = objStates["blue_cube"]
+        # self.pick(blue_cube_pos + [1, 0, 0, 0])
+        # self.place([0.7, 0.1, 0.05, 1, 0, 0, 0], True)
 
 
-    def test_callback(self, request, response):
+    def test_callback(self, msg):
         print("received code")
-        code = request.code
+        code = msg.code
         print(code)
-        evaluation_code = request.evaluation_code
 
         # Create a dictionary to hold the local scope
         scope = {'self': self}
 
-        except_occurred = False
-        completion_flag = False
-        code_except = ""
-        eval_except = ""
-
-        # Define wrapper functions for your instance methods in the scope
-        #scope['move_to'] = lambda pos: self.move_to(pos)
-        #scope['pick_cube'] = lambda pos: self.pick_cube(pos)
-
-        # Execute the received code
-        try:
-            exec(code, globals(), scope)
-            if 'execution_func' in scope:
-                # Convert the `execution_func` in the scope to a method of self
-                from types import MethodType
-                execution_func = MethodType(scope['execution_func'], self)
-                execution_func()
-        except Exception as e:
-            except_occurred = True
-            code_except = str(e)
-            print("Code exception: ", code_except)
-
-        # Execute the evaluation code
-        try:
-            exec(evaluation_code, globals(), scope)
-            if 'evaluation_func' in scope:
-                evaluation_func = MethodType(scope['evaluation_func'], self)
-                completion_flag = evaluation_func()
-        except Exception as e:
-            except_occurred = True
-            eval_except = str(e)
-            print("Eval exception: ", eval_except)
-
-        response.completion_flag = completion_flag and not except_occurred
-        response.code_except = code_except
-        response.eval_except = eval_except
-
-        return response
+        # objStates = self.getInitialObjectStates()
+        blue_cube_pos = self.objStates["blue_cube"]
+        self.pick(blue_cube_pos + [1, 0, 0, 0])
+        self.place([0.7, 0.1, 0.05, 1, 0, 0, 0], True)
+        self.pick(blue_cube_pos + [1, 0, 0, 0])
+        self.place([0.7, 0.1, 0.05, 1, 0, 0, 0], True)
     
 
 def main(args=None):
     rclpy.init(args=args)
     node = RobotAPINode()
-    executor = MultiThreadedExecutor()
+    executor = MultiThreadedExecutor(num_threads=4)
     executor.add_node(node)
-
-    # ***** DEBUG *****
-    # node.pick(np.array([0.6, 0.1, 0.05, 1, 0, 0, 0]))
-
-    # rclpy.spin_once(node)
-
-    # node.place(np.array([0.7, 0.1, 0.05, 1, 0, 0, 0]))
-    # *****************
 
     executor.spin()
     rclpy.shutdown()

@@ -4,5 +4,3 @@ float32[] target_state
 #True if pick, False if place
 bool pick_or_place 
 bool end_task
----
-bool completion_flag
