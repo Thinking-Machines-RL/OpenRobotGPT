@@ -20,11 +20,11 @@ class TestNode(Node):
         self.SERVICE_TIMEOUT = 60
 
         service_group = ReentrantCallbackGroup()
-        self.exec_pub = self.create_publisher(CodeExecutionM, 'chat_gpt_bot/test_code', 10, callback_group = service_group)
-        # self.client = self.create_client(CodeExecution, 'chat_gpt_bot/test_code')
-        # while not self.client.wait_for_service(timeout_sec=self.SERVICE_TIMEOUT):
-        #     self.get_logger().info('Service not available, waiting again...')
-        # self.req = CodeExecution.Request()
+        # self.exec_pub = self.create_publisher(CodeExecutionM, 'chat_gpt_bot/test_code', 10, callback_group = service_group)
+        self.client = self.create_client(CodeExecution, 'chat_gpt_bot/test_code', callback_group = service_group)
+        while not self.client.wait_for_service(timeout_sec=self.SERVICE_TIMEOUT):
+            self.get_logger().info('Service not available, waiting again...')
+        self.req = CodeExecution.Request()
 
         #service to generate evaluation code
         self.evaluation_service = self.create_service(EvaluationCode, 'chat_gpt_bot/evaluation_code', self.service_callback, callback_group = service_group)
@@ -40,13 +40,15 @@ class TestNode(Node):
             print("error evaluation", msg.eval_except)
 
     def call_service(self, code: str):
-        # self.req.code = code
-        # future = self.client.call_async(self.req)
-        # rclpy.spin_until_future_complete(self, future)
-        # return future.result().code_except
-        msg = CodeExecutionM()
-        msg.code = code
-        self.exec_pub.publish(msg)
+        self.req.code = code
+        future = self.client.call_async(self.req)
+        future.add_done_callback(self.code_eval_callback)
+        # msg = CodeExecutionM()
+        # msg.code = code
+        # self.exec_pub.publish(msg)
+    
+    def code_eval_callback(self, future):
+        print("error |{}|".format(future.result().code_except))
     
     def service_callback(self, request, response):
 
@@ -61,8 +63,7 @@ def main(args=None):
     node = TestNode()
 
     code = """def execution_func(self):
-        objStates = self.getInitialObjectStates()
-        blue_cube_pos = objStates["blue_cube"]
+        blue_cube_pos = self.objStates["blue_cube"]
         self.pick(blue_cube_pos + [1, 0, 0, 0])
         self.place([0.7, 0.1, 0.05, 1, 0, 0, 0], True)
         return True

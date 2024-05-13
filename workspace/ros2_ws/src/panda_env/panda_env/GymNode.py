@@ -77,11 +77,11 @@ class PandaEnvROSNode(Node):
         # print("spinning")
         if self.curr_state is not None:
             state_msg = State(state=self.curr_state)
-            print("state")
             self.state_pub.publish(state_msg)
     
     def _traj_generation(self, goal_position, gripper_state, end_task):
         request = Trajectory.Request()
+        print("[INFO] endt task = ", end_task)
         self.end_task = end_task
         request.current_position = self.curr_state[0:7]
         print("current position ", self.curr_state[0:7])
@@ -138,7 +138,7 @@ class PandaEnvROSNode(Node):
                 states.append(op)
             msg.states = states
             self.ObjectStatesPublisher.publish(msg)
-            print("[INFO] buplishe message")
+            print("[INFO] published message")
             print(msg)
 
     def reset(self):

@@ -55,8 +55,8 @@ class RobotAPINode(Node):
         self.getInitialObjectStates()
 
         #CHATGPT client and service -----
-        # self.srv = self.create_service(CodeExecution, 'chat_gpt_bot/test_code', self.test_callback, callback_group = service_group)
-        self.sub_exec = self.create_subscription(CodeExecutionM, 'chat_gpt_bot/test_code', self.test_callback,10, callback_group = service_group)
+        self.srv = self.create_service(CodeExecution, 'chat_gpt_bot/test_code', self.test_callback, callback_group = service_group)
+        # self.sub_exec = self.create_subscription(CodeExecutionM, 'chat_gpt_bot/test_code', self.test_callback,10, callback_group = service_group)
         self.client_evaluation_code = self.create_client(EvaluationCode, 'chat_gpt_bot/evaluation_code', callback_group = service_group)
         while not self.client_evaluation_code.wait_for_service(timeout_sec=self.SERVICE_TIMEOUT):
             self.get_logger().info('Evaluation code service not available, waiting again...')
@@ -218,20 +218,30 @@ class RobotAPINode(Node):
         # self.place([0.7, 0.1, 0.05, 1, 0, 0, 0], True)
 
 
-    def test_callback(self, msg):
+    def test_callback(self, request, response):
         print("received code")
-        code = msg.code
+        code = request.code
         print(code)
 
         # Create a dictionary to hold the local scope
         scope = {'self': self}
 
-        # objStates = self.getInitialObjectStates()
-        blue_cube_pos = self.objStates["blue_cube"]
-        self.pick(blue_cube_pos + [1, 0, 0, 0])
-        self.place([0.7, 0.1, 0.05, 1, 0, 0, 0], True)
-        self.pick(blue_cube_pos + [1, 0, 0, 0])
-        self.place([0.7, 0.1, 0.05, 1, 0, 0, 0], True)
+        try:
+            exec(code, globals(), scope)
+            if 'execution_func' in scope:
+                # Convert the `execution_func` in the scope to a method of self
+                from types import MethodType
+                execution_func = MethodType(scope['execution_func'], self)
+                execution_func()
+            code_except = " "
+        except Exception as e:
+            except_occurred = True
+            code_except = str(e)
+            print("Code exception: ", code_except)
+
+        response.code_except = code_except
+        return response
+
     
 
 def main(args=None):
