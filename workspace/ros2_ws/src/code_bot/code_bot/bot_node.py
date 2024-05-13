@@ -47,39 +47,38 @@ class BotNode(Node):
         return future.result().completion_flag, future.result().code_except, future.result().eval_except
 
     def service_callback(self, request, response):
+        config_path = "/root/workspace/ros2_ws/install/code_bot/share/code_bot/config/config_bot.json"
+        secret_path = os.environ.get("API_KEY_PATH")
+        secret_path = "/root/workspace/secrets/api_key.json"
+        print(secret_path)
+        evaluation_bot = ChatGPT(config_path, secret_path)
 
-            config_path = "/root/workspace/ros2_ws/install/code_bot/share/code_bot/config/config_bot.json"
-            secret_path = os.environ.get("API_KEY_PATH")
-            secret_path = "/root/workspace/secrets/api_key.json"
-            print(secret_path)
-            evaluation_bot = ChatGPT(config_path, secret_path)
+        eval_context_json_path="/root/workspace/contexts/evaluation_context.json"
+        eval_context_txt_path="/root/workspace/contexts/evaluation_context.txt"
 
-            eval_context_json_path="/root/workspace/contexts/evaluation_context.json"
-            eval_context_txt_path="/root/workspace/contexts/evaluation_context.txt"
+        self.create_json_from_txt(eval_context_txt_path, eval_context_json_path)
 
-            self.create_json_from_txt(eval_context_txt_path, eval_context_json_path)
+        while True:
 
-            while True:
+            evaluation_context = self.read_json_to_dict(eval_context_json_path)
+            evaluation_bot.set_context([evaluation_context])
+            evaluation_code = evaluation_bot.chat(code)
 
-                evaluation_context = self.read_json_to_dict(eval_context_json_path)
-                evaluation_bot.set_context([evaluation_context])
-                evaluation_code = evaluation_bot.chat(code)
+            print("ChatGPT evaluation code (raw): \n", evaluation_code)
+            x = input("Press a key to proceed or type 'Q' to regenerate: ")
+            if x.strip().upper() == 'QUIT':
+                continue
 
-                print("ChatGPT evaluation code (raw): \n", evaluation_code)
-                x = input("Press a key to proceed or type 'Q' to regenerate: ")
-                if x.strip().upper() == 'QUIT':
-                    continue
+            # Clean the code from the overhead
+            pattern = r"```python(.*?)```"
+            evaluation_code_list = re.findall(pattern, evaluation_code, re.DOTALL)
+            if evaluation_code_list:
+                evaluation_code = evaluation_code_list[0]
 
-                # Clean the code from the overhead
-                pattern = r"```python(.*?)```"
-                evaluation_code_list = re.findall(pattern, evaluation_code, re.DOTALL)
-                if evaluation_code_list:
-                    evaluation_code = evaluation_code_list[0]
-
-                print("ChatGPT evaluation code (cleaned): \n", evaluation_code)
-                break
-            response.evaluation_code = evaluation_code
-            return response
+            print("ChatGPT evaluation code (cleaned): \n", evaluation_code)
+            break
+        response.evaluation_code = evaluation_code
+        return response
     
     def read_json_to_dict(json_file):
             with open(json_file, 'r') as f:

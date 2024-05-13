@@ -4,7 +4,7 @@ from rclpy.executors import MultiThreadedExecutor
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallbackGroup
 import copy
 from robotgpt_interfaces.srv import CodeExecution, EECommands, EvaluationCode, ObjectStatesR
-from robotgpt_interfaces.msg import StateReward, Action, State, ObjectStates, ResultEvaluation, EECommandsM, CodeExecutionM
+from robotgpt_interfaces.msg import StateReward, Action, State, ObjectStates, ResultEvaluation, EECommandsM, CodeExecutionM, ObjectPose
 from robot_api_layer.PlannerInterface import PlannerInterface
 import numpy as np
 from geometry_msgs.msg import Point
@@ -51,6 +51,7 @@ class RobotAPINode(Node):
         while not self.objects_states.wait_for_service(timeout_sec=self.SERVICE_TIMEOUT):
             self.get_logger().info('objects_states service not available, waiting again...')
         self.req_states = ObjectStatesR.Request()
+        self.ObjectsStatesPublisher = self.create_publisher(ObjectStates, '/panda_env/objects_states', 1)
 
         self.getInitialObjectStates()
 
@@ -63,6 +64,10 @@ class RobotAPINode(Node):
         self.req_eval = EvaluationCode.Request()
         self.eval_publisher = self.create_publisher(ResultEvaluation, 'chat_gpt_bot/evaluation_results', 10)
         #--------------------------------
+
+        # Final states server
+        self.states_server = self.create_service(ObjectStatesR, 'chat_gpt/final_states', self.final_states_callback, callback_group = service_group)
+        # -------------------
 
         #trajectory execution service
         # self.client_trajectory = self.create_client(EECommands, 'trajectory_execution', callback_group = service_group)
@@ -165,10 +170,19 @@ class RobotAPINode(Node):
             eval_except = str(e)
             print("Eval exception: ", eval_except)
 
+        # Fill message with data on the evaluation and final object states
         msg = ResultEvaluation()
         msg.completion_flag = completion_flag and not except_occurred
         msg.eval_except = eval_except
+        msg.objects = self.objStates.keys()
+        states = []
+        for state in self.objStates.values():
+            p = ObjectPose()
+            p.pose = state
+            states.append(p)
+        msg.states = states
         self.eval_publisher.publish(msg)
+
         print("Published message end task")
         print(msg)
 
