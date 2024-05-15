@@ -126,6 +126,8 @@ class RobotAPINode(Node):
         future = self.objects_states.call_async(self.req_states)
         rclpy.spin_until_future_complete(self, future)
         objects =  future.result().objects
+        print("objects id")
+        print(objects)
         states =  future.result().states
         states = [states[i].pose for i in range(len(states))]
         objStates = {object:list(state) for object,state in zip(objects, states)}
@@ -201,22 +203,6 @@ class RobotAPINode(Node):
     def state_callback(self, msg):
         self.curr_state =  msg.state
         print("state")
-
-    def execute_code(self, code, scope):
-        # try:
-        #     exec(code, globals(), scope)
-        #     if 'execution_func' in scope:
-        #         # Convert the `execution_func` in the scope to a method of self
-        #         from types import MethodType
-        #         execution_func = MethodType(scope['execution_func'], scope['self'])
-        #         execution_func()
-        # except Exception as e:
-        #     print("Code exception: ", e)
-        objStates = self.getInitialObjectStates()
-        blue_cube_pos = objStates["blue_cube"]
-        # self.pick(blue_cube_pos + [1, 0, 0, 0])
-        # self.place([0.7, 0.1, 0.05, 1, 0, 0, 0], True)
-
 
     def test_callback(self, request, response):
         print("received code")

@@ -1,1 +1,1 @@
-bots:ros2launch
+bots:kinova_gen3_7dof_robotiq_2f_85_moveit_config:ros2launch
