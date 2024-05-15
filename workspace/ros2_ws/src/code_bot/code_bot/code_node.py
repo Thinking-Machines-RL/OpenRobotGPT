@@ -63,13 +63,10 @@ class CodeNode(Node):
         self._create_json_from_txt(self.evaluation_context_txt_path, self.evaluation_context_json_path)
         context = [self._read_json_to_dict(self.evaluation_context_json_path)]
         self.evaluation_bot.set_context(context)
+        self.evaluation_code = None
 
         # Correction bot
         self.correction_bot = ChatGPT(config_path, secret_path)
-        self.final_states_client = self.create_client(ObjectStatesR, 'chat_gpt/final_states', callback_group = service_group)
-        while not self.final_states_client.wait_for_service(timeout_sec=self.SERVICE_TIMEOUT):
-            self.get_logger().info('Service not available, waiting again...')
-        self.final_states_req = ObjectStatesR.Request()
         self._create_json_from_txt(self.correction_context_txt_path, self.correction_context_json_path)
         context = [self._read_json_to_dict(self.correction_context_json_path)]
         self.correction_bot.set_context(context)
@@ -130,6 +127,12 @@ class CodeNode(Node):
         self.evaluation_code = None
         self.attempts = 1
 
+        # ***** DEBUG ******
+        print("\n\n")
+        print(f"Writing CODE...")
+        print("\n\n")
+        # ******************
+
         code = self.decision_bot.chat(f"Task: {task}")
         code = self._clean_code(code)
 
@@ -157,15 +160,26 @@ class CodeNode(Node):
         '''
         Print the errors triggered by code execution
         '''
-        print("Code execution generated the following error |{}|".format(future.result().code_except))
-        self.code_errors = future.result().code_except
-        self.objStates = None
-        self._correct_code()
+        if future.result().code_except != "":
+            print("Code execution generated the following error |{}|".format(future.result().code_except))
+            self.code_errors = future.result().code_except
+            self.objStates = None
+            self._correct_code()
+        else:
+            self.objStates = None
 
     def _evaluation_service_callback(self, request, response):
         '''
         Manages requests for evaluation code coming from outside
         '''
+
+        # ***** DEBUG *****
+        print("\n\n")
+        print("Writing EVALUATION code ...")
+        print("\n\n")
+        # *****************
+
+
         if self.evaluation_code:
             evaluation_code = self.evaluation_code
         else:
@@ -189,18 +203,26 @@ class CodeNode(Node):
         else:
             if msg.eval_except != "":
                 print("The evaluation generated the following error", msg.eval_except)
-            print("Code execution failed to solve the task")
-            if self.attempts < self.MAX_ATTEMPTS:
+            elif self.attempts < self.MAX_ATTEMPTS:
+                print("Code execution failed to solve the task")
                 self.code_errors = ""
                 self.objStates = {object:state.pose for object, state in zip(msg.objects,msg.states)}
                 self._correct_code()
             else:
+                print("Code execution failed to solve the task")
                 print("Unable to perform the prompted task") 
 
     def _correct_code(self):
         '''
         Provides feedback on how to correct the code
         '''
+
+        # ***** DEBUG ******
+        print("\n\n")
+        print("Writing REPORT...")
+        print("\n\n")
+        # ******************
+
         # Analyze code and object states
         if self.objStates:
             correction_report = self.correction_bot.chat(f"Task: {self.task}, Code: {self.code}, Objects: {self._stringifyObjects(self.objStates)}")
@@ -209,15 +231,32 @@ class CodeNode(Node):
 
         # ***** DEBUG ******
         print("\n\n")
-        print(f"Retort #{self.attempts}:\n {correction_report}")
+        print(f"Report #{self.attempts}:\n {correction_report}")
         print("\n\n")
         # ******************
 
-        # Reset stored code errors
+        # Reset stored code errors and object states
         self.code_errors = ""
+        self.objStates = None
+
+        # ***** DEBUG ******
+        print("\n\n")
+        print("Writing CORRECTED code...")
+        print("\n\n")
+        # ******************
 
         # Generate new code
         new_code = self.decision_bot.chat(f"Task: {self.task}, Old Code: {self.code}, Report: {correction_report}")
+        new_code = self._clean_code(new_code)
+
+        # Update attempt number
+        self.attemps += 1
+
+        # ***** DEBUG ******
+        print("\n\n")
+        print(f"Code #{self.attempts}:\n {new_code}")
+        print("\n\n")
+        # ******************
 
         # Deploy new code
         self._deploy_code(new_code)

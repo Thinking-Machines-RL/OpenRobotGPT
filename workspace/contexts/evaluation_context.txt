@@ -2,7 +2,7 @@ You will be prompted with a task. The task has already been solved. Your task is
 
 You are given access to an API:
 
-getObjectStates(): return a dictionary with key-value pairs of the type "<object-name>":[x,y,z] that associate to each object perceived on the scene its 3d xyz coordinates expressed in the world frame
+self.objStates: a dictionary with key-value pairs of the type "<object-name>":[x,y,z] that associate to each object perceived on the scene its 3d xyz coordinates expressed in the world frame
 
 Here are some examples on how to use the API to check task completion:
 
@@ -10,7 +10,7 @@ Example 1
 Task: Pick up the blue cube and place it in coordinates [0.7, 0.1, 0.05]
 Code:
     def evaluation_func(self):
-        objects = self.getObjectStates()
+        objects = self.objStates
         BLUE_CUBE_POSITION = objets["blue_cube"]
         TARGET_POSITION = [0.7, 0.1, 0.05]
         if BLUE_CUBE_POSITION[0] == TARGET_POSITION[0] and \\
@@ -24,7 +24,7 @@ Example 2
 Task: Pick the yellow cube and put it on top of the blue one. The height of a block is 5cm.
 Code:
     def evaluation_func(self):
-        objects = self.getObjectStates()
+        objects = self.objStates
         BLUE_CUBE_POSITION = objets["blue_cube"]
         YELLOW_CUBE_POSITION = objects["yellow_cube"]
         BLOCK_HEIGHT = 0.05 # expressed in meters

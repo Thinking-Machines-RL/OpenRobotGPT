@@ -11,6 +11,7 @@ from geometry_msgs.msg import Point
 import time
 from collections import deque
 import threading
+from types import MethodType
 
 class RobotAPINode(Node):
 
@@ -65,10 +66,6 @@ class RobotAPINode(Node):
         self.eval_publisher = self.create_publisher(ResultEvaluation, 'chat_gpt_bot/evaluation_results', 10)
         #--------------------------------
 
-        # Final states server
-        self.states_server = self.create_service(ObjectStatesR, 'chat_gpt/final_states', self.final_states_callback, callback_group = service_group)
-        # -------------------
-
         #trajectory execution service
         # self.client_trajectory = self.create_client(EECommands, 'trajectory_execution', callback_group = service_group)
         self.traj_pub = self.create_publisher(EECommandsM,'trajectory_execution', 10, callback_group = service_group)
@@ -111,10 +108,13 @@ class RobotAPINode(Node):
         # What I should get is traj + at the end grip aktion
         msg = EECommandsM()
         msg.target_state = object_pose
-        msg.pick_or_place = True
+        msg.pick_or_place = False
         msg.end_task = end_task
 
         self.traj_pub.publish(msg)
+
+        # Mark trajectory as in execution
+        self.execution = True
 
         # while not self.client_trajectory.wait_for_service(timeout_sec=self.SERVICE_TIMEOUT):
         #     print("service not available")
@@ -244,10 +244,9 @@ class RobotAPINode(Node):
             exec(code, globals(), scope)
             if 'execution_func' in scope:
                 # Convert the `execution_func` in the scope to a method of self
-                from types import MethodType
                 execution_func = MethodType(scope['execution_func'], self)
                 execution_func()
-            code_except = " "
+            code_except = ""
         except Exception as e:
             except_occurred = True
             code_except = str(e)
