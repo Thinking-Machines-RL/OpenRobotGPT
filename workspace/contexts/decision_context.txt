@@ -45,3 +45,6 @@ Code:
         # Last command --> end_task = True
         self.place(PLACE_POSE, end_task = True)
 
+
+Additionally, the code you write is tested in a simulation and, if it fails to complete the task, you will be provided with the old code (that has failed) and a report from another bot that speculates on the possible reasons for failure. You are tasked to write another code that takes into account the suggestions from the report.
+

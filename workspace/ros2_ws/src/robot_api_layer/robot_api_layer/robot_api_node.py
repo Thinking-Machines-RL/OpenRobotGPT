@@ -12,6 +12,7 @@ import time
 from collections import deque
 import threading
 from types import MethodType
+import copy
 
 class RobotAPINode(Node):
 
@@ -74,7 +75,13 @@ class RobotAPINode(Node):
         # self.req = EECommands.Request()
         print("Node ready")
 
-    def pick(self, object_pose:np.ndarray, end_task = False):
+    def pick(self, object_pose, end_task = False):
+
+        assert isinstance(object_pose, list), "The pose (first argument of pick) should be a list"
+        assert isinstance(end_task, bool), "end_task (second argument of pick) should be a bool"
+        assert all(isinstance(item, float) or isinstance(item, int) for item in object_pose), "All elements of the pose should be floats"
+        assert len(object_pose) == 7, "The pose has wrong length. It should be 7 elements long"
+
         print("[INFO] requested pick")
         # final pose must be a numpy array of dimension 7 (3+4)
         # What I should get is traj + at the end grip aktion
@@ -102,7 +109,13 @@ class RobotAPINode(Node):
         # return future.result().completion_flag
      
     
-    def place(self, object_pose:np.ndarray, end_task = False):
+    def place(self, object_pose, end_task = False):
+
+        assert isinstance(object_pose, list), "The pose (first argument of place) should be a list"
+        assert isinstance(end_task, bool), "end_task (second argument of place) should be a bool"
+        assert all(isinstance(item, float) or isinstance(item, int) for item in object_pose), "All elements of the pose should be floats"
+        assert len(object_pose) == 7, "The pose has wrong length. It should be 7 elements long"
+
         print("[INFO] requested place")
         # final pose must be a numpy array of dimension 7 (3+4)
         # What I should get is traj + at the end grip aktion
@@ -236,6 +249,9 @@ class RobotAPINode(Node):
         print("received code")
         code = request.code
         print(code)
+
+        # Log initial object position
+        self.initialObjectStates = copy.deepcopy(self.objStates)
 
         # Create a dictionary to hold the local scope
         scope = {'self': self}

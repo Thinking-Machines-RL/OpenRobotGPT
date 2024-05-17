@@ -124,7 +124,7 @@ class CodeNode(Node):
         self.task = task
 
         # Reset stored variables
-        self.evaluation_code = None
+        self.evaluation_code = ""
         self.attempts = 1
 
         # ***** DEBUG ******
@@ -180,11 +180,12 @@ class CodeNode(Node):
         # *****************
 
 
-        if self.evaluation_code:
+        if self.evaluation_code != "":
             evaluation_code = self.evaluation_code
         else:
             evaluation_code = self.evaluation_bot.chat(self.task)
             evaluation_code = self._clean_code(evaluation_code)
+            self.evaluation_code = evaluation_code
 
         # ***** DEBUG ******
         print("\n\n")
@@ -250,7 +251,7 @@ class CodeNode(Node):
         new_code = self._clean_code(new_code)
 
         # Update attempt number
-        self.attemps += 1
+        self.attempts += 1
 
         # ***** DEBUG ******
         print("\n\n")

@@ -9,8 +9,8 @@ The other bot had access to an API:
 
 self.move_to(target_pose): Moves the end-effector to the target position, with the target orientation
 
-self.pick(target_pose): Moves the end effector to the specified position, with the specified orientation, and closes the gripper, picking up whatever object is at hand
+self.pick(target_pose, end_task=False): Moves the end effector to the specified position, with the specified orientation, and closes the gripper, picking up whatever object is at hand. end_task = True if this is the last command
 
-self.place(target_pose): Moves the end effector to the specified position, with the specified orientation, and opens the gripper, placing whatever object is in the gripper
+self.place(target_pose, end_task=False): Moves the end effector to the specified position, with the specified orientation, and opens the gripper, placing whatever object is in the gripper. end_task = True if this is the last command
 
 self.objStates: a dictionary with key-value pairs of the type "<object-name>":[x,y,z] that associate to each object perceived on the scene its 3d xyz coordinates expressed in the world frame
