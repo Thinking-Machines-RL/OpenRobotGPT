@@ -66,7 +66,7 @@ class MoveitSubscriber : public rclcpp::Node
             RCLCPP_INFO(logger, "Planning successful");
 
             // Populate the response with the plan details
-            response->plan.trajectory_.joint_trajectory
+            response->plan = plan.trajectory.joint_trajectory;
             response->completion_flag = true;
         } else {
             RCLCPP_WARN(logger, "Planning failed");
@@ -112,32 +112,37 @@ class MoveitSubscriber : public rclcpp::Node
     void obj_callback(const robotgpt_interfaces::msg::ObjectStates::SharedPtr msg) const
     {
 
-      //Write in order to add the object of the envirnoment
-      moveit_msgs::msg::CollisionObject collision_object;
-      collision_object.header.frame_id = move_group_interface->getPlanningFrame();
-      collision_object.id = "cube1";
-      shape_msgs::msg::SolidPrimitive primitive;
-
-      // Define the size of the box in meters
-      primitive.type = primitive.BOX;
-      primitive.dimensions.resize(3);
-      primitive.dimensions[primitive.BOX_X] = 0.5;
-      primitive.dimensions[primitive.BOX_Y] = 0.1;
-      primitive.dimensions[primitive.BOX_Z] = 0.5;
-
-      // Define the pose of the box (relative to the frame_id)
-      geometry_msgs::msg::Pose box_pose;
-      box_pose.orientation.w = 1.0;
-      box_pose.position.x = 0.2;
-      box_pose.position.y = 0.2;
-      box_pose.position.z = 0.25;
-
-      collision_object.primitives.push_back(primitive);
-      collision_object.primitive_poses.push_back(box_pose);
-      collision_object.operation = collision_object.ADD;
-
       moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
-      planning_scene_interface.applyCollisionObject(collision_object);
+
+      for (size_t i = 0; i < msg->objects.size(); ++i) {
+        moveit_msgs::msg::CollisionObject collision_object;
+        collision_object.header.frame_id = move_group_interface->getPlanningFrame();
+        collision_object.id = msg->objects[i];
+        
+        shape_msgs::msg::SolidPrimitive primitive;
+        // add dimension of the blocks
+        primitive.type = primitive.BOX;
+        primitive.dimensions.resize(3);
+        primitive.dimensions[primitive.BOX_X] = 0.5;
+        primitive.dimensions[primitive.BOX_Y] = 0.1;
+        primitive.dimensions[primitive.BOX_Z] = 0.5;
+
+        geometry_msgs::msg::Pose box_pose;
+        box_pose.position.x = msg->states[i].pose[0];
+        box_pose.position.y = msg->states[i].pose[1];
+        box_pose.position.z = msg->states[i].pose[2];
+        box_pose.orientation.x = msg->states[i].pose[3];
+        box_pose.orientation.y = msg->states[i].pose[4];
+        box_pose.orientation.z = msg->states[i].pose[5];
+        box_pose.orientation.w = msg->states[i].pose[6];
+
+        collision_object.primitives.push_back(primitive);
+        collision_object.primitive_poses.push_back(box_pose);
+        collision_object.operation = collision_object.ADD;
+
+        planning_scene_interface.applyCollisionObject(collision_object);
+        std::cout << "object "<< msg->objects[i] << std::endl;
+      }
     }
 
     //rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr subscription_;
