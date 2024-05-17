@@ -84,8 +84,10 @@ class PandaEnvROSNode(Node):
         request = Trajectory.Request()
         print("[INFO] endt task = ", end_task)
         self.end_task = end_task
-        request.current_position = self.curr_state[0:7]
-        print("current position ", self.curr_state[0:7])
+        joint_names, joint_states = self.env.get_joint_states()
+        request.current_position.name = joint_names
+        request.current_position.position = joint_states
+        print("current position ", joint_states)
         request.ending_position = goal_position
         request.gripper_state = gripper_state
         future = self.move_client.call_async(request)
@@ -94,12 +96,7 @@ class PandaEnvROSNode(Node):
     def _traj_generation_callback(self, future):
         if future.result() is not None:
             result = future.result()
-            position_array = np.array(result.position)
-            vel_array = np.array(result.vel)
-            traj_pos = np.reshape(position_array, (int(position_array.size/8), 8))
-            traj_vel = np.reshape(vel_array, (int(vel_array.size/3), 3))
-            traj = np.hstack((traj_pos, traj_vel))
-            self._handle_trajectory(result.completion_flag, traj)
+            self._handle_trajectory(result.completion_flag, result.plan)
             with self.lock:
                 self.executing_trajectory = False  # Mark trajectory execution as completed
                 # Signal trajectory completion to the API node
@@ -119,12 +116,13 @@ class PandaEnvROSNode(Node):
                 self.executing_trajectory = False  # Mark trajectory execution as completed
                 # Signal trajectory completion to the API node
 
-    def _handle_trajectory(self, done, traj):
+    def _handle_trajectory(self, done, plan):
         print("Starting trajectory")
         # curr_state = traj[-1,0:7]
-        for step in traj:
+        # get setpoints from plan
+        for step in plan.points:
             # print("step")
-            next_state, _, done, _, _ = self.env.step(step)
+            next_state, _, done, _, _ = self.env.step((plan.joint_names,step))
             self.env.render()
             self.curr_state = next_state[0:8]
         

@@ -38,35 +38,17 @@ class PandaEnv(gym.Env):
         '''Contains the logic of the environment, computes the state
            of the env after applying a given action'''
         p.configureDebugVisualizer(p.COV_ENABLE_SINGLE_STEP_RENDERING)
-        # Get orientation quaternion from action
-        orientation = action[3:7]
-        position = action[:3]
-        fingers = action[7]
-        vel_ee = action[8:11]
-        #current pose of the end effector
-        currentPose = p.getLinkState(self.pandaUid, 11)
 
-        joint_states = p.getJointStates(self.pandaUid, range(p.getNumJoints(self.pandaUid)))
-        joint_infos = [p.getJointInfo(self.pandaUid, i) for i in range(p.getNumJoints(self.pandaUid))]
-        #exclude the one that are not part of the dynamic
-        joint_states = [j for j, i in zip(joint_states, joint_infos) if i[3] > -1]
-        joint_positions = np.array([state[0] for state in joint_states])
-        joint_velocities = np.array([state[1] for state in joint_states])
+        # Joint names as list of strings
+        jointNames = action[0]
+        # Joint positions and velocities 
+        jointPositions = action[1].positions
+        jointVelocities = action[1].velocities
 
-        jointPoses = p.calculateInverseKinematics(self.pandaUid,11,position, orientation)[0:7]
-        # print("pandauid ", self.pandaUid)
-        # print("joint_positions", list(joint_positions))
-        # print("joint_velocities", list(joint_velocities))
-        # print("ero", list(np.zeros_like(joint_positions)))
-        jacobian_p, jacobian_r = p.calculateJacobian(self.pandaUid, 11, [0.0, 0.0, 0.0], list(joint_positions), list(joint_velocities), list(np.zeros_like(joint_positions)))
-        P_jacobian = np.linalg.pinv(jacobian_p)
-        # print("vel_ee ", vel_ee.T)
-        # print("P matrix ", P_jacobian)
-        jointVelocities = np.linalg.pinv(jacobian_p) @ vel_ee.T
-        jointVelocities[7:9] = 0
+        # TODO: linkIndex should probably depend on the joint names
+        linkIndex = list(range(7))+[9,10]
 
-        p.setJointMotorControlArray(self.pandaUid, list(range(7))+[9,10], p.POSITION_CONTROL, list(jointPoses)+2*[fingers], list(jointVelocities), positionGains=list(np.ones_like(joint_positions)*1), velocityGains=list(np.ones_like(joint_positions)*0.5))
-        # p.setJointMotorControlArray(self.pandaUid, list(range(7))+[9,10], p.POSITION_CONTROL, list(jointPoses)+2*[fingers])
+        p.setJointMotorControlArray(self.pandaUid, linkIndex, p.POSITION_CONTROL, jointPositions, jointVelocities, positionGains=list(np.ones_like(jointPositions)*1), velocityGains=list(np.ones_like(jointVelocities)*0.5))
 
         #The default timestep is 1/240 second, it can be changed using the setTimeStep
         p.stepSimulation()
