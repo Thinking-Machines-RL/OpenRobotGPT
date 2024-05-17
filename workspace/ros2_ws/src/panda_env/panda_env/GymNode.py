@@ -84,10 +84,11 @@ class PandaEnvROSNode(Node):
         request = Trajectory.Request()
         print("[INFO] endt task = ", end_task)
         self.end_task = end_task
-        joint_names, joint_states = self.env.get_joint_states()
+        joint_names, joint_states_np = self.env.get_joint_states()
+        joint_states = joint_states_np.tolist()
         request.current_position.name = joint_names
-        request.current_position.position = joint_states
-        print("current position ", joint_states)
+        request.current_position.position = joint_states[0]
+        request.current_position.velocity = joint_states[1]
         request.ending_position = goal_position
         request.gripper_state = gripper_state
         future = self.move_client.call_async(request)

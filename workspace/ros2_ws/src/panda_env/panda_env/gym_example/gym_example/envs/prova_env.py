@@ -45,8 +45,12 @@ class PandaEnv(gym.Env):
         jointPositions = action[1].positions
         jointVelocities = action[1].velocities
 
+        print("jointPositions = ", jointPositions)
+        print("jointVelocities = ", jointVelocities)
+
         # TODO: linkIndex should probably depend on the joint names
-        linkIndex = list(range(7))+[9,10]
+        # linkIndex = list(range(7))+[9,10]
+        linkIndex = list(range(7))
 
         p.setJointMotorControlArray(self.pandaUid, linkIndex, p.POSITION_CONTROL, jointPositions, jointVelocities, positionGains=list(np.ones_like(jointPositions)*1), velocityGains=list(np.ones_like(jointVelocities)*0.5))
 

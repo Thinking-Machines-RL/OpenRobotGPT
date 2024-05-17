@@ -35,7 +35,9 @@ RUN echo "source /opt/ros/$ROS_DISTRO/setup.bash" >> /root/.bashrc
 
 # Install MoveIt
 RUN apt-get install -y ros-$ROS_DISTRO-moveit
-RUN apt-get install -y ros-${ROS_DISTRO}-moveit-py
+RUN apt-get install -y ros-$ROS_DISTRO-moveit-py
+RUN apt-get install -y ros-$ROS_DISTRO-moveit-resources-panda-moveit-config
+RUN apt-get install -y ros-$ROS_DISTRO-controller-manager
 
 # Install pip
 RUN apt-get install -y python3-pip
