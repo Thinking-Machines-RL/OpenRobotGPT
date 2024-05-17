@@ -4,13 +4,15 @@ from rclpy.executors import MultiThreadedExecutor
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallbackGroup
 import copy
 from robotgpt_interfaces.srv import CodeExecution, EECommands, EvaluationCode, ObjectStatesR
-from robotgpt_interfaces.msg import StateReward, Action, State, ObjectStates, ResultEvaluation, EECommandsM, CodeExecutionM
+from robotgpt_interfaces.msg import StateReward, Action, State, ObjectStates, ResultEvaluation, EECommandsM, CodeExecutionM, ObjectPose
 from robot_api_layer.PlannerInterface import PlannerInterface
 import numpy as np
 from geometry_msgs.msg import Point
 import time
 from collections import deque
 import threading
+from types import MethodType
+import copy
 
 class RobotAPINode(Node):
 
@@ -51,6 +53,7 @@ class RobotAPINode(Node):
         while not self.objects_states.wait_for_service(timeout_sec=self.SERVICE_TIMEOUT):
             self.get_logger().info('objects_states service not available, waiting again...')
         self.req_states = ObjectStatesR.Request()
+        self.ObjectsStatesPublisher = self.create_publisher(ObjectStates, '/panda_env/objects_states', 1)
 
         self.getInitialObjectStates()
 
@@ -72,7 +75,13 @@ class RobotAPINode(Node):
         # self.req = EECommands.Request()
         print("Node ready")
 
-    def pick(self, object_pose:np.ndarray, end_task = False):
+    def pick(self, object_pose, end_task = False):
+
+        assert isinstance(object_pose, list), "The pose (first argument of pick) should be a list"
+        assert isinstance(end_task, bool), "end_task (second argument of pick) should be a bool"
+        assert all(isinstance(item, float) or isinstance(item, int) for item in object_pose), "All elements of the pose should be floats"
+        assert len(object_pose) == 7, "The pose has wrong length. It should be 7 elements long"
+
         print("[INFO] requested pick")
         # final pose must be a numpy array of dimension 7 (3+4)
         # What I should get is traj + at the end grip aktion
@@ -100,16 +109,25 @@ class RobotAPINode(Node):
         # return future.result().completion_flag
      
     
-    def place(self, object_pose:np.ndarray, end_task = False):
+    def place(self, object_pose, end_task = False):
+
+        assert isinstance(object_pose, list), "The pose (first argument of place) should be a list"
+        assert isinstance(end_task, bool), "end_task (second argument of place) should be a bool"
+        assert all(isinstance(item, float) or isinstance(item, int) for item in object_pose), "All elements of the pose should be floats"
+        assert len(object_pose) == 7, "The pose has wrong length. It should be 7 elements long"
+
         print("[INFO] requested place")
         # final pose must be a numpy array of dimension 7 (3+4)
         # What I should get is traj + at the end grip aktion
         msg = EECommandsM()
         msg.target_state = object_pose
-        msg.pick_or_place = True
+        msg.pick_or_place = False
         msg.end_task = end_task
 
         self.traj_pub.publish(msg)
+
+        # Mark trajectory as in execution
+        self.execution = True
 
         # while not self.client_trajectory.wait_for_service(timeout_sec=self.SERVICE_TIMEOUT):
         #     print("service not available")
@@ -167,10 +185,19 @@ class RobotAPINode(Node):
             eval_except = str(e)
             print("Eval exception: ", eval_except)
 
+        # Fill message with data on the evaluation and final object states
         msg = ResultEvaluation()
         msg.completion_flag = completion_flag and not except_occurred
         msg.eval_except = eval_except
+        msg.objects = self.objStates.keys()
+        states = []
+        for state in self.objStates.values():
+            p = ObjectPose()
+            p.pose = state
+            states.append(p)
+        msg.states = states
         self.eval_publisher.publish(msg)
+
         print("Published message end task")
         print(msg)
 
@@ -209,6 +236,9 @@ class RobotAPINode(Node):
         code = request.code
         print(code)
 
+        # Log initial object position
+        self.initialObjectStates = copy.deepcopy(self.objStates)
+
         # Create a dictionary to hold the local scope
         scope = {'self': self}
 
@@ -216,10 +246,9 @@ class RobotAPINode(Node):
             exec(code, globals(), scope)
             if 'execution_func' in scope:
                 # Convert the `execution_func` in the scope to a method of self
-                from types import MethodType
                 execution_func = MethodType(scope['execution_func'], self)
                 execution_func()
-            code_except = " "
+            code_except = ""
         except Exception as e:
             except_occurred = True
             code_except = str(e)

@@ -3,13 +3,11 @@ You will be asked to produce code that solves a task. Only write code. You have 
 You are given access to an API:
 In the following function that you can call target_pose is a list of 7 elements: the first 3 are x y z coordinates (in the world frame) and the last 4 are a quaternion representation of the gripper orientation
 
-move_to(target_pose): Moves the end-effector to the target position, with the target orientation
+self.pick(target_pose, end_task=False): Moves the end effector to the specified position, with the specified orientation, and closes the gripper, picking up whatever object is at hand
 
-pick(target_pose): Moves the end effector to the specified position, with the specified orientation, and closes the gripper, picking up whatever object is at hand
+self.place(target_pose, end_task=False): Moves the end effector to the specified position, with the specified orientation, and opens the gripper, placing whatever object is in the gripper
 
-place(target_pose): Moves the end effector to the specified position, with the specified orientation, and opens the gripper, placing whatever object is in the gripper
-
-getObjectStates(): return a dictionary with key-value pairs of the type "<object-name>":[x,y,z] that associate to each object perceived on the scene its 3d xyz coordinates expressed in the world frame
+self.objStates: a dictionary with key-value pairs of the type "<object-name>":[x,y,z] that associate to each object perceived on the scene its 3d xyz coordinates expressed in the world frame
 
 Here are some examples on how to use the API to solve tasks:
 
@@ -17,7 +15,7 @@ Example 1
 Task: Pick up the blue cube and place it in coordinates [0.7, 0.1, 0.05]
 Code:
     def execution_func(self):
-        objects = self.getObjectStates()
+        objects = self.objStates
         PICK_POSITION = objects["blue_cube"]
         PLACE_POSITION = [0.7, 0.1, 0.05]
         # Append to the position also the quaternion that defines the orientation of the gripper
@@ -25,13 +23,14 @@ Code:
         PLACE_POSE = PLACE_POSITION + [1,0,0,0]
 
         self.pick(PICK_POSITION)
-        self.place(PLACE_POSITION)
+        # Last command --> end_task = True
+        self.place(PLACE_POSITION, end_task = True)
 
 Example 2
 Task: Pick the yellow cube and put it on top of the blue one. The height of a block is 5cm.
 Code:
     def execution_func(self):
-        objects = self.getObjectStates()
+        objects = self.objStates
         YELLOW_POSITION = objects["yellow_cube"]
         BLUE_POSITION = objects["blue_cube"]
         BLOCK_HEIGHT = 0.05 # expressed in meters
@@ -43,5 +42,9 @@ Code:
         PLACE_POSE = PLACE_POSITION + [1,0,0,0]
 
         self.pick(PICK_POSE)
-        self.place(PLACE_POSE)
+        # Last command --> end_task = True
+        self.place(PLACE_POSE, end_task = True)
+
+
+Additionally, the code you write is tested in a simulation and, if it fails to complete the task, you will be provided with the old code (that has failed) and a report from another bot that speculates on the possible reasons for failure. You are tasked to write another code that takes into account the suggestions from the report.
 

@@ -28,7 +28,8 @@ setup(
         'console_scripts': [
             'bot_node = code_bot.bot_node:main',
             'test_node = code_bot.test_node:main',
-            'perception_test_node = code_bot.perception_test_node:main'
+            'perception_test_node = code_bot.perception_test_node:main',
+            'code_node = code_bot.code_node:main'
         ],
     },
 )
