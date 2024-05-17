@@ -66,7 +66,7 @@ class MoveitSubscriber : public rclcpp::Node
             RCLCPP_INFO(logger, "Planning successful");
 
             // Populate the response with the plan details
-            response->plan.trajectory_.joint_trajectory
+            response->plan = plan.trajectory.joint_trajectory;
             response->completion_flag = true;
         } else {
             RCLCPP_WARN(logger, "Planning failed");
