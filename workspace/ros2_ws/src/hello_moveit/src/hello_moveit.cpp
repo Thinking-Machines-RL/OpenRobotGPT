@@ -4,10 +4,13 @@
 #include <moveit/move_group_interface/move_group_interface.h>
 #include <moveit/planning_scene_interface/planning_scene_interface.h>
 #include "sensor_msgs/msg/joint_state.hpp"
+#include "robotgpt_interfaces/srv/trajectory.hpp"
 #include "moveit_msgs/msg/robot_state.hpp"
+#include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "robotgpt_interfaces/msg/object_states.hpp"
 
 using std::placeholders::_1;
+using std::placeholders::_2;
 
 // Implemented as a subscribe for testin, mus be modify to client/service
 class MoveitSubscriber : public rclcpp::Node
@@ -16,8 +19,12 @@ class MoveitSubscriber : public rclcpp::Node
     MoveitSubscriber()
     : Node("moveit_subscriber")
     {
-      subscription_ = this->create_subscription<sensor_msgs::msg::JointState>(
-      "/current_position", 10, std::bind(&MoveitSubscriber::topic_callback, this, _1));
+      // subscription_ = this->create_subscription<sensor_msgs::msg::JointState>(
+      // "/current_position", 10, std::bind(&MoveitSubscriber::topic_callback, this, _1));
+
+      service_ = this->create_service<robotgpt_interfaces::srv::Trajectory>(
+            "traj", 
+            std::bind(&MoveitSubscriber::handle_service, this, _1, _2));
 
       // moveit::planning_interface::MoveGroupInterface move_group_interface(std::make_shared<rclcpp::Node>(this->get_name()), planning_group_);
       move_group_interface = std::make_unique<moveit::planning_interface::MoveGroupInterface>(
@@ -30,6 +37,43 @@ class MoveitSubscriber : public rclcpp::Node
 
   private:
     
+    void handle_service(
+        const std::shared_ptr<robotgpt_interfaces::srv::Trajectory::Request> request,
+        std::shared_ptr<robotgpt_interfaces::srv::Trajectory::Response> response)
+    {
+        auto const logger = rclcpp::get_logger("moveit_service");
+
+        // setting current position for moveit planning
+        moveit_msgs::msg::RobotState c_msg;
+        c_msg.joint_state = request->current_position;
+        move_group_interface->setStartState(c_msg);
+
+        // Set the target pose using the ending_position from the request
+        geometry_msgs::msg::Pose target_pose;
+        target_pose.position.x = request->ending_position[0];
+        target_pose.position.y = request->ending_position[1];
+        target_pose.position.z = request->ending_position[2];
+        target_pose.orientation.x = request->ending_position[3];
+        target_pose.orientation.y = request->ending_position[4];
+        target_pose.orientation.z = request->ending_position[5];
+        target_pose.orientation.w = request->ending_position[6];
+
+        move_group_interface->setPoseTarget(target_pose);
+        moveit::planning_interface::MoveGroupInterface::Plan plan;
+        bool success = static_cast<bool>(move_group_interface->plan(plan));
+
+        if (success) {
+            RCLCPP_INFO(logger, "Planning successful");
+
+            // Populate the response with the plan details
+            response->plan.trajectory_.joint_trajectory
+            response->completion_flag = true;
+        } else {
+            RCLCPP_WARN(logger, "Planning failed");
+            response->completion_flag = false;
+        }
+    }
+
     void topic_callback(const sensor_msgs::msg::JointState::SharedPtr msg) const
     {
       // requires a current state as a Joint state
@@ -96,8 +140,9 @@ class MoveitSubscriber : public rclcpp::Node
       planning_scene_interface.applyCollisionObject(collision_object);
     }
 
-    rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr subscription_;
+    //rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr subscription_;
     rclcpp::Subscription<robotgpt_interfaces::msg::ObjectStates>::SharedPtr subscription_obj_;
+    rclcpp::Service<robotgpt_interfaces::srv::Trajectory>::SharedPtr service_;
     std::unique_ptr<moveit::planning_interface::MoveGroupInterface> move_group_interface;
     
 

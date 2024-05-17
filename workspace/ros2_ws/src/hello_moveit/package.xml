@@ -14,6 +14,7 @@
   <depend>sensor_msgs</depend>
   <depend>robotgpt_interfaces</depend>
   <depend>moveit_msgs</depend>
+  <depend>trajectory_msgs</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

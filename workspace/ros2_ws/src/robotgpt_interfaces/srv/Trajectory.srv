@@ -1,11 +1,9 @@
 # Service for trajectory
 #current position
-float32[] current_position
+sensor_msgs/JointState current_position
 float32[] ending_position
 bool gripper_state 
 ---
 #must have 8 * n components, (position + rotation + gripper) * n time steps
-float32[] position
-# 3 * n components
-float32[] vel 
+trajectory_msgs/JointTrajectory plan
 bool completion_flag

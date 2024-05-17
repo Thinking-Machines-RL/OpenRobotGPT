@@ -12,6 +12,7 @@ find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(moveit_msgs REQUIRED)
 find_package(robotgpt_interfaces REQUIRED)
+find_package(trajectory_msgs REQUIRED)
 
 add_executable(hello_moveit src/hello_moveit.cpp)
 target_include_directories(hello_moveit PUBLIC

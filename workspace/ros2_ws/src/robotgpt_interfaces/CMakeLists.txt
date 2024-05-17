@@ -20,6 +20,11 @@ find_package(ament_cmake REQUIRED)
 # uncomment the following section in order to fill in
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
+find_package(moveit_msgs REQUIRED)
+find_package(trajectory_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+
+
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -50,6 +55,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/Trajectory.srv"
   "srv/EvaluationCode.srv"
   "srv/ObjectStatesR.srv"
+  DEPENDENCIES sensor_msgs trajectory_msgs
 )
 
 ament_package()
