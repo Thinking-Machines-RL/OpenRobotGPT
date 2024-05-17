@@ -7,6 +7,7 @@ import time
 from robotgpt_interfaces.msg import StateReward, Action, State, ObjectStatesRequest, ObjectStates, ObjectPose, TrajCompletionMsg, EECommandsM
 from robotgpt_interfaces.srv import EECommands, Trajectory, ObjectStatesR
 from geometry_msgs.msg import Point
+from sensor_msgs.msg import JointState
 
 import gym_example
 import gymnasium
@@ -28,7 +29,7 @@ class PandaEnvROSNode(Node):
 
         #publisher for environment state
         self.curr_state = None
-        self.state_pub = self.create_publisher(State, '/panda_env/state', 10)
+        self.state_pub = self.create_publisher(JointState, '/current_position', 10)
         timer_period = 1 # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback, timer_group)
         print("--------- state pub created -------")
@@ -77,7 +78,7 @@ class PandaEnvROSNode(Node):
         # print("spinning")
         if self.curr_state is not None:
             state_msg = State(state=self.curr_state)
-            self.state_pub.publish(state_msg)
+            # self.state_pub.publish(state_msg)
     
     def _traj_generation(self, goal_position, gripper_state, end_task):
         request = Trajectory.Request()
@@ -146,9 +147,15 @@ class PandaEnvROSNode(Node):
         state, info = self.env.reset()
         self.curr_state = state[0:8]
         self.env.render()
-        state_msg = State(state=state)
+        joint_names, joint_state_np = self.env.get_joint_states()
+        state_msg = JointState()
+        state_msg.header.stamp = self.get_clock().now().to_msg()
+        state_msg.name = joint_names
+        state_msg.position = joint_state_np[0,:]
+        state_msg.velocity = joint_state_np[1,:]
+        state_msg.effort = joint_state_np[2,:]
         print(state_msg)
-        # self.state_pub.publish(state_msg)
+        self.state_pub.publish(state_msg)
     
     def step_callback(self, msg):
         position = msg.target_state
@@ -165,31 +172,6 @@ class PandaEnvROSNode(Node):
         self._traj_generation(position, gripper, end_task)
         # response.completion_flag = True
         return True
-
-    # def step_callback(self, request, response):
-    #     print("received action")
-    #     position = request.target_state
-    #     gripper = request.pick_or_place
-
-    #     print("[INFO] calling traj_generation")
-    #     done, traj = self._traj_generation(position, gripper)
-    #     # done = True
-    #     # traj = np.array([[0.699999988079071, 0.10000000149011612, 0.05000000074505806, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]])
-    #     for step in traj:
-    #         next_state, reward, done, _, info = self.env.step(step)
-    #         self.env.render()
-    #         self.curr_state = next_state[0:8]
-    #         state_msg = State(state=self.curr_state)
-    #         # print("state ", state_msg)
-    #         # self.state_pub.publish(state_msg)
-    #     done=True
-    #     response.completion_flag = done
-    #     response.height_map = []
-    #     response.in_hand_image = []
-    #     response.gripper_state = gripper
-    #     print("[INFO] Sent response")
-
-    #     return response
 
 def main(args=None):
     #prova

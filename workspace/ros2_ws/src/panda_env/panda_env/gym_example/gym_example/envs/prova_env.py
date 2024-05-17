@@ -23,6 +23,8 @@ class PandaEnv(gym.Env):
         self.action_space = spaces.Box(np.array([-1]*11), np.array([1]*11))
         #Obs space: cartesian position of the EE and j variables of the 2 fingers
         self.observation_space = spaces.Box(np.array([-1]*9), np.array([1]*9))
+        #variable used to update the moveit simulation
+        self.joint_states = None
 
     def getObjStates(self):
         object_obs = {}
@@ -138,6 +140,19 @@ class PandaEnv(gym.Env):
         for obj in self.objectUid.keys():
             self.objects[obj], _ = p.getBasePositionAndOrientation(self.objectUid[obj])
 
+        #update the moveit simulation
+        joint_states = p.getJointStates(self.pandaUid, range(p.getNumJoints(self.pandaUid)))
+        joint_infos = [p.getJointInfo(self.pandaUid, i) for i in range(p.getNumJoints(self.pandaUid))]
+        #exclude the one that are not part of the dynamic
+        joint_states = [j for j, i in zip(joint_states, joint_infos) if i[3] > -1]
+        joint_states_np = np.zeros((3, len(joint_states)))
+        for i, state in enumerate(joint_states):
+            joint_states_np[0,i] = state[0]
+            joint_states_np[1,i] = state[1]
+            joint_states_np[2,i] = state[3]
+        self.joint_states = joint_states_np
+        
+        self.joint_names = [i[1].decode('utf-8') for i in joint_infos if i[3] > -1]
         #we return the first observation
         state_robot = p.getLinkState(self.pandaUid, 11)[0]
         orientation_robot = p.getLinkState(self.pandaUid, 11)[1]
@@ -182,6 +197,10 @@ class PandaEnv(gym.Env):
 
     def _get_state(self):
         return self.observation
+    
+    def get_joint_states(self):
+        #function to be called by the GymNode to update the simulation to the starting value of the robot
+        return self.joint_names, self.joint_states
 
     def close(self):
         p.disconnect()
