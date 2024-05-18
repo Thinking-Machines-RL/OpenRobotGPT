@@ -121,8 +121,14 @@ class PandaEnvROSNode(Node):
         print("Starting trajectory")
         # curr_state = traj[-1,0:7]
         # get setpoints from plan
+        t = 0
         for step in plan.points:
             # print("step")
+            # We change the content of time_from_start, so that it now contains the timestep
+            delta_t = step.time_from_start - t
+            t = step.time_from_start
+            step.time_from_start = delta_t
+
             next_state, _, done, _, _ = self.env.step((plan.joint_names,step))
             self.env.render()
             self.curr_state = next_state[0:8]

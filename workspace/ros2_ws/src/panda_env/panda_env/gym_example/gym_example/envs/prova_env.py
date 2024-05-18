@@ -45,16 +45,21 @@ class PandaEnv(gym.Env):
         jointPositions = action[1].positions
         jointVelocities = action[1].velocities
 
-        print("jointPositions = ", jointPositions)
-        print("jointVelocities = ", jointVelocities)
-
         # TODO: linkIndex should probably depend on the joint names
         # linkIndex = list(range(7))+[9,10]
+        print("jointNames = ", jointNames)
         linkIndex = list(range(7))
+
+        # If the joints are more than 7, use also the two fingers
+        if len(jointPositions) > 7:
+            linkIndex += [8,9]
 
         p.setJointMotorControlArray(self.pandaUid, linkIndex, p.POSITION_CONTROL, jointPositions, jointVelocities, positionGains=list(np.ones_like(jointPositions)*1), velocityGains=list(np.ones_like(jointVelocities)*0.5))
 
-        #The default timestep is 1/240 second, it can be changed using the setTimeStep
+        # The default timestep is 1/240 second, it can be changed using the setTimeStep
+        # We change time_from_start definition: now it is a timestep
+        p.setTimeStep(self.time_from_start)
+
         p.stepSimulation()
 
         object_obs = {}

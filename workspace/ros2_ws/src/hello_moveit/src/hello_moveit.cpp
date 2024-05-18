@@ -8,6 +8,7 @@
 #include "moveit_msgs/msg/robot_state.hpp"
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "robotgpt_interfaces/msg/object_states.hpp"
+#include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
 using std::placeholders::_1;
 using std::placeholders::_2;
@@ -58,6 +59,8 @@ class MoveitSubscriber : public rclcpp::Node
         target_pose.orientation.z = request->ending_position[5];
         target_pose.orientation.w = request->ending_position[6];
 
+        bool gripper_closed = request->gripper_state;
+
         move_group_interface->setPoseTarget(target_pose);
         moveit::planning_interface::MoveGroupInterface::Plan plan;
         bool success = static_cast<bool>(move_group_interface->plan(plan));
@@ -67,6 +70,35 @@ class MoveitSubscriber : public rclcpp::Node
 
             // Populate the response with the plan details
             response->plan = plan.trajectory.joint_trajectory;
+
+            // Add some terminal points that close/open the gripper (only when needed)
+            trajectory_msgs::msg::JointTrajectoryPoint gripper_command = response->plan.points.back();
+            // 0.02 for pick and 0.04 for place
+            float command;
+            if(gripper_closed)
+                command = 0.02;
+            else
+                command = 0.04;
+
+            // Choose a delta_t = 1.0/240.0
+            float delta_t = 1.0/240.0;
+
+            // Set gripper command for the two fingers
+            gripper_command.positions.push_back(command);
+            gripper_command.positions.push_back(command);
+    
+            // Add 0 velocity commands -> I think they are needed in order not to break the position control with velocities
+            gripper_command.velocities.push_back(0.0);
+            gripper_command.velocities.push_back(0.0);
+
+            // Stack 5 packets at the end of the trajectory
+            for(int i=0; i<5; i++){
+                gripper_command.time_from_start = gripper_command.time_from_start + delta_t;
+                response->plan.push_back(gripper_command);
+            }
+
+            
+
             response->completion_flag = true;
         } else {
             RCLCPP_WARN(logger, "Planning failed");
