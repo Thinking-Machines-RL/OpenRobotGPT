@@ -122,7 +122,6 @@ class PandaEnvROSNode(Node):
         print("Starting trajectory")
         # curr_state = traj[-1,0:7]
         for step in traj:
-            # print("step")
             next_state, _, done, _, _ = self.env.step(step)
             self.env.render()
             self.curr_state = next_state[0:8]

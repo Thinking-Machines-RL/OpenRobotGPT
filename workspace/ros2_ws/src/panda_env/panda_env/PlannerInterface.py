@@ -80,7 +80,7 @@ class PlannerInterface:
         vel = np.hstack((vel_in, vel_fin))
         vel_array = np.hstack((vel, vel))
         vel_array = np.hstack((vel_array, vel))
-        # Store trajectory in a 7xNUM_STEPS ndarray
+        # Store trajectory in a 8xNUM_STEPS ndarray
 
         trajectory = None
         grip = np.ones(((1))) * self.grip_value

@@ -41,6 +41,14 @@ class PandaEnv(gym.Env):
         position = action[:3]
         fingers = action[7]
         vel_ee = action[8:11]
+
+        # ***** DEBUG *****
+        print("orientation: ", orientation)
+        print("position: ", position)
+        print("fingers: ", fingers)
+        print("vel_ee: ", vel_ee)
+        # *****************
+
         #current pose of the end effector
         currentPose = p.getLinkState(self.pandaUid, 11)
 
