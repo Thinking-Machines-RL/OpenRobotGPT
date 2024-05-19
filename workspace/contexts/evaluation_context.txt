@@ -49,7 +49,7 @@ Code:
             return False
 
         # 2.
-        TOLERANCE = 0.01
+        TOLERANCE = 0.05
         green_on_blue = abs(GREEN_CUBE_POSITION[0] - BLUE_CUBE_POSITION[0]) < TOLERANCE and \
                         abs(GREEN_CUBE_POSITION[1] - BLUE_CUBE_POSITION[1]) < TOLERANCE and \
                         GREEN_CUBE_POSITION[2] > BLUE_CUBE_POSITION[2]

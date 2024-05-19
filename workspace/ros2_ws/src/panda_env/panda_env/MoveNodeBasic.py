@@ -35,7 +35,7 @@ class MoveNodeBasic(Node):
         
         # Plan 3 trajectory pieces + grip
         # Move to a safe height
-        SAFE_HEIGHT = 0.1
+        SAFE_HEIGHT = 0.3
         target_pose_1 = copy.deepcopy(curr_state)
         target_pose_1[2] = SAFE_HEIGHT
         # Move over the final_position

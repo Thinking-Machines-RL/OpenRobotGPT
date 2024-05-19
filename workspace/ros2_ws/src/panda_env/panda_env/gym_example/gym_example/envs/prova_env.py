@@ -42,13 +42,6 @@ class PandaEnv(gym.Env):
         fingers = action[7]
         vel_ee = action[8:11]
 
-        # ***** DEBUG *****
-        print("orientation: ", orientation)
-        print("position: ", position)
-        print("fingers: ", fingers)
-        print("vel_ee: ", vel_ee)
-        # *****************
-
         #current pose of the end effector
         currentPose = p.getLinkState(self.pandaUid, 11)
 
@@ -71,7 +64,9 @@ class PandaEnv(gym.Env):
         jointVelocities = np.linalg.pinv(jacobian_p) @ vel_ee.T
         jointVelocities[7:9] = 0
 
-        p.setJointMotorControlArray(self.pandaUid, list(range(7))+[9,10], p.POSITION_CONTROL, list(jointPoses)+2*[fingers], list(jointVelocities), positionGains=list(np.ones_like(joint_positions)*1), velocityGains=list(np.ones_like(joint_positions)*0.5))
+        POSITION_GAIN = 0.8
+        VELOCITY_GAIN = 1
+        p.setJointMotorControlArray(self.pandaUid, list(range(7))+[9,10], p.POSITION_CONTROL, list(jointPoses)+2*[fingers], list(jointVelocities), positionGains=list(np.ones_like(joint_positions)*POSITION_GAIN), velocityGains=list(np.ones_like(joint_positions)*VELOCITY_GAIN))
         # p.setJointMotorControlArray(self.pandaUid, list(range(7))+[9,10], p.POSITION_CONTROL, list(jointPoses)+2*[fingers])
 
         #The default timestep is 1/240 second, it can be changed using the setTimeStep
