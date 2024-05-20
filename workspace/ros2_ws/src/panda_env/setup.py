@@ -20,7 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'GymNode = panda_env.GymNode:main'
+            'GymNode = panda_env.GymNode:main',
+            'MoveNodeBasic = panda_env.MoveNodeBasic:main'
         ],
     },
 )

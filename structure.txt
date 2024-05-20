@@ -1,0 +1,22 @@
+robot_api_node
+|
+|-> getObjectStates(): publishes a message on a topic ObjectStatesRequest, requesting the states and then
+                     waits for a response on a topic ObjectStates
+
+getObjectStates():
+    publish on topic ObjectStatesRequests a message of type ObjectStatesRequest
+    turns on self.wait_for_obj_states flag
+    the callback self.objectStates_callback() saves the returned states in self.objSates and changes the flag
+    the states are returned
+
+GymNode
+|
+|-> objectStates_callback(): when a request is received on a topic ObjectStatesRequest,
+                             the node calls a function env.getObjectStates() that returns the info
+                             and then publishes on a topic ObjectStates the info
+
+
+
+env
+|
+|-> getObjectStates(): returns a dictionary with {"<object-name>":[<object-pose-x-y-z]}

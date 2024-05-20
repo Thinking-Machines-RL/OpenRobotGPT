@@ -1,12 +1,15 @@
 # Use the nvidia/cuda image as base
-FROM nvidia/cuda:12.3.2-base-ubuntu20.04
+FROM nvidia/cuda:12.4.1-base-ubuntu22.04
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        mesa-utils && \
-    rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -qq -y --no-install-recommends \
+        curl \
+        gnupg2 \
+        lsb-release \
+    && rm -rf /var/lib/apt/lists/*
 
-# Setup sources.list
-RUN echo "deb http://packages.ros.org/ros2/ubuntu focal main" > /etc/apt/sources.list.d/ros2-latest.list
+# Setup ROS 2 sources
+RUN curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | apt-key add -
+RUN sh -c 'echo "deb [arch=$(dpkg --print-architecture)] http://packages.ros.org/ros2/ubuntu $(lsb_release -cs) main" > /etc/apt/sources.list.d/ros2-latest.list'
 
 # Setup keys
 RUN apt-key adv --keyserver 'hkp://keyserver.ubuntu.com:80' --recv-key C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
@@ -14,11 +17,11 @@ RUN apt-key adv --keyserver 'hkp://keyserver.ubuntu.com:80' --recv-key C1CF6E31E
 ENV DEBIAN_FRONTEND noninteractive
 
 # Specify ROS distro
-ENV ROS_DISTRO foxy
+ENV ROS_DISTRO iron
 
 # Update the package repository and install the required packages
 RUN apt-get update
-RUN apt-get install -y \
+RUN apt-get install -qq -y --no-install-recommends\
   ros-$ROS_DISTRO-desktop \
   python3-rosdep
 
@@ -32,6 +35,7 @@ RUN echo "source /opt/ros/$ROS_DISTRO/setup.bash" >> /root/.bashrc
 
 # Install MoveIt
 RUN apt-get install -y ros-$ROS_DISTRO-moveit
+RUN apt-get install -y ros-${ROS_DISTRO}-moveit-py
 
 # Install pip
 RUN apt-get install -y python3-pip

@@ -24,6 +24,14 @@ class PandaEnv(gym.Env):
         #Obs space: cartesian position of the EE and j variables of the 2 fingers
         self.observation_space = spaces.Box(np.array([-1]*9), np.array([1]*9))
 
+    def getObjStates(self):
+        object_obs = {}
+        for object in self.objects.keys():
+            object_state, _ = p.getBasePositionAndOrientation(self.objectUid[object])
+            object_obs[object] = object_state
+
+        return object_obs
+
     def step(self, action):
         '''Contains the logic of the environment, computes the state
            of the env after applying a given action'''
@@ -33,6 +41,7 @@ class PandaEnv(gym.Env):
         position = action[:3]
         fingers = action[7]
         vel_ee = action[8:11]
+
         #current pose of the end effector
         currentPose = p.getLinkState(self.pandaUid, 11)
 
@@ -44,29 +53,36 @@ class PandaEnv(gym.Env):
         joint_velocities = np.array([state[1] for state in joint_states])
 
         jointPoses = p.calculateInverseKinematics(self.pandaUid,11,position, orientation)[0:7]
-        print("pandauid ", self.pandaUid)
-        print("joint_positions", list(joint_positions))
-        print("joint_velocities", list(joint_velocities))
-        print("ero", list(np.zeros_like(joint_positions)))
+        # print("pandauid ", self.pandaUid)
+        # print("joint_positions", list(joint_positions))
+        # print("joint_velocities", list(joint_velocities))
+        # print("ero", list(np.zeros_like(joint_positions)))
         jacobian_p, jacobian_r = p.calculateJacobian(self.pandaUid, 11, [0.0, 0.0, 0.0], list(joint_positions), list(joint_velocities), list(np.zeros_like(joint_positions)))
         P_jacobian = np.linalg.pinv(jacobian_p)
-        print("vel_ee ", vel_ee.T)
-        print("P matrix ", P_jacobian)
+        # print("vel_ee ", vel_ee.T)
+        # print("P matrix ", P_jacobian)
         jointVelocities = np.linalg.pinv(jacobian_p) @ vel_ee.T
         jointVelocities[7:9] = 0
 
-        p.setJointMotorControlArray(self.pandaUid, list(range(7))+[9,10], p.POSITION_CONTROL, list(jointPoses)+2*[fingers], list(jointVelocities), positionGains=list(np.ones_like(joint_positions)*0.3), velocityGains=list(np.ones_like(joint_positions)*0.5))
+        POSITION_GAIN = 0.8
+        VELOCITY_GAIN = 1
+        p.setJointMotorControlArray(self.pandaUid, list(range(7))+[9,10], p.POSITION_CONTROL, list(jointPoses)+2*[fingers], list(jointVelocities), positionGains=list(np.ones_like(joint_positions)*POSITION_GAIN), velocityGains=list(np.ones_like(joint_positions)*VELOCITY_GAIN))
+        # p.setJointMotorControlArray(self.pandaUid, list(range(7))+[9,10], p.POSITION_CONTROL, list(jointPoses)+2*[fingers])
 
+        #The default timestep is 1/240 second, it can be changed using the setTimeStep
         p.stepSimulation()
 
-        state_object, _ = p.getBasePositionAndOrientation(self.objectUid)
+        object_obs = {}
+        for object in self.objects.keys():
+            state_object, _ = p.getBasePositionAndOrientation(self.objectUid[object])
+            object_obs[object] = state_object
         state_robot = p.getLinkState(self.pandaUid, 11)[0]
         orientation_robot = p.getLinkState(self.pandaUid, 11)[1]
         state_fingers = (p.getJointState(self.pandaUid,9)[0], p.getJointState(self.pandaUid, 10)[0])
 
         #TODO: random goal, must be changed
         #we moved the object at a certain altitude 
-        if state_object[2]>0.45:
+        if object_obs["blue_cube"][-1]>0.45:
             reward = 1
             done = True
         else:
@@ -112,9 +128,19 @@ class PandaEnv(gym.Env):
         
         #we randomize the position of the object on the table
         # state_object= [random.uniform(0.5,0.8),random.uniform(-0.2,0.2),0.05]
-        state_object= [0.6,0.1,0.05]
-        self.objectUid = p.loadURDF(os.path.join(urdfRootPath, "cube_small.urdf"), basePosition=state_object)
-        info = {'object_position': state_object}
+        # state_object= [0.6,0.1,0.05]
+        # self.objectUid = p.loadURDF(os.path.join(urdfRootPath, "cube_small.urdf"), basePosition=state_object)
+        objects = {"blue_cube":[0.6,0.1,0.05],
+                   "yellow_cube":[0.5,-0.1,0.05],
+                   "green_cube": [0.7,0.1,0.05]}
+        self.objectUid = {}
+        for object,position in zip(objects.keys(), objects.values()):
+            self.objectUid[object] = p.loadURDF(os.path.join(urdfRootPath, "cube_small.urdf"), basePosition=position)
+        
+        self.objects = {}
+        for obj in self.objectUid.keys():
+            self.objects[obj], _ = p.getBasePositionAndOrientation(self.objectUid[obj])
+
         #we return the first observation
         state_robot = p.getLinkState(self.pandaUid, 11)[0]
         orientation_robot = p.getLinkState(self.pandaUid, 11)[1]
@@ -122,6 +148,7 @@ class PandaEnv(gym.Env):
         self.observation = state_robot + orientation_robot + state_fingers
         #Now that everything is done, we can load 
         p.configureDebugVisualizer(p.COV_ENABLE_RENDERING,1)
+        info = {"object_position" : objects}
         return np.array(self.observation).astype(np.float32), info
 
     def render(self, mode='human'):
