@@ -1,5 +1,6 @@
 # OpenRobotGPT
 Open source implementation of RobotGPT
+![](images/tower_demonstrate.gif)
 
 # ROS2 structure:
 ![](images/graph_ros.png)
