@@ -48,4 +48,4 @@ The node to launch are in order:
 - GymNode.
 - the trajectory node (ex. MoveNodebasic, MoveIt).
 - robot_api_node
-- bot_node
+- code_node
