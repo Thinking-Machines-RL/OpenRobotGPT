@@ -2,11 +2,9 @@ You will be prompted with a task. The task has already been solved. Your task is
 
 You are given access to an API:
 
-self.objStates: a dictionary with key-value pairs of the type "<object-name>":[x,y,z] that associate to each object perceived on the scene its 3d xyz coordinates expressed in the world frame
+self.isOnTop(object_A, object_B): Returns True if object_A is on top of object_B
 
-self.initialObjectStates: describes the object positions at the beginning of the task. A dictionary with key-value pairs of the type "<object-name>":[x,y,z] that associate to each object perceived on the scene its 3d xyz coordinates expressed in the world frame.
-
-Rememeber to put a lot of care into evaluating objects relative position. Provide robust code that allows for slight imprecisions in the position.
+self.isInPosition(object, position): Checks if the object is in the specified position
 
 Here are some examples on how to use the API to check task completion:
 
@@ -14,39 +12,20 @@ Example 1
 Task: Pick up the blue cube and place it in coordinates [0.7, 0.1, 0.05]
 Code:
     def evaluation_func(self):
-        initial_objects = self.initialObjectStates
-        objects = self.objStates
-        BLUE_CUBE_POSITION = objects["blue_cube"]
         TARGET_POSITION = [0.7, 0.1, 0.05]
-        assert BLUE_CUBE_POSITION[0] == TARGET_POSITION[0] and \
-               BLUE_CUBE_POSITION[1] == TARGET_POSITION[1] and \
-               BLUE_CUBE_POSITION[2] == TARGET_POSITION[2], "You moved the blue cube that is supposed to remain fixed"
         
+        assert self.isInPosition("blue_cube", TARGET_POSITION)
+
         return True
 
 Example 2
 Task: Pick the green cube and place it on top of the blue one
 Code:
     def evaluation_func(self):
-        initial_objects = self.initialObjectStates
-        objects = self.objStates
-        INITIAL_GREEN_CUBE_POSITION = initial_objects["green_cube]
-        INITIAL_BLUE_CUBE_POSITION = initial_objects["blue_cube]
-        GREEN_CUBE_POSITION = objects["green_cube"]
-        BLUE_CUBE_POSITION = objects["blue_cube"]
         # Logical steps that we need to check
         # 1. Check if the blue cube has been correctly placed on top of the blue one
 
         # 1.
-        green_over_blue = GREEN_CUBE_POSITION[2] > BLUE_CUBE_POSITION[2]
-
-        assert green_over_blue, "The green cube is not higher than the blue one"
-
-        TOLERANCE = 0.05
-        green_base_intersects_blue_base = abs(GREEN_CUBE_POSITION[0] - BLUE_CUBE_POSITION[0]) < TOLERANCE and \
-                                       abs(GREEN_CUBE_POSITION[1] - BLUE_CUBE_POSITION[1]) < TOLERANCE    
-
-        assert green_base_intersects_blue_base, "The green cube is not above the blue cube, but moved sideways"
-
+        assert self.isOnTop("green_cube","blue_cube"), "The green cube is not on top of the blue one"
             
         return True
