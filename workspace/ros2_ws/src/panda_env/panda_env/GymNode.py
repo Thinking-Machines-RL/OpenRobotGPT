@@ -61,6 +61,7 @@ class PandaEnvROSNode(Node):
         self.height_map = []
 
     def InObj_callback(self, request, response):
+        self.reset()
         objStates = self.env.getObjStates()
         response.objects = objStates.keys()
         states = []
@@ -121,12 +122,8 @@ class PandaEnvROSNode(Node):
     def _handle_trajectory(self, done, traj):
         print("Starting trajectory")
         # curr_state = traj[-1,0:7]
-        for step in traj:
-            next_state, _, done, _, _ = self.env.step(step)
-            self.env.render()
-            self.curr_state = next_state[0:8]
-        
-        if self.end_task == True:
+
+        if self.end_task:
             objStates = self.env.getObjStates()
             msg = ObjectStates()
             msg.objects = objStates.keys()
@@ -139,6 +136,11 @@ class PandaEnvROSNode(Node):
             self.ObjectStatesPublisher.publish(msg)
             print("[INFO] published message")
             print(msg)
+        else:
+            for step in traj:
+                next_state, _, done, _, _ = self.env.step(step)
+                self.env.render()
+                self.curr_state = next_state[0:8]
 
     def reset(self):
         print("Initialising the env .....")

@@ -40,7 +40,6 @@ class RobotAPINode(Node):
         self.req_states = ObjectStatesR.Request()
         self.ObjectsStatesPublisher = self.create_publisher(ObjectStates, '/panda_env/objects_states', 1)
 
-        self.getInitialObjectStates()
         self.pickedObject = None
 
         #CHATGPT client and service -----
@@ -97,6 +96,16 @@ class RobotAPINode(Node):
 
         # Mark trajectory as in execution
         self.execution = True
+
+
+    def end_task(self):
+        ''' Terminate task '''
+        msg = EECommandsM()
+        msg.target_state = [0,0,0,1,0,0,0] # fake target state
+        msg.pick_or_place = False
+        msg.end_task = True
+
+        self.traj_pub.publish(msg)
 
 
     def pickUp(self, object, end_task = False):
@@ -184,7 +193,8 @@ class RobotAPINode(Node):
         completion_flag = False
         eval_except = ""
 
-        # Define wrapper functions for your instance methods in the scope
+        # Reset environment and get initial position of the objects
+        self.getInitialObjectStates()
 
         # Execute the evaluation code
         try:
@@ -251,11 +261,10 @@ class RobotAPINode(Node):
         code = request.code
         print(code)
 
-        # Log initial object position
-        self.initialObjectStates = copy.deepcopy(self.objStates)
-
         # Create a dictionary to hold the local scope
         scope = {'self': self}
+
+        self.getInitialObjectStates()
 
         try:
             exec(code, globals(), scope)
@@ -268,6 +277,8 @@ class RobotAPINode(Node):
             except_occurred = True
             code_except = str(e)
             print("Code exception: ", code_except)
+
+        self.end_task()
 
         response.code_except = code_except
         return response

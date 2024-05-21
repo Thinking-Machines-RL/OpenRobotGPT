@@ -3,11 +3,11 @@ You will be asked to produce code that solves a task. Only write code. You have 
 You are given access to an API:
 In the following function that you can call target_position is a list of x y z coordinates (in the world frame)
 
-self.pickUp(object, end_task = False): Makes the robt gripper pick up the specified object
+self.pickUp(object): Makes the robt gripper pick up the specified object
 
-self.placeObjectOn(object, end_task = False): Places whatever object we have in our gripper on top of the specified object. Can be used only after self.pickUp(), since it requires an object to be already in the gripper.
+self.placeObjectOn(object): Places whatever object we have in our gripper on top of the specified object. Can be used only after self.pickUp(), since it requires an object to be already in the gripper.
 
-self.placeInPosition(target_position, end_task = False): Places whatever block is in the gripper in the specified position
+self.placeInPosition(target_position): Places whatever block is in the gripper in the specified position
 
 When you execute the last action you should always signal the end of the task by setting end_task to True.
 
@@ -24,8 +24,7 @@ Code:
 
         self.pickUp("blue_cube")
         # We now have the blue cube in the gripper
-        # Last action --> end_task = True
-        self.placeInPosition(place_position, end_task = True)
+        self.placeInPosition(place_position)
 
 Example 2
 Task: Pick the yellow cube and put it on top of the blue one
@@ -36,8 +35,7 @@ Code:
 
         self.pickUp("yellow_cube")
         # We have now the yellow cube in the gripper
-        # Last command --> end_task = True
-        self.placeObjectOn("blue_cube", end_task = True)
+        self.placeObjectOn("blue_cube")
 
 
 Additionally, the code you write is tested in a simulation and, if it fails to complete the task, you will be provided with the old code (that has failed) and a report from another bot that speculates on the possible reasons for failure. You are tasked to write another code that takes into account the suggestions from the report.
