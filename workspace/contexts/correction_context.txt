@@ -7,10 +7,8 @@ If this relationships are incorrect you should make hypothesis about why they ar
 
 The other bot had access to an API:
 
-self.move_to(target_pose): Moves the end-effector to the target position, with the target orientation
+self.pickUp(object, end_task = False): Makes the robt grpper pick up the specified object
 
-self.pick(target_pose, end_task=False): Moves the end effector to the specified position, with the specified orientation, and closes the gripper, picking up whatever object is at hand. end_task = True if this is the last command
+self.placeInPosition(target_position, end_task = False): Places whatever block is in the gripper in the specified position
 
-self.place(target_pose, end_task=False): Moves the end effector to the specified position, with the specified orientation, and opens the gripper, placing whatever object is in the gripper. end_task = True if this is the last command
-
-self.objStates: a dictionary with key-value pairs of the type "<object-name>":[x,y,z] that associate to each object perceived on the scene its 3d xyz coordinates expressed in the world frame
+self.placeObjectOn(object, end_task = False): Places whatever object we have in our gripper on top of the specified object. Can be used only after self.pickUp(), since it requires an object to be already in the gripper.

@@ -1,18 +1,15 @@
 You will be asked to produce code that solves a task. Only write code. You have to define a function execution_func(self) that performs the task, only define the function do not call it. Every kind of explanation should be included as python comments. Your entire response should be directly executable in a python shell. 
 
 You are given access to an API:
-In the following function that you can call target_pose is a list of 7 elements: the first 3 are x y z coordinates (in the world frame) and the last 4 are a quaternion representation of the gripper orientation
+In the following function that you can call target_position is a list of x y z coordinates (in the world frame)
 
-self.pick(target_pose, end_task=False): Moves the end effector to the specified position, with the specified orientation, and closes the gripper, picking up whatever object is at hand
+self.pickUp(object, end_task = False): Makes the robt gripper pick up the specified object
 
-self.place(target_pose, end_task=False): Moves the end effector to the specified position, with the specified orientation, and opens the gripper, placing whatever object is in the gripper
+self.placeObjectOn(object, end_task = False): Places whatever object we have in our gripper on top of the specified object. Can be used only after self.pickUp(), since it requires an object to be already in the gripper.
 
-self.objStates: a dictionary with key-value pairs of the type "<object-name>":[x,y,z] that associate to each object perceived on the scene its 3d xyz coordinates expressed in the world frame
+self.placeInPosition(target_position, end_task = False): Places whatever block is in the gripper in the specified position
 
-When you provide a solution, first write some comments where you divide the task in steps. 
-At each step you should write down the expected result in terms of spacial relationships among objects.
-Every time you move an object you should update some variables to keep track of the new state of the objects.
-When you execute the last pick or place action you chould always signal the end of the task by setting end_task to True.
+When you execute the last action you should always signal the end of the task by setting end_task to True.
 
 Here are some examples on how to use the API to solve tasks:
 
@@ -20,44 +17,27 @@ Example 1
 Task: Pick up the blue cube and place it in coordinates [0.7, 0.1, 0.05]
 Code:
     def execution_func(self):
-        # 1. Pick the blue cube in PICK_POSITION
-        # 2. Place the cube in [0.7, 0.1, 0.05] -> the blue cube is now in [0.7, 0.1, 0.05]
+        # 1. Pick the blue cube
+        # 2. Place the cube in position [0.7, 0.1, 0.05]
 
-        objects = self.objStates
-        PICK_POSITION = objects["blue_cube"]
-        PLACE_POSITION = [0.7, 0.1, 0.05]
-        # Append to the position also the quaternion that defines the orientation of the gripper
-        PICK_POSE = PICK_POSITION + [1,0,0,0]
-        PLACE_POSE = PLACE_POSITION + [1,0,0,0]
+        place_position = [0.7, 0.1, 0.05]
 
-        self.pick(PICK_POSITION)
-        # Last command --> end_task = True
-        self.place(PLACE_POSITION, end_task = True)
-        # Update state of the blue cube
-        objects["blue_cube"] = [0.7, 0.1, 0.05]
+        self.pickUp("blue_cube")
+        # We now have the blue cube in the gripper
+        # Last action --> end_task = True
+        self.placeInPosition(place_position, end_task = True)
 
 Example 2
-Task: Pick the yellow cube and put it on top of the blue one. The height of a block is 5cm.
+Task: Pick the yellow cube and put it on top of the blue one
 Code:
     def execution_func(self):
         # 1. Pick the yellow cube
-        # 2. Place the yellow cube on top of the blue cube. The bottom face of the yellow cube should touch the upper face of the blue one. So the center of the yellow cube needs to be directly above the center of the blue one, with an offset of BLOCK_HEIGHT on z -> The yellow cube is now directly above the the blue cube
+        # 2. Place the yellow cube on top of the blue cube
 
-        objects = self.objStates
-        YELLOW_POSITION = objects["yellow_cube"]
-        BLUE_POSITION = objects["blue_cube"]
-        BLOCK_HEIGHT = 0.05 # expressed in meters
-        PICK_POSITION = YELLOW_POSITION
-        # Add an offset to the z component of the position of the blue cube in order to place the yellow cube on top
-        PLACE_POSITION = BLUE_POSITION[2] + BLOCK_HEIGHT
-        # Append to the position also the quaternion that defines the orientation of the gripper
-        PICK_POSE = PICK_POSITION + [1,0,0,0]
-        PLACE_POSE = PLACE_POSITION + [1,0,0,0]
-
-        self.pick(PICK_POSE)
+        self.pickUp("yellow_cube")
+        # We have now the yellow cube in the gripper
         # Last command --> end_task = True
-        self.place(PLACE_POSE, end_task = True)
-        objects["yellow_cube"] = PLACE_POSITION
+        self.placeObjectOn("blue_cube", end_task = True)
 
 
 Additionally, the code you write is tested in a simulation and, if it fails to complete the task, you will be provided with the old code (that has failed) and a report from another bot that speculates on the possible reasons for failure. You are tasked to write another code that takes into account the suggestions from the report.
