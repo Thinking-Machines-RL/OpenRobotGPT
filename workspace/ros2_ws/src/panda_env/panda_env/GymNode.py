@@ -4,7 +4,7 @@ from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallb
 from rclpy.node import Node
 import time
 
-from robotgpt_interfaces.msg import StateReward, Action, State, ObjectStatesRequest, ObjectStates, ObjectPose, TrajCompletionMsg, EECommandsM
+from robotgpt_interfaces.msg import StateReward, Action, State, ObjectStatesRequest, ObjectStates, ObjectPose, TrajCompletionMsg, EECommandsM, ResetRequest
 from robotgpt_interfaces.srv import EECommands, Trajectory, ObjectStatesR
 from geometry_msgs.msg import Point
 
@@ -45,11 +45,13 @@ class PandaEnvROSNode(Node):
         #Service to be called by the API or the Agent to step the environment
         # self.action_service = self.create_service(EECommands, 'trajectory_execution', self.step_callback, callback_group=service_group)
         self.action_sub = self.create_subscription(EECommandsM, 'trajectory_execution', self.step_callback, 10, callback_group=service_group)
-        self.initial_object_states = self.create_service(ObjectStatesR, '/panda_env/InitialObjectStates', self.InObj_callback, callback_group=service_group)
+        self.initial_object_states_pub = self.create_publisher(ObjectStates, '/panda_env/InitialObjectStates', 10, callback_group=service_group)
+        self.reset_sub = self.create_subscription(ResetRequest, '/panda_env/reset_request', self.reset_callback, 10)
+
 
         # Perception
         # Object states pusblisher
-        self.ObjectStatesPublisher = self.create_publisher(ObjectStates, '/panda_env/ObjectStates', 1)
+        self.ObjectStatesPublisher = self.create_publisher(ObjectStates, '/panda_env/ObjectStatesEval', 1)
 
         # Trajectory completion
         self.trajCompletionPub = self.create_publisher(TrajCompletionMsg, 'traj_completion', 10, callback_group=completion_cb_group)
@@ -60,17 +62,20 @@ class PandaEnvROSNode(Node):
         self.request_queue = Queue()
         self.height_map = []
 
-    def InObj_callback(self, request, response):
-        self.reset()
+    def reset_callback(self, msg):
+        with self.lock:
+            self.reset()
         objStates = self.env.getObjStates()
-        response.objects = objStates.keys()
+
+        initObj = ObjectStates()
+        initObj.objects = objStates.keys()
         states = []
         for state in objStates.values():
             op = ObjectPose()
             op.pose = state
             states.append(op)
-        response.states = states
-        return response
+        initObj.states = states
+        self.initial_object_states_pub.publish(initObj)
 
 
     def timer_callback(self):
@@ -100,17 +105,17 @@ class PandaEnvROSNode(Node):
             traj_vel = np.reshape(vel_array, (int(vel_array.size/3), 3))
             traj = np.hstack((traj_pos, traj_vel))
             self._handle_trajectory(result.completion_flag, traj)
+            # Signal trajectory completion to the API node
+            msg = TrajCompletionMsg()
+            msg.flag = True
+            print("Starting to publish trajectory completion message")
+            self.trajCompletionPub.publish(msg)
+            print("Trajectory completion message published")
             with self.lock:
-                self.executing_trajectory = False  # Mark trajectory execution as completed
-                # Signal trajectory completion to the API node
-                msg = TrajCompletionMsg()
-                msg.flag = True
-                print("Starting to publish trajectory completion message")
-                self.trajCompletionPub.publish(msg)
-                print("Trajectory completion message published")
                 if not self.request_queue.empty():
+                    self.executing_trajectory = False  # Mark trajectory execution as completed
                     # Process next request in the queue
-                    position, gripper, end_task = self.request_queue.get()
+                    position, gripper, end_task = self.request_queue.get()    
                     self._traj_generation(position, gripper, end_task)
                     
         else:
@@ -138,12 +143,14 @@ class PandaEnvROSNode(Node):
             print(msg)
         else:
             for step in traj:
-                next_state, _, done, _, _ = self.env.step(step)
-                self.env.render()
-                self.curr_state = next_state[0:8]
+                    next_state, _, done, _, _ = self.env.step(step)
+                    self.env.render()
+                    self.curr_state = next_state[0:8]
+            
 
     def reset(self):
         print("Initialising the env .....")
+        self.request_queue = Queue()
         state, info = self.env.reset()
         self.curr_state = state[0:8]
         self.env.render()
@@ -163,7 +170,7 @@ class PandaEnvROSNode(Node):
 
             # Mark trajectory execution as in progress
             self.executing_trajectory = True
-        self._traj_generation(position, gripper, end_task)
+            self._traj_generation(position, gripper, end_task)
         # response.completion_flag = True
         return True
 

@@ -3,7 +3,7 @@ from rclpy.node import Node
 from robotgpt_interfaces.srv import CodeExecution, EvaluationCode, ObjectStatesR
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallbackGroup
-from robotgpt_interfaces.msg import ResultEvaluation, CodeExecutionM
+from robotgpt_interfaces.msg import ResultEvaluation, CodeExecutionM, CodeError
 from .bots import DecisionBot, CorrectionBot, EvaluationBot, ChatGPT
 import pkg_resources
 import json
@@ -48,10 +48,8 @@ class CodeNode(Node):
 
         # Decision bot
         self.decision_bot = ChatGPT(config_path, secret_path)
-        self.code_deployment_client = self.create_client(CodeExecution, 'chat_gpt_bot/test_code', callback_group = service_group)
-        while not self.code_deployment_client.wait_for_service(timeout_sec=self.SERVICE_TIMEOUT):
-            self.get_logger().info('Service not available, waiting again...')
-        self.code_execution_req = CodeExecution.Request()
+        self.code_deployment_publisher = self.create_publisher(CodeExecutionM, 'chat_gpt_bot/test_code', 10)
+        self.code_error_subscriber = self.create_subscription(CodeError, 'chat_gpt_bot/code_error', self._code_errors_callback, 10)
         self._create_json_from_txt(self.decision_context_txt_path, self.decision_context_json_path)
         context = [self._read_json_to_dict(self.decision_context_json_path)]
         self.decision_bot.set_context(context)
@@ -151,18 +149,17 @@ class CodeNode(Node):
         '''
         # Keep track of the code
         self.code = code
-        # Increment attemps counter
-        self.code_execution_req.code = code
-        future = self.code_deployment_client.call_async(self.code_execution_req)
-        future.add_done_callback(self._code_errors_callback)
+        code_execution_req = CodeExecutionM()
+        code_execution_req.code = code
+        self.code_deployment_publisher.publish(code_execution_req)
 
-    def _code_errors_callback(self, future):
+    def _code_errors_callback(self, msg):
         '''
         Print the errors triggered by code execution
         '''
-        if future.result().code_except != "":
-            print("Code execution generated the following error |{}|".format(future.result().code_except))
-            self.code_errors = future.result().code_except
+        if msg.code_except != "":
+            print("Code execution generated the following error |{}|".format(msg.code_except))
+            self.code_errors = msg.code_except
             self.objStates = None
             self._correct_code()
         else:

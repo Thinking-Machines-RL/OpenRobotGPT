@@ -45,6 +45,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/ResultEvaluation.msg"
   "msg/EECommandsM.msg"
   "msg/CodeExecutionM.msg"
+  "msg/ResetRequest.msg"
+  "msg/CodeError.msg"
   "srv/CodeExecution.srv"
   "srv/EECommands.srv"
   "srv/Trajectory.srv"

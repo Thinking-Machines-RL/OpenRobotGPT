@@ -4,7 +4,7 @@ from rclpy.executors import MultiThreadedExecutor
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallbackGroup
 import copy
 from robotgpt_interfaces.srv import CodeExecution, EECommands, EvaluationCode, ObjectStatesR
-from robotgpt_interfaces.msg import StateReward, Action, State, ObjectStates, ResultEvaluation, EECommandsM, CodeExecutionM, ObjectPose
+from robotgpt_interfaces.msg import StateReward, Action, State, ObjectStates, ResultEvaluation, EECommandsM, ObjectPose, ObjectStatesRequest, CodeExecutionM, CodeError, ResetRequest
 from robot_api_layer.PlannerInterface import PlannerInterface
 import numpy as np
 from geometry_msgs.msg import Point
@@ -33,23 +33,23 @@ class RobotAPINode(Node):
 
         # Perception
         # Object states subscriber
-        self.objStatesSubscriber = self.create_subscription(ObjectStates, '/panda_env/ObjectStates', self.objectStates_callback, 1, callback_group = service_group)
-        self.objects_states = self.create_client(ObjectStatesR, '/panda_env/InitialObjectStates')
-        while not self.objects_states.wait_for_service(timeout_sec=self.SERVICE_TIMEOUT):
-            self.get_logger().info('objects_states service not available, waiting again...')
-        self.req_states = ObjectStatesR.Request()
+        self.objStatesEvalSubscriber = self.create_subscription(ObjectStates, '/panda_env/ObjectStatesEval', self.objectStatesEval_callback, 1, callback_group = service_group)
+        self.objects_states_req = self.create_subscription(ObjectStates, '/panda_env/InitialObjectStates', self.code_execution_callback, 10)
+        self.reset_pub = self.create_publisher(ResetRequest, '/panda_env/reset_request', 10)
         self.ObjectsStatesPublisher = self.create_publisher(ObjectStates, '/panda_env/objects_states', 1)
+        self.req_states = ObjectStatesR.Request()
 
         self.pickedObject = None
 
         #CHATGPT client and service -----
-        self.srv = self.create_service(CodeExecution, 'chat_gpt_bot/test_code', self.test_callback, callback_group = service_group)
+        self.code_subscriber = self.create_subscription(CodeExecutionM, 'chat_gpt_bot/test_code', self.task_callback, 10)
         # self.sub_exec = self.create_subscription(CodeExecutionM, 'chat_gpt_bot/test_code', self.test_callback,10, callback_group = service_group)
         self.client_evaluation_code = self.create_client(EvaluationCode, 'chat_gpt_bot/evaluation_code', callback_group = service_group)
         while not self.client_evaluation_code.wait_for_service(timeout_sec=self.SERVICE_TIMEOUT):
             self.get_logger().info('Evaluation code service not available, waiting again...')
         self.req_eval = EvaluationCode.Request()
         self.eval_publisher = self.create_publisher(ResultEvaluation, 'chat_gpt_bot/evaluation_results', 10)
+        self.code_execution_resp_publisher = self.create_publisher(CodeError, 'chat_gpt_bot/code_error', 10)
         #--------------------------------
 
         self.traj_pub = self.create_publisher(EECommandsM,'trajectory_execution', 10, callback_group = service_group)
@@ -146,7 +146,7 @@ class RobotAPINode(Node):
         position_B = self.objStates[object_B]
         if abs(position_A[0] - position_B[0]) < BLOCK_DIM and \
            abs(position_A[1] - position_B[1]) < BLOCK_DIM and \
-           abs(position_A[3] - (position_B[0] + BLOCK_DIM)) < TOLERANCE:
+           abs(position_A[2] - (position_B[2] + BLOCK_DIM)) < TOLERANCE:
             return True
         return False
     
@@ -159,20 +159,10 @@ class RobotAPINode(Node):
            abs(objPosition[2] - position[2]) < TOLERANCE:
             return True
         return False
-    
-    def getInitialObjectStates(self):
-        print("[INFO] requested initial state objects")
-        future = self.objects_states.call_async(self.req_states)
-        rclpy.spin_until_future_complete(self, future)
-        objects =  future.result().objects
-        states =  future.result().states
-        states = [states[i].pose for i in range(len(states))]
-        objStates = {object:list(state) for object,state in zip(objects, states)}
-        self.objStates = objStates
 
 
     # Object states
-    def objectStates_callback(self, msg):
+    def objectStatesEval_callback(self, msg):
         print("[INFO] received object end task")
         objects = msg.objects
         states = msg.states
@@ -192,9 +182,6 @@ class RobotAPINode(Node):
         except_occurred = False
         completion_flag = False
         eval_except = ""
-
-        # Reset environment and get initial position of the objects
-        self.getInitialObjectStates()
 
         # Execute the evaluation code
         try:
@@ -222,15 +209,6 @@ class RobotAPINode(Node):
 
         print("Published message end task")
         print(msg)
-
-
-
-    def send_request(self, ):
-        self.req.a = a
-        self.req.b = b
-        self.future = self.cli.call_async(self.req)
-        rclpy.spin_until_future_complete(self, self.future)
-        return self.future.result()
     
 
     def timer_callback(self):
@@ -256,18 +234,28 @@ class RobotAPINode(Node):
         print("state")
 
 
-    def test_callback(self, request, response):
+    def task_callback(self, msg):
         print("received code")
-        code = request.code
-        print(code)
+        self.code = msg.code
+        print(self.code)
+        msg_reset = ResetRequest()
+        self.reset_pub.publish(msg_reset)
+        print("[INFO] requested initial state objects")
+
+    
+    def code_execution_callback(self, msg):
+
+        objects =  msg.objects
+        states =  msg.states
+        states = [states[i].pose for i in range(len(states))]
+        objStates = {object:list(state) for object,state in zip(objects, states)}
+        self.objStates = objStates
 
         # Create a dictionary to hold the local scope
         scope = {'self': self}
 
-        self.getInitialObjectStates()
-
         try:
-            exec(code, globals(), scope)
+            exec(self.code, globals(), scope)
             if 'execution_func' in scope:
                 # Convert the `execution_func` in the scope to a method of self
                 execution_func = MethodType(scope['execution_func'], self)
@@ -280,8 +268,9 @@ class RobotAPINode(Node):
 
         self.end_task()
 
-        response.code_except = code_except
-        return response
+        msg_error = CodeError()
+        msg_error.code_except = code_except
+        self.code_execution_resp_publisher.publish(msg_error)
 
     
 
