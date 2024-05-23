@@ -133,11 +133,13 @@ class PandaEnv(gym.Env):
         # self.objectUid = p.loadURDF(os.path.join(urdfRootPath, "cube_small.urdf"), basePosition=state_object)
         objects = {"red_cube":[0.6,0.1,0.05, 1, 0, 0, 0],
                    "green_cube":[0.5,-0.1,0.05, cos(pi/8), sin(pi/8), 0, 0],
-                   "blue_cube": [0.7,0.1,0.05, cos(pi/16), sin(pi/16), 0, 0]}
+                   "blue_cube": [0.7,0.1,0.05, cos(pi/16), sin(pi/16), 0, 0],
+                   "yellow_triangle":[0.8,-0.05,0.05, 1, 0, 0, 0]}
         urdf_files = {
                     "red_cube": "cube_red.urdf",
                     "green_cube": "cube_green.urdf",
-                    "blue_cube": "cube_blue.urdf"
+                    "blue_cube": "cube_blue.urdf",
+                    "yellow_triangle": "triangle_yellow.urdf"
                     }
 
         self.objectUid = {}
