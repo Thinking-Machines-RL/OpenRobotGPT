@@ -1,5 +1,7 @@
 msg/Action.idl
 msg/Action.msg
+msg/CodeError.idl
+msg/CodeError.msg
 msg/CodeExecutionM.idl
 msg/CodeExecutionM.msg
 msg/EECommandsM.idl
@@ -10,6 +12,8 @@ msg/ObjectStates.idl
 msg/ObjectStates.msg
 msg/ObjectStatesRequest.idl
 msg/ObjectStatesRequest.msg
+msg/ResetRequest.idl
+msg/ResetRequest.msg
 msg/ResultEvaluation.idl
 msg/ResultEvaluation.msg
 msg/State.idl
