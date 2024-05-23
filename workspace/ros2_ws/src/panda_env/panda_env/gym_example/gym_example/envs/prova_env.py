@@ -131,12 +131,26 @@ class PandaEnv(gym.Env):
         # state_object= [random.uniform(0.5,0.8),random.uniform(-0.2,0.2),0.05]
         # state_object= [0.6,0.1,0.05]
         # self.objectUid = p.loadURDF(os.path.join(urdfRootPath, "cube_small.urdf"), basePosition=state_object)
-        objects = {"blue_cube":[0.6,0.1,0.05, 1, 0, 0, 0],
-                   "yellow_cube":[0.5,-0.1,0.05, cos(pi/8), sin(pi/8), 0, 0],
-                   "green_cube": [0.7,0.1,0.05, cos(pi/16), sin(pi/16), 0, 0]}
+        objects = {"red_cube":[0.6,0.1,0.05, 1, 0, 0, 0],
+                   "green_cube":[0.5,-0.1,0.05, cos(pi/8), sin(pi/8), 0, 0],
+                   "blue_cube": [0.7,0.1,0.05, cos(pi/16), sin(pi/16), 0, 0],
+                   "yellow_triangle":[0.8,-0.05,0.05, 1, 0, 0, 0]}
+        urdf_files = {
+                    "red_cube": "cube_red.urdf",
+                    "green_cube": "cube_green.urdf",
+                    "blue_cube": "cube_blue.urdf",
+                    "yellow_triangle": "triangle_yellow.urdf"
+                    }
+
         self.objectUid = {}
-        for object,pose in zip(objects.keys(), objects.values()):
-            self.objectUid[object] = p.loadURDF(os.path.join(urdfRootPath, "cube_small.urdf"), basePosition=pose[:3], baseOrientation=pose[3:])
+        urdfRootPathOurs = "/root/workspace/ros2_ws/src/panda_env/panda_env/gym_example/gym_example/envs/objects"
+
+        for object_name, pose in objects.items():
+            urdf_file = urdf_files[object_name]
+            urdf_path = os.path.join(urdfRootPathOurs, urdf_file)
+            
+            # Load the URDF file with the specified pose
+            self.objectUid[object_name] = p.loadURDF(urdf_path, basePosition=pose[:3], baseOrientation=pose[3:])
         
         self.objects = {}
         for obj in self.objectUid.keys():
