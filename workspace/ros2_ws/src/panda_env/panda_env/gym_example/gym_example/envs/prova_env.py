@@ -5,7 +5,7 @@ from gymnasium .utils import seeding
 import os
 import pybullet as p
 import pybullet_data
-import math
+from math import sin, cos, pi
 import numpy as np
 import random
 import matplotlib.pyplot as plt
@@ -27,8 +27,8 @@ class PandaEnv(gym.Env):
     def getObjStates(self):
         object_obs = {}
         for object in self.objects.keys():
-            object_state, _ = p.getBasePositionAndOrientation(self.objectUid[object])
-            object_obs[object] = object_state
+            object_state, object_orientation = p.getBasePositionAndOrientation(self.objectUid[object])
+            object_obs[object] = object_state + object_orientation
 
         return object_obs
 
@@ -74,8 +74,8 @@ class PandaEnv(gym.Env):
 
         object_obs = {}
         for object in self.objects.keys():
-            state_object, _ = p.getBasePositionAndOrientation(self.objectUid[object])
-            object_obs[object] = state_object
+            object_state, object_orientation = p.getBasePositionAndOrientation(self.objectUid[object])
+            object_obs[object] = object_state + object_orientation
         state_robot = p.getLinkState(self.pandaUid, 11)[0]
         orientation_robot = p.getLinkState(self.pandaUid, 11)[1]
         state_fingers = (p.getJointState(self.pandaUid,9)[0], p.getJointState(self.pandaUid, 10)[0])
@@ -94,7 +94,8 @@ class PandaEnv(gym.Env):
         #Done is the end condition of the MDP, truncated is the time limit ending
 
         #info on the things that are not the agent
-        info = {'object_position': state_object}
+        #info = {'object_position': state_object}
+        info = {}
         self.observation = state_robot + orientation_robot + state_fingers
         #time limit is handled by the time wrapper
         return np.array(self.observation).astype(np.float32), reward, done, False, info
@@ -130,16 +131,17 @@ class PandaEnv(gym.Env):
         # state_object= [random.uniform(0.5,0.8),random.uniform(-0.2,0.2),0.05]
         # state_object= [0.6,0.1,0.05]
         # self.objectUid = p.loadURDF(os.path.join(urdfRootPath, "cube_small.urdf"), basePosition=state_object)
-        objects = {"blue_cube":[0.6,0.1,0.05],
-                   "yellow_cube":[0.5,-0.1,0.05],
-                   "green_cube": [0.7,0.1,0.05]}
+        objects = {"blue_cube":[0.6,0.1,0.05, 1, 0, 0, 0],
+                   "yellow_cube":[0.5,-0.1,0.05, cos(pi/8), sin(pi/8), 0, 0],
+                   "green_cube": [0.7,0.1,0.05, cos(pi/16), sin(pi/16), 0, 0]}
         self.objectUid = {}
-        for object,position in zip(objects.keys(), objects.values()):
-            self.objectUid[object] = p.loadURDF(os.path.join(urdfRootPath, "cube_small.urdf"), basePosition=position)
+        for object,pose in zip(objects.keys(), objects.values()):
+            self.objectUid[object] = p.loadURDF(os.path.join(urdfRootPath, "cube_small.urdf"), basePosition=pose[:3], baseOrientation=pose[3:])
         
         self.objects = {}
         for obj in self.objectUid.keys():
-            self.objects[obj], _ = p.getBasePositionAndOrientation(self.objectUid[obj])
+            position, orientation = p.getBasePositionAndOrientation(self.objectUid[obj]) 
+            self.objects[obj] = position + orientation
 
         #we return the first observation
         state_robot = p.getLinkState(self.pandaUid, 11)[0]

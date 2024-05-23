@@ -13,6 +13,7 @@ from collections import deque
 import threading
 from types import MethodType
 import copy
+from math import sin, cos
 
 class RobotAPINode(Node):
 
@@ -110,7 +111,8 @@ class RobotAPINode(Node):
         ''' Pick up the specified object '''
         assert object in self.objStates.keys(), f"pickUp({object}): '{object}' is not an object."
         assert not self.pickedObject, f"You already picked the object {self.pickedObject}, but you didn't place it"
-        PICK_POSE = self.objStates[object] + [1,0,0,0]
+        PICK_POSE = self.objStates[object]
+        self.objStates.pop(object)
         self.pickedObject = object
         self.pick(PICK_POSE)
 
@@ -120,17 +122,18 @@ class RobotAPINode(Node):
         assert self.pickedObject, "placeObjectOn({object}): No object has been picked yet."
         assert object in self.objStates.keys(), f"placeOnObject({object}): '{object}' is not an object."
         BLOCK_HEIGHT = 0.05
-        PLACE_POSITION = [self.objStates[object][0], self.objStates[object][1], self.objStates[object][2]+BLOCK_HEIGHT]
-        PLACE_POSE = PLACE_POSITION + [1,0,0,0]
+        PLACE_POSE = copy.deepcopy(self.objStates[object])
+        PLACE_POSE[2] += BLOCK_HEIGHT
         self.place(PLACE_POSE)
-        self.objStates[self.pickedObject] = PLACE_POSITION
+        self.objStates[self.pickedObject] = PLACE_POSE
         self.pickedObject = None
 
 
     def placeInPosition(self, target_position):
         ''' Place the object that we have grasped in the specified position '''
         assert self.pickedObject, "placeInPosition({object}): No object has been picked yet."
-        PLACE_POSE = target_position + [1,0,0,0]
+        # We choose default orientation [1,0,0,0]
+        PLACE_POSE = target_position + [1, 0, 0, 0]
         self.place(PLACE_POSE)
         self.objStates[self.pickedObject] = target_position
         self.pickedObject = None
