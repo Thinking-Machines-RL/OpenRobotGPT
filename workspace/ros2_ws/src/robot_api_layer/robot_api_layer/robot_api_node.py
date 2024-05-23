@@ -97,7 +97,7 @@ class RobotAPINode(Node):
         self.execution = True
 
 
-    def end_task(self):
+    def end_task_command(self):
         ''' Terminate task '''
         msg = EECommandsM()
         msg.target_state = [0,0,0,1,0,0,0] # fake target state
@@ -267,7 +267,7 @@ class RobotAPINode(Node):
             code_except = str(e)
             print("Code exception: ", code_except)
 
-        self.end_task()
+        self.end_task_command()
 
         msg_error = CodeError()
         msg_error.code_except = code_except
