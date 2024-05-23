@@ -13,6 +13,7 @@ from collections import deque
 import threading
 from types import MethodType
 import copy
+from math import sin, cos
 
 class RobotAPINode(Node):
 
@@ -55,10 +56,9 @@ class RobotAPINode(Node):
         self.traj_pub = self.create_publisher(EECommandsM,'trajectory_execution', 10, callback_group = service_group)
         print("Node ready")
 
-    def pick(self, object_pose, end_task = False):
+    def pick(self, object_pose):
 
         assert isinstance(object_pose, list), "The pose (first argument of pick) should be a list"
-        assert isinstance(end_task, bool), "end_task (second argument of pick) should be a bool"
         assert all(isinstance(item, float) or isinstance(item, int) for item in object_pose), "All elements of the pose should be floats"
         assert len(object_pose) == 7, "The pose has wrong length. It should be 7 elements long"
 
@@ -69,7 +69,7 @@ class RobotAPINode(Node):
         msg = EECommandsM()
         msg.target_state = object_pose
         msg.pick_or_place = True
-        msg.end_task = end_task
+        msg.end_task = False
 
         self.traj_pub.publish(msg)
 
@@ -77,10 +77,9 @@ class RobotAPINode(Node):
         self.execution = True
 
     
-    def place(self, object_pose, end_task = False):
+    def place(self, object_pose):
 
         assert isinstance(object_pose, list), "The pose (first argument of place) should be a list"
-        assert isinstance(end_task, bool), "end_task (second argument of place) should be a bool"
         assert all(isinstance(item, float) or isinstance(item, int) for item in object_pose), "All elements of the pose should be floats"
         assert len(object_pose) == 7, "The pose has wrong length. It should be 7 elements long"
 
@@ -90,7 +89,7 @@ class RobotAPINode(Node):
         msg = EECommandsM()
         msg.target_state = object_pose
         msg.pick_or_place = False
-        msg.end_task = end_task
+        msg.end_task = False
 
         self.traj_pub.publish(msg)
 
@@ -108,32 +107,34 @@ class RobotAPINode(Node):
         self.traj_pub.publish(msg)
 
 
-    def pickUp(self, object, end_task = False):
+    def pickUp(self, object):
         ''' Pick up the specified object '''
         assert object in self.objStates.keys(), f"pickUp({object}): '{object}' is not an object."
         assert not self.pickedObject, f"You already picked the object {self.pickedObject}, but you didn't place it"
-        PICK_POSE = self.objStates[object] + [1,0,0,0]
+        PICK_POSE = self.objStates[object]
+        self.objStates.pop(object)
         self.pickedObject = object
-        self.pick(PICK_POSE, end_task=end_task)
+        self.pick(PICK_POSE)
 
 
-    def placeObjectOn(self, object, end_task = False):
+    def placeObjectOn(self, object):
         ''' Place the object that we have grasped on top of the specified object '''
         assert self.pickedObject, "placeObjectOn({object}): No object has been picked yet."
         assert object in self.objStates.keys(), f"placeOnObject({object}): '{object}' is not an object."
         BLOCK_HEIGHT = 0.05
-        PLACE_POSITION = [self.objStates[object][0], self.objStates[object][1], self.objStates[object][2]+BLOCK_HEIGHT]
-        PLACE_POSE = PLACE_POSITION + [1,0,0,0]
-        self.place(PLACE_POSE, end_task=end_task)
-        self.objStates[self.pickedObject] = PLACE_POSITION
+        PLACE_POSE = copy.deepcopy(self.objStates[object])
+        PLACE_POSE[2] += BLOCK_HEIGHT
+        self.place(PLACE_POSE)
+        self.objStates[self.pickedObject] = PLACE_POSE
         self.pickedObject = None
 
 
-    def placeInPosition(self, target_position, end_task = False):
+    def placeInPosition(self, target_position):
         ''' Place the object that we have grasped in the specified position '''
         assert self.pickedObject, "placeInPosition({object}): No object has been picked yet."
-        PLACE_POSE = target_position + [1,0,0,0]
-        self.place(PLACE_POSE, end_task=end_task)
+        # We choose default orientation [1,0,0,0]
+        PLACE_POSE = target_position + [1, 0, 0, 0]
+        self.place(PLACE_POSE)
         self.objStates[self.pickedObject] = target_position
         self.pickedObject = None
 

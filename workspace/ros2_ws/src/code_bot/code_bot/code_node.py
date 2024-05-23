@@ -201,7 +201,7 @@ class CodeNode(Node):
         else:
             if msg.eval_except != "":
                 print("The evaluation generated the following error", msg.eval_except)
-            elif self.attempts < self.MAX_ATTEMPTS:
+            if self.attempts < self.MAX_ATTEMPTS:
                 print("Code execution failed to solve the task")
                 self.code_errors = ""
                 self.objStates = {object:state.pose for object, state in zip(msg.objects,msg.states)}
