@@ -132,6 +132,7 @@ class RobotAPINode(Node):
     def placeInPosition(self, target_position):
         ''' Place the object that we have grasped in the specified position '''
         assert self.pickedObject, "placeInPosition({object}): No object has been picked yet."
+        # We choose default orientation [1,0,0,0]
         PLACE_POSE = target_position + [1, 0, 0, 0]
         self.place(PLACE_POSE)
         self.objStates[self.pickedObject] = target_position
