@@ -8,6 +8,8 @@ from robotgpt_interfaces.msg import StateReward, Action, State, ObjectStatesRequ
 from robotgpt_interfaces.srv import EECommands, Trajectory, ObjectStatesR
 from geometry_msgs.msg import Point
 
+import csv
+import os
 import gym_example
 import gymnasium
 import numpy as np
@@ -93,6 +95,16 @@ class PandaEnvROSNode(Node):
         print("current position ", self.curr_state[0:7])
         request.ending_position = goal_position
         request.gripper_state = gripper_state
+
+        #add action to database
+        dataset_path = "/root/workspace/dataset"
+        current_folder_date = self._retrieve_last_folder(dataset_path)
+        print("recent path ", current_folder_date)
+        current_folder_traj = self._retrieve_last_folder(current_folder_date)
+        print("current folder traj ", current_folder_traj)
+
+        self._add_action_csv(current_folder_traj, goal_position.tolist(), gripper_state)
+
         future = self.move_client.call_async(request)
         future.add_done_callback(self._traj_generation_callback)
 
@@ -144,8 +156,72 @@ class PandaEnvROSNode(Node):
         else:
             for step in traj:
                     next_state, _, done, _, _ = self.env.step(step)
-                    self.env.render()
+                    rgb, depth = self.env.render()
                     self.curr_state = next_state[0:8]
+                
+                        #Update the data in Dataset
+            dataset_path = "/root/workspace/dataset"
+            current_folder_date = self._retrieve_last_folder(dataset_path)
+            current_folder_traj = self._retrieve_last_folder(current_folder_date)
+
+            self._add_state_csv(current_folder_traj, self.curr_state.tolist())
+    
+    def _retrieve_last_folder(self, main_directory):
+
+        #create list with all directories
+        print("directories")
+        print(os.listdir(main_directory))
+
+        directories = [d for d in os.listdir(main_directory) if os.path.isdir(os.path.join(main_directory, d))]
+        # Sort the directories based on their names (which are dates)
+        sorted_directories = sorted(directories, reverse=True)
+        print(sorted_directories)
+        if sorted_directories:
+            # Retrieve the most recent directory (the first one in the sorted list)
+            last_folder = sorted_directories[0]
+            last_folder_path = os.path.join(main_directory, last_folder)
+            print(f"Last folder retireved: {last_folder_path}")
+            return last_folder_path
+        else:
+            print("No folders found in the dataset directory.")
+
+    def _add_state_csv(self, path, state):
+        #path to data.cvs
+        csv_states_path = os.path.join(path, 'states.csv')
+        file_exists = os.path.isfile(csv_states_path)
+
+        headers = ["image", "x", "y", "z", "q0", "q1", "q2", "q3"]
+        # Open the CSV file in append mode and write the data
+        with open(csv_states_path, 'a', newline='') as csvfile:
+            csv_writer = csv.writer(csvfile)
+
+            # If the file doesn't exist, write the header
+            if not file_exists:
+                csv_writer.writerow(headers)  # Write header
+
+            # Write the data rows
+            image_name = "image"
+            for val in state:
+                image_name = image_name + "_" + str(int(val))
+            csv_writer.writerow([image_name] + state)
+        print(f"state appended to: {csv_states_path}")
+
+    def _add_action_csv(self, path, state, gripper_state):
+        #path to data.cvs
+        csv_action_path = os.path.join(path, 'action.csv')
+        file_exists = os.path.isfile(csv_action_path)
+
+        headers = ["x", "y", "z", "q0", "q1", "q2", "q3", "gripper_state"]
+        # Open the CSV file in append mode and write the data
+        with open(csv_action_path, 'a', newline='') as csvfile:
+            csv_writer = csv.writer(csvfile)
+
+            # If the file doesn't exist, write the header
+            if not file_exists:
+                csv_writer.writerow(headers)  # Write header
+
+            csv_writer.writerow(state + [gripper_state])
+        print(f"state appended to: {csv_action_path}")
             
 
     def reset(self):

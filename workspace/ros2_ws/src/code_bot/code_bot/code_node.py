@@ -9,7 +9,9 @@ import pkg_resources
 import json
 import re
 import os
+from datetime import datetime
 import json
+import shutil
 
 
 class CodeNode(Node):
@@ -45,6 +47,12 @@ class CodeNode(Node):
         # Correction context
         self.correction_context_json_path="/root/workspace/contexts/correction_context.json"
         self.correction_context_txt_path="/root/workspace/contexts/correction_context.txt"
+
+        #dataset
+        self.dataset_path = "/root/workspace/dataset"
+        self.current_folder = None
+        self.current_traj_folder = None
+        self.it = 0
 
         # Decision bot
         self.decision_bot = ChatGPT(config_path, secret_path)
@@ -94,6 +102,36 @@ class CodeNode(Node):
             # Write the dictionary as a JSON formatted string into the file
             json.dump(data, file, indent=4)
 
+    def _create_folder(self) -> str:
+        '''This function create a folder inside dataset with the name
+           of the current time instant in order to differentiate the 
+           trials
+           
+           output:
+                str: path of the new folder'''
+
+        #folder name will contain date and time
+        current_datetime = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        #creation of the folder
+        new_folder_name = os.path.join(self.dataset_path, current_datetime)
+        os.makedirs(new_folder_name)
+        return new_folder_name
+
+    def _create_trajectory_folder(self) -> str:
+        '''This function create a folder inside dataset/current_folder 
+            with the name ot trajectory_ + the index of the traj 
+    
+           output:
+                str: path of the new folder'''
+        #for now only creates trajectory 0
+        #TODO add multiple trajectory
+        traj_name = "trajectory_" + str(self.it)
+        #creation of the folder
+        new_folder_name = os.path.join(self.current_folder, traj_name)
+        os.makedirs(new_folder_name)
+        print("created new traejctroy ", traj_name)
+        return new_folder_name
+
     def _clean_code(self, code: str):
         '''
         Clean the code from the overhead
@@ -134,6 +172,16 @@ class CodeNode(Node):
         code = self.decision_bot.chat(f"Task: {task}")
         code = self._clean_code(code)
 
+        #Create folder for dataset
+        self.current_folder = self._create_folder()
+        #save the prompt used to generate the trajectories
+        prompt_path = os.path.join(self.current_folder, "prompt.txt")
+        # Write the prompt to the prompt.txt file
+        with open(prompt_path, 'w') as file:
+            file.write(self.task)
+
+        print(f"[INFO] Task prompt saved to: {prompt_path}")
+
         # ***** DEBUG ******
         print("\n\n")
         print(f"Code #{self.attempts}:\n {code}")
@@ -148,9 +196,12 @@ class CodeNode(Node):
         Deploys the code in a simulated environment
         '''
         # Keep track of the code
+        self.it += 1
         self.code = code
         code_execution_req = CodeExecutionM()
         code_execution_req.code = code
+                #create trajectory directory:
+        self.current_traj_folder = self._create_trajectory_folder()
         self.code_deployment_publisher.publish(code_execution_req)
 
     def _code_errors_callback(self, msg):
@@ -161,6 +212,9 @@ class CodeNode(Node):
             print("Code execution generated the following error |{}|".format(msg.code_except))
             self.code_errors = msg.code_except
             self.objStates = None
+            print("removing ", self.current_traj_folder)
+            # shutil.rmtree(self.current_traj_folder)
+            print("removed ")
             self._correct_code()
         else:
             self.objStates = None
@@ -198,13 +252,18 @@ class CodeNode(Node):
         if msg.completion_flag == True:
             print("The task was succesfully completed")
             print("The succesful code is:\n", self.code)
+            if self.it < 25:
+                code = self.decision_bot.chat(self.task)
+                code = self._clean_code(code)
+                self._deploy_code(code)
         else:
             if msg.eval_except != "":
                 print("The evaluation generated the following error", msg.eval_except)
-            elif self.attempts < self.MAX_ATTEMPTS:
+            if self.attempts < self.MAX_ATTEMPTS and self.it < 25:
                 print("Code execution failed to solve the task")
                 self.code_errors = ""
                 self.objStates = {object:state.pose for object, state in zip(msg.objects,msg.states)}
+                # shutil.rmtree(self.current_traj_folder)
                 self._correct_code()
             else:
                 print("Code execution failed to solve the task")
