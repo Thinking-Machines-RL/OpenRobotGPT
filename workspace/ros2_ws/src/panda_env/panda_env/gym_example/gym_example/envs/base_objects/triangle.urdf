@@ -1,5 +1,5 @@
 <?xml version="1.0" ?>
-<robot name="triangle_yellow.urdf">
+<robot name="triangle.urdf">
   <link name="baseLink">
     <contact>
       <friction_anchor/>
@@ -14,17 +14,18 @@
     <visual>
       <origin rpy="3.1416 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="triangle.obj" scale="0.7 1 1"/>
+        <mesh filename="triangle.obj" scale="0.7 1 1"/> <!-- <mesh filename="../base_objects/triangle.obj" -->
       </geometry>
-      <material name="yellow">
-        <color rgba="1 1 0 1"/>
+      <material name="white">
+        <color rgba="1 1 1 1"/>
       </material>
     </visual>
     <collision>
       <origin rpy="3.1416 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="triangle.obj" scale="0.7 1 1"/>
+        <mesh filename="triangle.obj" scale="0.7 1 1"/> <!-- <mesh filename="../base_objects/triangle.obj" -->
       </geometry>
     </collision>
   </link>
+  <type value="triangle"/>
 </robot>

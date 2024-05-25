@@ -1,5 +1,5 @@
 <?xml version="1.0" ?>
-<robot name="cube_blue">
+<robot name="cube_green">
   <link name="baseLink">
     <contact>
       <lateral_friction value="1.0"/>
@@ -15,10 +15,10 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-				<mesh filename="cube.obj" scale="0.05 0.05 0.05"/>
+				<mesh filename="../base_objects/cube.obj" scale="0.05 0.05 0.05"/>
       </geometry>
-       <material name="white">
-        <color rgba="0 0 1 1"/>
+       <material name="green">
+        <color rgba="0 1 0 1"/>
       </material>
     </visual>
     <collision>
@@ -27,5 +27,6 @@
 	 	<box size="1 1 1"/>
       </geometry>
     </collision>
+    <type value="cube"/>
   </link>
 </robot>

@@ -32,6 +32,21 @@ class PandaEnv(gym.Env):
 
         return object_obs
 
+    def rgba_to_color_name(rgba):
+        """Convert RGBA values to a color name."""
+        color_map = {
+            (1, 1, 1, 1): "white",
+            (0, 0, 0, 1): "black",
+            (1, 0, 0, 1): "red",
+            (0, 1, 0, 1): "green",
+            (0, 0, 1, 1): "blue",
+            (0, 1, 1, 1): "cyan",
+            (1, 0, 1, 1): "magenta",
+            (1, 1, 0, 1): "yellow",
+        }
+        rgba_tuple = tuple(rgba)
+        return color_map.get(rgba_tuple, "unknown")
+
     def step(self, action):
         '''Contains the logic of the environment, computes the state
            of the env after applying a given action'''
@@ -136,14 +151,14 @@ class PandaEnv(gym.Env):
                    "blue_cube": [0.7,0.1,0.05, cos(pi/16), sin(pi/16), 0, 0],
                    "yellow_triangle":[0.8,-0.05,0.05, 1, 0, 0, 0]}
         urdf_files = {
-                    "red_cube": "cube_red.urdf",
+                    "red_cube": "brick_cyan.urdf",
                     "green_cube": "cube_green.urdf",
-                    "blue_cube": "cube_blue.urdf",
+                    "blue_cube": "cylinder_magenta.urdf",
                     "yellow_triangle": "triangle_yellow.urdf"
                     }
 
         self.objectUid = {}
-        urdfRootPathOurs = "/root/workspace/ros2_ws/src/panda_env/panda_env/gym_example/gym_example/envs/objects"
+        urdfRootPathOurs = "/root/workspace/ros2_ws/src/panda_env/panda_env/gym_example/gym_example/envs/workspace_objects"
 
         for object_name, pose in objects.items():
             urdf_file = urdf_files[object_name]

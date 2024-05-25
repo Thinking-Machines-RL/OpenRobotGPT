@@ -1,0 +1,31 @@
+<?xml version="1.0" ?>
+<robot name="cylinder_magenta.urdf">
+  <link name="baseLink">
+    <contact>
+      <friction_anchor/>
+      <lateral_friction value="1.0"/>
+      <rolling_friction value="0.0"/>
+    </contact>
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <mass value="0.1"/>
+      <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="../base_objects/cylinder.obj" scale="1.2 1.2 1.2"/> <!-- <mesh filename="../base_objects/cylinder.obj" -->
+      </geometry>
+      <material name="magenta">
+        <color rgba="1 0 1 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="../base_objects/cylinder.obj" scale="1.2 1.2 1.2"/> <!-- <mesh filename="../base_objects/cylinder.obj" -->
+      </geometry>
+    </collision>
+  </link>
+  <type value="cylinder"/>
+</robot>
