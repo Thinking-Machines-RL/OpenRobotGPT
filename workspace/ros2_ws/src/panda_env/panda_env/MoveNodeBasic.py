@@ -32,6 +32,10 @@ class MoveNodeBasic(Node):
 
         curr_state = np.array(curr_state)
         final_pose = np.array(final_pose)
+
+        # ***** DEBUG *****
+        print("Final pose: ", final_pose)
+        # *****************
         
         # Plan 3 trajectory pieces + grip
         # Move to a safe height

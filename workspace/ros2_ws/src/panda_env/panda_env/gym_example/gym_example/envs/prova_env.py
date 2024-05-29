@@ -9,6 +9,7 @@ from math import sin, cos, pi
 import numpy as np
 import random
 import matplotlib.pyplot as plt
+from scipy.spatial.transform import Rotation as R
 
 class PandaEnv(gym.Env):
     metadata = {'render_modes': ['human'], 'render_fps' : 60}
@@ -28,6 +29,8 @@ class PandaEnv(gym.Env):
         object_obs = {}
         for object in self.objects.keys():
             object_state, object_orientation = p.getBasePositionAndOrientation(self.objectUid[object])
+            object_state = list(object_state)
+            object_orientation = R.from_matrix(R.from_quat(object_orientation).as_matrix() @ R.from_quat(self.grip_rotation[object]).as_matrix()).as_quat().tolist()
             object_obs[object] = object_state + object_orientation
 
         return object_obs
@@ -75,6 +78,8 @@ class PandaEnv(gym.Env):
         object_obs = {}
         for object in self.objects.keys():
             object_state, object_orientation = p.getBasePositionAndOrientation(self.objectUid[object])
+            object_state = list(object_state)
+            object_orientation = R.from_matrix(R.from_quat(object_orientation).as_matrix() @ R.from_quat(self.grip_rotation[object]).as_matrix()).as_quat().tolist()
             object_obs[object] = object_state + object_orientation
         state_robot = p.getLinkState(self.pandaUid, 11)[0]
         orientation_robot = p.getLinkState(self.pandaUid, 11)[1]
@@ -144,6 +149,13 @@ class PandaEnv(gym.Env):
                     "blue_cube": "cube_blue.urdf",
                     "yellow_triangle": "triangle_yellow.urdf"
                     }
+        
+        self.grip_rotation = {
+            "red_cube":[0, 0, 1, 0],
+            "green_cube":[0, 0, 1, 0],
+            "blue_cube": [0, 0, 1, 0],
+            "yellow_triangle":[-1, 0, 0, 0]
+        }
 
         self.objectUid = {}
         urdfRootPathOurs = "/root/workspace/ros2_ws/src/panda_env/panda_env/gym_example/gym_example/envs/objects"
@@ -158,6 +170,8 @@ class PandaEnv(gym.Env):
         self.objects = {}
         for obj in self.objectUid.keys():
             position, orientation = p.getBasePositionAndOrientation(self.objectUid[obj]) 
+            position = list(position)
+            orientation = R.from_matrix(R.from_quat(orientation).as_matrix() @ R.from_quat(self.grip_rotation[obj]).as_matrix()).as_quat().tolist()
             self.objects[obj] = position + orientation
 
         #we return the first observation
