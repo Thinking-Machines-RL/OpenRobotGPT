@@ -74,13 +74,6 @@ class MoveNodeBasic(Node):
         add_vel_3 = np.hstack([vel_setpt_3 for i in range(5)])
         vel_traj_3 = np.concatenate((vel_traj_3,add_vel_3),axis=0)
 
-        pose_setpt_p = copy.deepcopy(traj_p[-8:])
-        vel_setpt_p = np.zeros_like(vel_traj_p[-3:])
-        add_pose_p = np.hstack([pose_setpt_p for i in range(5)])
-        traj_p = np.concatenate((traj_p,add_pose_p),axis=0)
-        add_vel_p = np.hstack([vel_setpt_p for i in range(5)])
-        vel_traj_p = np.concatenate((vel_traj_p,add_vel_p),axis=0)
-
         # Build unique trajectory
         traj = np.concatenate((traj_1, traj_2, traj_3, traj_p),axis=0)
         vel_traj = np.concatenate((vel_traj_1, vel_traj_2, vel_traj_3, vel_traj_p),axis=0)
@@ -89,6 +82,20 @@ class MoveNodeBasic(Node):
         response.position = traj
         response.vel = vel_traj
         print("[INFO] trajectory generated")
+
+        # ***** DEBUG *****
+
+        print("traj_3 quaternions")
+        for i in range(len(traj_3)//8):
+            print(traj_3[i*8+3:i*8+7])
+        print("\n")
+
+        print("traj_p quaternions")
+        for i in range(len(traj_p)//8):
+            print(traj_p[i*8+3:i*8+7])
+        print("\n")
+        # *****************
+
         print("[INFO] response sent ----------")
         # print(response)
         print("----------------------")

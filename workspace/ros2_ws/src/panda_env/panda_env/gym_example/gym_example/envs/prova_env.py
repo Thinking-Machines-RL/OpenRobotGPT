@@ -82,12 +82,14 @@ class PandaEnv(gym.Env):
 
         #TODO: random goal, must be changed
         #we moved the object at a certain altitude 
-        if object_obs["blue_cube"][-1]>0.45:
+        """ if object_obs["red_cube"][-1]>0.45:
             reward = 1
             done = True
         else:
             reward = 0
-            done = False
+            done = False """
+        reward = 0
+        done = False
 
         self.step_counter += 1
 
@@ -128,9 +130,10 @@ class PandaEnv(gym.Env):
         trayUid = p.loadURDF(os.path.join(urdfRootPath, "tray/traybox.urdf"),basePosition=[0.65,0,0])
         
         #we randomize the position of the object on the table
-        # state_object= [random.uniform(0.5,0.8),random.uniform(-0.2,0.2),0.05]
-        # state_object= [0.6,0.1,0.05]
-        # self.objectUid = p.loadURDF(os.path.join(urdfRootPath, "cube_small.urdf"), basePosition=state_object)
+        #state_object= [random.uniform(0.5,0.8),random.uniform(-0.2,0.2),0.05]
+        #state_object= [0.6,0.1,0.05]
+        #self.objectUid = p.loadURDF(os.path.join(urdfRootPath, "cube_small.urdf"), basePosition=state_object)
+        
         objects = {"red_cube":[0.6,0.1,0.05, 1, 0, 0, 0],
                    "green_cube":[0.5,-0.1,0.05, cos(pi/8), sin(pi/8), 0, 0],
                    "blue_cube": [0.7,0.1,0.05, cos(pi/16), sin(pi/16), 0, 0],

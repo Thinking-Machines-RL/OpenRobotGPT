@@ -3,6 +3,7 @@ import numpy as np
 import math
 from numpy.linalg import inv
 from collections import deque
+from scipy.spatial.transform import Rotation as R
 
 Pose = TypeVar("Pose")
 Trajectory = TypeVar("Trajectory")
@@ -28,10 +29,21 @@ class PlannerInterface:
                       [-axis[1], axis[0], 0]])
         return M
     
+    def _quat_to_mat(self, quat):
+        e_0 = quat[0]
+        e_hat = quat[1:]
+        S = self._skew_simm(e_hat)
+        R = np.eye(3) + 2*e_0*S + 2*S@S
+        return R
+    
     def _axis_to_mat(self, axis:np.ndarray, angle)-> np.ndarray:
         #from rotation axis to rotation matrix
         S = self._skew_simm(axis)
-        R = np.eye(3) + math.sin(angle)*S + (1-math.cos(angle))*(S @ S)
+        T = np.array([[axis[0]*axis[0], axis[0]*axis[1], axis[0]*axis[2]],
+                      [axis[1]*axis[0], axis[1]*axis[1], axis[1]*axis[2]],
+                      [axis[2]*axis[0], axis[2]*axis[1], axis[2]*axis[2]]])
+        # R = math.cos(angle)*np.eye(3) - math.sin(angle)*(S@S) + (1-math.cos(angle))*T
+        R = np.eye(3) + math.sin(angle)*S + (1 - math.cos(angle))*(S@S)
         return R
     
     def _mat_to_axis(self, R):
@@ -43,14 +55,9 @@ class PlannerInterface:
         return axis, angle
     
     def _quat_to_axis(self, quat:np.ndarray):
-        angle = 2*math.acos(quat[0])
+        angle = 2*math.acos(quat[0]) 
         axis = quat[1:]/(math.sin(angle/2) + self.eps)
         return axis, angle
-    
-    def _quat_to_mat(self, quat:np.ndarray) -> np.ndarray:
-        axis, angle = self._quat_to_axis(quat)
-        R = self._axis_to_mat(axis, angle)
-        return R
     
     def _axis_to_quat(self, axis:np.ndarray, angle:float) -> np.ndarray:
         v = math.sin(angle/2) * axis
@@ -65,11 +72,20 @@ class PlannerInterface:
     def plan_trajectory(self, A: np.array, B: np.array):
         print("[INFO] calculating the trajectory")
         # Plan direct path from A to B
-        A_rot = self._quat_to_mat(A[3:])
-        B_rot = self._quat_to_mat(B[3:])
+        A_rot = np.array(R.from_quat(A[3:].tolist()).as_matrix())
+        B_rot = np.array(R.from_quat(B[3:].tolist()).as_matrix())
         AB_rot = inv(A_rot) @ B_rot
 
-        axis, theta_f = self._mat_to_axis(AB_rot)
+        vector = np.array(R.from_matrix(AB_rot).as_rotvec())
+
+        theta_f = np.linalg.norm(vector)
+        axis = vector / theta_f
+
+        # ***** DEBUG *****
+        print("Rotation:")
+        print("axis: ", axis)
+        print("theta_f: ", theta_f)
+        # *****************
 
         x_y_z_theta_0 = np.concatenate((A[:3],np.array([0])))
         x_y_z_theta_f = np.concatenate((B[:3],np.array([theta_f])))
@@ -89,9 +105,10 @@ class PlannerInterface:
             position = np.array([x_y_z_theta[0][i], x_y_z_theta[1][i], x_y_z_theta[2][i]])
 
             # Orientation
-            R_theta = self._axis_to_mat(axis, x_y_z_theta[3][i])
-            R = A_rot @ R_theta
-            quat = self._matrix_to_quat(R)
+            vector = x_y_z_theta[3][i] * axis
+            R_theta = np.array(R.from_rotvec(vector).as_matrix())
+            Rot = A_rot @ R_theta
+            quat = np.array(R.from_matrix(Rot).as_quat())
 
             orientation = quat.T
             traj_point = np.concatenate((position, orientation, grip))
@@ -102,62 +119,6 @@ class PlannerInterface:
 
         #return a valid set of action for the robot
         return trajectory, vel_array
-
-# def _calculate_shortest_time(distance):
-#     # Constants
-#     max_velocity = 1.7  # m/s
-#     max_acceleration = 13.0  # m/s^2
-
-#     # Calculate time for acceleration and deceleration phases
-#     acceleration_time = max_velocity / max_acceleration #Ta
-    
-#     # Total time
-#     total_time = distance / max_velocity + acceleration_time
-#     return total_time
-
-# def plan_trajectory(self, A: np.array, B: np.array):
-#     # Constants
-#     max_velocity = 1.7  # m/s
-#     max_acceleration = 13.0  # m/s^2
-
-#     distance = np.linalg.norm(A[0:3] - B[0:3])
-#     total_time = calculate_shortest_time(distance)
-
-#     # Calculate number of timesteps
-#     num_steps = int(total_time / dt)
-
-#     # Time array
-#     t = np.linspace(0, total_time, num_steps)
-
-#     # Generate trapezoidal velocity profile
-#     acceleration_time = max_velocity / max_acceleration
-#     distance_acceleration = 0.5 * max_acceleration * acceleration_time ** 2
-#     constant_velocity_time = (total_time - 2 * acceleration_time)
-#     distance_constant_velocity = max_velocity * constant_velocity_time
-#     total_distance = 2 * distance_acceleration + distance_constant_velocity
-
-#     # Initialize arrays for position, orientation, and linear velocity
-#     position = np.zeros((3, num_steps))
-#     orientation = np.zeros((4, num_steps))  # Using quaternion for orientation
-#     linear_velocity = np.zeros((3, num_steps))
-
-#     # Generate trajectory
-#     current_pos = 0
-#     for i in range(num_steps):
-#         if t[i] < acceleration_time:
-#             current_pos += 0.5 * max_acceleration * (t[i] ** 2)
-#             linear_velocity[0, i] = max_acceleration * t[i]
-#         elif t[i] < acceleration_time + constant_velocity_time:
-#             current_pos += max_velocity * dt
-#             linear_velocity[0, i] = max_velocity
-#         else:
-#             current_pos += max_velocity * (total_time - t[i]) - 0.5 * max_acceleration * (
-#                     total_time - t[i]) ** 2
-#             linear_velocity[0, i] = max_acceleration * (total_time - t[i])
-
-#         position[0, i] = current_pos
-
-#     return position, orientation, linear_velocity
 
     
     def pick_cube(self, A):
@@ -170,10 +131,10 @@ class PlannerInterface:
         self.grip_value = 0.02
         gripping_state = np.hstack((A, self.grip_value)) 
         vel_traj = np.array([0.0, 0.0, 0.0])
-        gp_state = gripping_state
-        for i in range(5):
-            gp_state = np.hstack((gripping_state, gp_state))
-            vel_traj = np.hstack((vel_traj,np.array([0.0, 0.0, 0.0])))
+        gp_state = (gripping_state, gripping_state, gripping_state, gripping_state, gripping_state)
+        vel_traj = (np.array([0.0, 0.0, 0.0]), np.array([0.0, 0.0, 0.0]), np.array([0.0, 0.0, 0.0]), np.array([0.0, 0.0, 0.0]), np.array([0.0, 0.0, 0.0]))
+        gp_state = np.hstack(gp_state)
+        vel_traj = np.hstack(vel_traj)
         return gp_state, vel_traj
 
     def release_cube(self, A):
@@ -185,8 +146,12 @@ class PlannerInterface:
         self.grip_value = 0.04
         degripping_state = np.hstack((A, self.grip_value)) 
         vel_traj = np.array([0.0, 0.0, 0.0])
-        gp_state = degripping_state
-        for i in range(5):
-            gp_state = np.hstack((degripping_state, gp_state))
-            vel_traj = np.hstack((vel_traj,np.array([0.0, 0.0, 0.0])))
+        gp_state = (degripping_state, degripping_state, degripping_state, degripping_state, degripping_state)
+        vel_traj = (np.array([0.0, 0.0, 0.0]), np.array([0.0, 0.0, 0.0]), np.array([0.0, 0.0, 0.0]), np.array([0.0, 0.0, 0.0]), np.array([0.0, 0.0, 0.0]))
+        gp_state = np.hstack(gp_state)
+        vel_traj = np.hstack(vel_traj)
         return gp_state, vel_traj
+    
+
+if __name__ == '__main__':
+    print("")
