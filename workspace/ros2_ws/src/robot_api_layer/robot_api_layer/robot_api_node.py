@@ -64,8 +64,7 @@ class RobotAPINode(Node):
 
         print("[INFO] requested pick")
         # final pose must be a numpy array of dimension 7 (3+4)
-        # What I should get is traj + at the end grip aktion
-        print("obj pos", object_pose )
+        # What I should get is traj + at the end grip action
         msg = EECommandsM()
         msg.target_state = object_pose
         msg.pick_or_place = True
@@ -136,6 +135,16 @@ class RobotAPINode(Node):
         PLACE_POSE = target_position + [1, 0, 0, 0]
         self.place(PLACE_POSE)
         self.objStates[self.pickedObject] = target_position
+        self.pickedObject = None
+
+    def placeSafe(self):
+        ''' Place the object in a safe position '''
+        assert self.pickedObject, "placeInPosition({object}): No object has been picked yet."
+        # We choose default orientation [1,0,0,0]
+        target_position = [0.7, -0.1, 0.05]
+        PLACE_POSE = target_position + [1, 0, 0, 0]
+        self.place(PLACE_POSE)
+        self.objStates[self.pickedObject] = PLACE_POSE
         self.pickedObject = None
 
 
@@ -251,6 +260,10 @@ class RobotAPINode(Node):
         states = [states[i].pose for i in range(len(states))]
         objStates = {object:list(state) for object,state in zip(objects, states)}
         self.objStates = objStates
+
+        print("objStates = ", self.objStates)
+
+        self.pickedObject = None
 
         # Create a dictionary to hold the local scope
         scope = {'self': self}

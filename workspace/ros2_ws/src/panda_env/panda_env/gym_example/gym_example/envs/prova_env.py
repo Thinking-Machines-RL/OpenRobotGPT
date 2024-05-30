@@ -30,7 +30,7 @@ class PandaEnv(gym.Env):
         for object in self.objects.keys():
             object_state, object_orientation = p.getBasePositionAndOrientation(self.objectUid[object])
             object_state = list(object_state)
-            object_orientation = R.from_matrix(R.from_quat(object_orientation).as_matrix() @ R.from_quat(self.grip_rotation[object]).as_matrix()).as_quat().tolist()
+            object_orientation = R.from_matrix(R.from_quat(self.grip_rotation[object]).as_matrix() @ R.from_quat(object_orientation).as_matrix()).as_quat().tolist()
             object_obs[object] = object_state + object_orientation
 
         return object_obs
@@ -79,7 +79,7 @@ class PandaEnv(gym.Env):
         for object in self.objects.keys():
             object_state, object_orientation = p.getBasePositionAndOrientation(self.objectUid[object])
             object_state = list(object_state)
-            object_orientation = R.from_matrix(R.from_quat(object_orientation).as_matrix() @ R.from_quat(self.grip_rotation[object]).as_matrix()).as_quat().tolist()
+            object_orientation = R.from_matrix(R.from_quat(self.grip_rotation[object]).as_matrix() @ R.from_quat(object_orientation).as_matrix()).as_quat().tolist()
             object_obs[object] = object_state + object_orientation
         state_robot = p.getLinkState(self.pandaUid, 11)[0]
         orientation_robot = p.getLinkState(self.pandaUid, 11)[1]
@@ -149,11 +149,11 @@ class PandaEnv(gym.Env):
                     "blue_cube": "cube_blue.urdf",
                     "yellow_triangle": "triangle_yellow.urdf"
                     }
-        
+
         self.grip_rotation = {
-            "red_cube":[0, 0, 1, 0],
-            "green_cube":[0, 0, 1, 0],
-            "blue_cube": [0, 0, 1, 0],
+            "red_cube":[0, 0, 0, 1],
+            "green_cube":[0, 0, 0, 1],
+            "blue_cube": [0, 0, 0, 1],
             "yellow_triangle":[-1, 0, 0, 0]
         }
 
@@ -165,14 +165,18 @@ class PandaEnv(gym.Env):
             urdf_path = os.path.join(urdfRootPathOurs, urdf_file)
             
             # Load the URDF file with the specified pose
+            print("pose[:3] = ", pose[:3])
+            print("pose[3:] = ", pose[3:])
             self.objectUid[object_name] = p.loadURDF(urdf_path, basePosition=pose[:3], baseOrientation=pose[3:])
         
         self.objects = {}
         for obj in self.objectUid.keys():
             position, orientation = p.getBasePositionAndOrientation(self.objectUid[obj]) 
             position = list(position)
-            orientation = R.from_matrix(R.from_quat(orientation).as_matrix() @ R.from_quat(self.grip_rotation[obj]).as_matrix()).as_quat().tolist()
+            orientation = R.from_matrix(R.from_quat(self.grip_rotation[obj]).as_matrix() @ R.from_quat(orientation).as_matrix()).as_quat().tolist()
             self.objects[obj] = position + orientation
+
+        print("RESET objStates = ", self.objects)
 
         #we return the first observation
         state_robot = p.getLinkState(self.pandaUid, 11)[0]
