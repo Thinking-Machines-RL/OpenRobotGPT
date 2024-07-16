@@ -53,6 +53,8 @@ class CodeNode(Node):
         self.current_folder = None
         self.current_traj_folder = None
         self.it = 0
+        #list where to store the index of all the failed trajectoeries
+        self.failed = []
 
         # Decision bot
         self.decision_bot = ChatGPT(config_path, secret_path)
@@ -76,6 +78,7 @@ class CodeNode(Node):
         self._create_json_from_txt(self.correction_context_txt_path, self.correction_context_json_path)
         context = [self._read_json_to_dict(self.correction_context_json_path)]
         self.correction_bot.set_context(context)
+
 
     # Utility functions
     def _read_json_to_dict(self, json_file):
@@ -156,7 +159,10 @@ class CodeNode(Node):
 
     # Public interface
     def request_task(self, task):
-        # Keep track of the task
+        '''Request to the LLM to create the code for a certain 
+           prompted task. This is the first action of the pipeline'''
+
+        # Keep track of the task, want to use it for the dataset
         self.task = task
 
         # Reset stored variables
@@ -252,18 +258,25 @@ class CodeNode(Node):
         if msg.completion_flag == True:
             print("The task was succesfully completed")
             print("The succesful code is:\n", self.code)
-            if self.it < 25:
+            if self.it < 10:
                 code = self.decision_bot.chat(self.task)
                 code = self._clean_code(code)
                 self._deploy_code(code)
+            if self.it >= 10:
+                print(f"failed attempts {self.failed}")
+                for idx in self.failed:
+                    traj_name = "trajectory_" + str(idx)
+                    #creation of the folder
+                    new_folder_name = os.path.join(self.current_folder, traj_name)
+                    shutil.rmtree(new_folder_name)
         else:
             if msg.eval_except != "":
                 print("The evaluation generated the following error", msg.eval_except)
-            if self.attempts < self.MAX_ATTEMPTS and self.it < 25:
+            if self.attempts < self.MAX_ATTEMPTS and self.it < 10:
                 print("Code execution failed to solve the task")
                 self.code_errors = ""
                 self.objStates = {object:state.pose for object, state in zip(msg.objects,msg.states)}
-                # shutil.rmtree(self.current_traj_folder)
+                self.failed.append(self.it)
                 self._correct_code()
             else:
                 print("Code execution failed to solve the task")

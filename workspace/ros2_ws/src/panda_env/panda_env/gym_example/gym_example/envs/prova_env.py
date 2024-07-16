@@ -27,11 +27,11 @@ class PandaEnv(gym.Env):
 
     def getObjStates(self):
         object_obs = {}
-        for object in self.objects.keys():
-            object_state, object_orientation = p.getBasePositionAndOrientation(self.objectUid[object])
+        for obj in self.objects.keys():
+            object_state, object_orientation = p.getBasePositionAndOrientation(self.objectUid[obj])
             object_state = list(object_state)
-            object_orientation = R.from_matrix(R.from_quat(self.grip_rotation[object]).as_matrix() @ R.from_quat(object_orientation).as_matrix()).as_quat().tolist()
-            object_obs[object] = object_state + object_orientation
+            object_orientation = R.from_matrix(R.from_quat(self.grip_rotation[obj]).as_matrix() @ R.from_quat(object_orientation).as_matrix()).as_quat().tolist()
+            object_obs[obj] = object_state + object_orientation
 
         return object_obs
 
@@ -76,11 +76,13 @@ class PandaEnv(gym.Env):
         p.stepSimulation()
 
         object_obs = {}
-        for object in self.objects.keys():
-            object_state, object_orientation = p.getBasePositionAndOrientation(self.objectUid[object])
+        for obj in self.objects.keys():
+            print(f"object {obj}")
+            object_state, object_orientation = p.getBasePositionAndOrientation(self.objectUid[obj])
             object_state = list(object_state)
-            object_orientation = R.from_matrix(R.from_quat(self.grip_rotation[object]).as_matrix() @ R.from_quat(object_orientation).as_matrix()).as_quat().tolist()
-            object_obs[object] = object_state + object_orientation
+            object_orientation = R.from_matrix(R.from_quat(self.grip_rotation[obj]).as_matrix() @ R.from_quat(object_orientation).as_matrix()).as_quat().tolist()
+            object_obs[obj] = object_state + object_orientation
+
         state_robot = p.getLinkState(self.pandaUid, 11)[0]
         orientation_robot = p.getLinkState(self.pandaUid, 11)[1]
         state_fingers = (p.getJointState(self.pandaUid,9)[0], p.getJointState(self.pandaUid, 10)[0])
