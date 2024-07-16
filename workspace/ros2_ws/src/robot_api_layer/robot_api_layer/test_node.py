@@ -13,7 +13,7 @@ from collections import deque
 import threading
 from types import MethodType
 import copy
-from math import sin, cos
+from math import sin, cos, pi
 
 class RobotAPINode(Node):
 
@@ -42,19 +42,14 @@ class RobotAPINode(Node):
 
         self.pickedObject = None
 
-        #CHATGPT client and service -----
-        self.code_subscriber = self.create_subscription(CodeExecutionM, 'chat_gpt_bot/test_code', self.task_callback, 10)
-        # self.sub_exec = self.create_subscription(CodeExecutionM, 'chat_gpt_bot/test_code', self.test_callback,10, callback_group = service_group)
-        self.client_evaluation_code = self.create_client(EvaluationCode, 'chat_gpt_bot/evaluation_code', callback_group = service_group)
-        while not self.client_evaluation_code.wait_for_service(timeout_sec=self.SERVICE_TIMEOUT):
-            self.get_logger().info('Evaluation code service not available, waiting again...')
-        self.req_eval = EvaluationCode.Request()
-        self.eval_publisher = self.create_publisher(ResultEvaluation, 'chat_gpt_bot/evaluation_results', 10)
-        self.code_execution_resp_publisher = self.create_publisher(CodeError, 'chat_gpt_bot/code_error', 10)
-        #--------------------------------
-
         self.traj_pub = self.create_publisher(EECommandsM,'trajectory_execution', 10, callback_group = service_group)
         print("Node ready")
+
+        axis = [1,0,0]
+        angle = pi/2
+        quat = [cos(angle/2), sin(angle/2)*axis[0], sin(angle/2)*axis[1], sin(angle/2)*axis[2]]
+        test_pose = [0.5, 0.1, 0.05] + quat
+        self.pick(test_pose)
 
     def pick(self, object_pose):
 
@@ -64,7 +59,8 @@ class RobotAPINode(Node):
 
         print("[INFO] requested pick")
         # final pose must be a numpy array of dimension 7 (3+4)
-        # What I should get is traj + at the end grip action
+        # What I should get is traj + at the end grip aktion
+        print("obj pos", object_pose )
         msg = EECommandsM()
         msg.target_state = object_pose
         msg.pick_or_place = True
@@ -135,16 +131,6 @@ class RobotAPINode(Node):
         PLACE_POSE = target_position + [1, 0, 0, 0]
         self.place(PLACE_POSE)
         self.objStates[self.pickedObject] = target_position
-        self.pickedObject = None
-
-    def placeSafe(self):
-        ''' Place the object in a safe position '''
-        assert self.pickedObject, "placeInPosition({object}): No object has been picked yet."
-        # We choose default orientation [1,0,0,0]
-        target_position = [0.7, -0.1, 0.05]
-        PLACE_POSE = target_position + [1, 0, 0, 0]
-        self.place(PLACE_POSE)
-        self.objStates[self.pickedObject] = PLACE_POSE
         self.pickedObject = None
 
 
@@ -261,10 +247,6 @@ class RobotAPINode(Node):
         objStates = {object:list(state) for object,state in zip(objects, states)}
         self.objStates = objStates
 
-        print("objStates = ", self.objStates)
-
-        self.pickedObject = None
-
         # Create a dictionary to hold the local scope
         scope = {'self': self}
 
@@ -300,4 +282,3 @@ def main(args=None):
 
 if __name__ == '__main__':
     main()
-

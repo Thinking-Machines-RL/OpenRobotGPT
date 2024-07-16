@@ -5,10 +5,11 @@ from gymnasium .utils import seeding
 import os
 import pybullet as p
 import pybullet_data
-import math
+from math import sin, cos, pi
 import numpy as np
 import random
 import matplotlib.pyplot as plt
+from scipy.spatial.transform import Rotation as R
 
 class PandaEnv(gym.Env):
     metadata = {'render_modes': ['human'], 'render_fps' : 60}
@@ -26,9 +27,11 @@ class PandaEnv(gym.Env):
 
     def getObjStates(self):
         object_obs = {}
-        for object in self.objects.keys():
-            object_state, _ = p.getBasePositionAndOrientation(self.objectUid[object])
-            object_obs[object] = object_state
+        for obj in self.objects.keys():
+            object_state, object_orientation = p.getBasePositionAndOrientation(self.objectUid[obj])
+            object_state = list(object_state)
+            object_orientation = R.from_matrix(R.from_quat(self.grip_rotation[obj]).as_matrix() @ R.from_quat(object_orientation).as_matrix()).as_quat().tolist()
+            object_obs[obj] = object_state + object_orientation
 
         return object_obs
 
@@ -73,28 +76,34 @@ class PandaEnv(gym.Env):
         p.stepSimulation()
 
         object_obs = {}
-        for object in self.objects.keys():
-            state_object, _ = p.getBasePositionAndOrientation(self.objectUid[object])
-            object_obs[object] = state_object
+        for obj in self.objects.keys():
+            print(f"object {obj}")
+            object_state, object_orientation = p.getBasePositionAndOrientation(self.objectUid[obj])
+            object_state = list(object_state)
+            object_orientation = R.from_matrix(R.from_quat(self.grip_rotation[obj]).as_matrix() @ R.from_quat(object_orientation).as_matrix()).as_quat().tolist()
+            object_obs[obj] = object_state + object_orientation
         state_robot = p.getLinkState(self.pandaUid, 11)[0]
         orientation_robot = p.getLinkState(self.pandaUid, 11)[1]
         state_fingers = (p.getJointState(self.pandaUid,9)[0], p.getJointState(self.pandaUid, 10)[0])
 
         #TODO: random goal, must be changed
         #we moved the object at a certain altitude 
-        if object_obs["blue_cube"][-1]>0.45:
+        """ if object_obs["red_cube"][-1]>0.45:
             reward = 1
             done = True
         else:
             reward = 0
-            done = False
+            done = False """
+        reward = 0
+        done = False
 
         self.step_counter += 1
 
         #Done is the end condition of the MDP, truncated is the time limit ending
 
         #info on the things that are not the agent
-        info = {'object_position': state_object}
+        #info = {'object_position': state_object}
+        info = {}
         self.observation = state_robot + orientation_robot + state_fingers
         #time limit is handled by the time wrapper
         return np.array(self.observation).astype(np.float32), reward, done, False, info
@@ -127,19 +136,48 @@ class PandaEnv(gym.Env):
         trayUid = p.loadURDF(os.path.join(urdfRootPath, "tray/traybox.urdf"),basePosition=[0.65,0,0])
         
         #we randomize the position of the object on the table
-        # state_object= [random.uniform(0.5,0.8),random.uniform(-0.2,0.2),0.05]
-        # state_object= [0.6,0.1,0.05]
-        # self.objectUid = p.loadURDF(os.path.join(urdfRootPath, "cube_small.urdf"), basePosition=state_object)
-        objects = {"blue_cube":[0.6,0.1,0.05],
-                   "yellow_cube":[0.5,-0.1,0.05],
-                   "green_cube": [0.7,0.1,0.05]}
+        #state_object= [random.uniform(0.5,0.8),random.uniform(-0.2,0.2),0.05]
+        #state_object= [0.6,0.1,0.05]
+        #self.objectUid = p.loadURDF(os.path.join(urdfRootPath, "cube_small.urdf"), basePosition=state_object)
+        
+        objects = {"red_cube":[0.6,0.1,0.05, 1, 0, 0, 0],
+                   "green_cube":[0.5,-0.1,0.05, cos(pi/8), sin(pi/8), 0, 0],
+                   "blue_cube": [0.7,0.1,0.05, cos(pi/16), sin(pi/16), 0, 0],
+                   "yellow_triangle":[0.8,-0.05,0.05, 1, 0, 0, 0]}
+        urdf_files = {
+                    "red_cube": "cube_red.urdf",
+                    "green_cube": "cube_green.urdf",
+                    "blue_cube": "cube_blue.urdf",
+                    "yellow_triangle": "triangle_yellow.urdf"
+                    }
+
+        self.grip_rotation = {
+            "red_cube":[0, 0, 0, 1],
+            "green_cube":[0, 0, 0, 1],
+            "blue_cube": [0, 0, 0, 1],
+            "yellow_triangle":[-1, 0, 0, 0]
+        }
+
         self.objectUid = {}
-        for object,position in zip(objects.keys(), objects.values()):
-            self.objectUid[object] = p.loadURDF(os.path.join(urdfRootPath, "cube_small.urdf"), basePosition=position)
+        urdfRootPathOurs = "/root/workspace/ros2_ws/src/panda_env/panda_env/gym_example/gym_example/envs/objects"
+
+        for object_name, pose in objects.items():
+            urdf_file = urdf_files[object_name]
+            urdf_path = os.path.join(urdfRootPathOurs, urdf_file)
+            
+            # Load the URDF file with the specified pose
+            print("pose[:3] = ", pose[:3])
+            print("pose[3:] = ", pose[3:])
+            self.objectUid[object_name] = p.loadURDF(urdf_path, basePosition=pose[:3], baseOrientation=pose[3:])
         
         self.objects = {}
         for obj in self.objectUid.keys():
-            self.objects[obj], _ = p.getBasePositionAndOrientation(self.objectUid[obj])
+            position, orientation = p.getBasePositionAndOrientation(self.objectUid[obj]) 
+            position = list(position)
+            orientation = R.from_matrix(R.from_quat(self.grip_rotation[obj]).as_matrix() @ R.from_quat(orientation).as_matrix()).as_quat().tolist()
+            self.objects[obj] = position + orientation
+
+        print("RESET objStates = ", self.objects)
 
         #we return the first observation
         state_robot = p.getLinkState(self.pandaUid, 11)[0]

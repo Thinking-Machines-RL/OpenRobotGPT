@@ -66,6 +66,7 @@ class PandaEnvROSNode(Node):
 
     def reset_callback(self, msg):
         with self.lock:
+            print("[info]: reset call")
             self.reset()
         objStates = self.env.getObjStates()
 
@@ -155,6 +156,7 @@ class PandaEnvROSNode(Node):
             print(msg)
         else:
             for step in traj:
+                with self.lock:
                     next_state, _, done, _, _ = self.env.step(step)
                     rgb, depth = self.env.render()
                     self.curr_state = next_state[0:8]
