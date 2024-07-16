@@ -9,6 +9,6 @@ The other bot had access to an API:
 
 self.pickUp(object): Makes the robt grpper pick up the specified object
 
-self.placeInPosition(target_position): Places whatever block is in the gripper in the specified position
+self.placeSafe(object): Places the object in a safe position, free of collisions. Useful for placing starting blocks
 
 self.placeObjectOn(object): Places whatever object we have in our gripper on top of the specified object. Can be used only after self.pickUp(), since it requires an object to be already in the gripper.

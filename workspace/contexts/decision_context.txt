@@ -7,24 +7,20 @@ self.pickUp(object): Makes the robt gripper pick up the specified object
 
 self.placeObjectOn(object): Places whatever object we have in our gripper on top of the specified object. Can be used only after self.pickUp(), since it requires an object to be already in the gripper.
 
-self.placeInPosition(target_position): Places whatever block is in the gripper in the specified position
-
-When you execute the last action you should always signal the end of the task by setting end_task to True.
+self.placeSafe(object): Places the object in a safe position, free of collisions. Useful for placing starting blocks
 
 Here are some examples on how to use the API to solve tasks:
 
 Example 1
-Task: Pick up the blue cube and place it in coordinates [0.7, 0.1, 0.05]
+Task: Pick up the blue cube and place it in safe coordinates as a base for further building
 Code:
     def execution_func(self):
         # 1. Pick the blue cube
-        # 2. Place the cube in position [0.7, 0.1, 0.05]
-
-        place_position = [0.7, 0.1, 0.05]
+        # 2. Place the cube in the safe position
 
         self.pickUp("blue_cube")
         # We now have the blue cube in the gripper
-        self.placeInPosition(place_position)
+        self.placeSafe()
 
 Example 2
 Task: Pick the yellow cube and put it on top of the blue one
