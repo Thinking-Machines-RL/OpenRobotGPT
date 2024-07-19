@@ -38,6 +38,12 @@ MANIFEST
 # workspace for testing
 workspace_fun/*
 
+#ROS2 directories
 workspace/ros2_ws/install/
 workspace/ros2_ws/log/
+
+#LLM API key
 workspace/secrets/*
+
+#Dataset created for imitation learning
+workspace/dataset/
