@@ -10,6 +10,7 @@ import numpy as np
 import random
 import matplotlib.pyplot as plt
 from scipy.spatial.transform import Rotation as R
+from scipy.ndimage import rotate
 
 class PandaEnv(gym.Env):
     metadata = {'render_modes': ['human'], 'render_fps' : 60}
@@ -18,12 +19,15 @@ class PandaEnv(gym.Env):
         self.step_counter = 0
         #Init visualization
         p.connect(p.GUI)
-        p.resetDebugVisualizerCamera(cameraDistance=1.5, cameraYaw=0, cameraPitch=-40, cameraTargetPosition=[0.55,-0.35,0.2])
+        p.resetDebugVisualizerCamera(cameraDistance=1.5, cameraYaw=0, cameraPitch=0, cameraTargetPosition=[0.55,-0.35,0.2])
 
         #Action space: cartesian pos of the EE and joint variable for both fingers 
         self.action_space = spaces.Box(np.array([-1]*11), np.array([1]*11))
         #Obs space: cartesian position of the EE and j variables of the 2 fingers
         self.observation_space = spaces.Box(np.array([-1]*9), np.array([1]*9))
+
+        self.Height_map = None
+        self.In_hand_image = None
 
     def getObjStates(self):
         object_obs = {}
@@ -38,13 +42,14 @@ class PandaEnv(gym.Env):
     def step(self, action):
         '''Contains the logic of the environment, computes the state
            of the env after applying a given action'''
+        
+        position = action[:3]
+        orientation = action[3:7]
+        fingers = action[7]
+        vel_ee = action[8:]
+
         p.configureDebugVisualizer(p.COV_ENABLE_SINGLE_STEP_RENDERING)
         # Get orientation quaternion from action
-        orientation = action[3:7]
-        position = action[:3]
-        fingers = action[7]
-        vel_ee = action[8:11]
-
         #current pose of the end effector
         currentPose = p.getLinkState(self.pandaUid, 11)
 
@@ -108,6 +113,72 @@ class PandaEnv(gym.Env):
         self.observation = state_robot + orientation_robot + state_fingers
         #time limit is handled by the time wrapper
         return np.array(self.observation).astype(np.float32), reward, done, False, info
+    
+    def _get_in_hand_image(self, pos, rot, height_map):
+        '''The in-hand image depends on the action executed on the last time step (at time t - 1). 
+            If the last action was a PICK, then Ht is a set of heightmaps that describe the 3D 
+            volume centered and aligned with the gripper when the PICK occurred. Otherwise, Ht is set to the zero
+            value image.'''
+        
+        #parameter
+        in_hand_size =  200
+
+        # Pad heightmaps for grasps near the edges of the workspace
+        height_map = np.pad(height_map, int(in_hand_size / 2), 'constant', constant_values=0.0)
+
+        x, y = pos[0:2]
+        print(f"pre x y {x} {y}")
+        width = 960
+        height = 720
+        fov = 60
+        fx = width / (2 * np.tan(fov / 2))
+        fy = height / (2 * np.tan(fov / 2))
+        cx = width / 2
+        cy = height / 2
+        world_coords = np.array([x, y, 0.5, 1.0])
+    
+        # Transform to camera coordinates
+        camera_coords = self.view_matrix @ world_coords.T
+        ndc_coords = self.proj_matrix @ camera_coords
+        print("coordinates in clip space ", ndc_coords)    
+        # Perspective division to normalize camera coordinates
+        x_c = camera_coords[0] / camera_coords[3]
+        y_c = camera_coords[1] / camera_coords[3]
+        z_c = camera_coords[2] / camera_coords[3]
+        print(f"coordinates in new space {x_c} {y_c} {z_c} ")
+        # Transform to image coordinates
+        u = fx * x_c + cx
+        v = fy * y_c + cy
+
+        print(f"post x y {u} {v}")
+        # print(f" pre x {x}")
+        # print(" pre y ", y)
+        # prop = 590/0.6
+        # print(f"position of end effector {pos}")
+        # x = x*(-prop) + 480
+        # y = 720 - (y*prop - 140)
+        u = u + in_hand_size/2
+        v = v + in_hand_size/2
+        # print(f"x {x - in_hand_size/2}")
+        # print("y ", y - in_hand_size/2)
+        # Get the corners of the crop
+        x_min = int(u - in_hand_size / 2)
+        x_max = int(u + in_hand_size / 2)
+        y_min = int(v - in_hand_size / 2)
+        y_max = int(v + in_hand_size / 2)
+
+        # Crop heightmap
+        crop = height_map[y_min:y_max, x_min:x_max]
+        print(f" crop size {crop.shape}")
+        return crop
+        #Now we need to align the image withb the end effector
+        w, x, y, z = rot
+        theta = 2 * np.arctan2(z, w)
+        angle_degrees = np.degrees(theta)
+        print(f"angle of allignement {angle_degrees}")
+
+        # return rotate(crop, angle_degrees, axes=(1,0))
+
 
     def reset(self, seed=None, options=None):
         '''This method will be called to initiate a new episode.
@@ -194,15 +265,17 @@ class PandaEnv(gym.Env):
         #info on matrix characteristics and position
         view_matrix = p.computeViewMatrixFromYawPitchRoll(cameraTargetPosition=[0.7,0,0.05],
                                                             distance=.7,
-                                                            yaw=90,
-                                                            pitch=-70,
+                                                            yaw=-90,
+                                                            pitch=-90,
                                                             roll=0,
                                                             upAxisIndex=2)
+        self.view_matrix = np.array(view_matrix).reshape(4, 4)
         proj_matrix = p.computeProjectionMatrixFOV(fov=60,
                                                      aspect=float(960) /720,
                                                      nearVal=0.1,
                                                      farVal=10.0)
-        (_, _, px, depth_px, _) = p.getCameraImage(width=960,
+        self.proj_matrix = np.array(proj_matrix).reshape(4, 4)
+        (width, height, px, depth_px, _) = p.getCameraImage(width=960,
                                               height=720,
                                               viewMatrix=view_matrix,
                                               projectionMatrix=proj_matrix,
@@ -217,6 +290,19 @@ class PandaEnv(gym.Env):
         near = 0.1
         depth_buffer_opengl = np.reshape(depth_px, (720,960))
         depth_opengl = far * near / (far - (far - near) * depth_buffer_opengl)
+
+        self.Height_map = depth_opengl
+        print(f"dimension heigh map ", self.Height_map.shape)
+        # projection_matrix_inv = np.linalg.inv(projection_matrix)
+        # view_matrix_inv = np.linalg.inv(view_matrix)
+
+        # # Convert to homogeneous coordinates
+        # clip_coords = np.array([x, y, depth, 1.0])
+        # eye_coords = projection_matrix_inv @ clip_coords
+        # eye_coords /= eye_coords[3]
+        
+        # world_coords = view_matrix_inv @ eye_coords
+        # world_coords /= world_coords[3]
         #depth image to publish as state 
 
         return rgb_array, depth_buffer_opengl
@@ -224,6 +310,15 @@ class PandaEnv(gym.Env):
 
     def _get_state(self):
         return self.observation
+    
+    def get_in_hand_image(self, action):
+        if self.Height_map is not None:
+            orientation = action[3:7]
+            position = action[:3]
+            fingers = action[7]
+            
+            self.In_hand_image = self._get_in_hand_image(position, orientation, self.Height_map)
+            return self.In_hand_image
 
     def close(self):
         p.disconnect()
