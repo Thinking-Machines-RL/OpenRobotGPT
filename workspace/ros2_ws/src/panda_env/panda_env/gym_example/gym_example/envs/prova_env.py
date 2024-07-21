@@ -138,7 +138,7 @@ class PandaEnv(gym.Env):
         world_coords = np.array([x, y, 0.5, 1.0])
     
         # Transform to camera coordinates
-        camera_coords = self.view_matrix @ world_coords.T
+        camera_coords = self.view_matrix.T @ world_coords
         ndc_coords = self.proj_matrix @ camera_coords
         print("coordinates in clip space ", ndc_coords)    
         # Perspective division to normalize camera coordinates
@@ -146,9 +146,10 @@ class PandaEnv(gym.Env):
         y_c = camera_coords[1] / camera_coords[3]
         z_c = camera_coords[2] / camera_coords[3]
         print(f"coordinates in new space {x_c} {y_c} {z_c} ")
+        #untile here are calcolated correctly
         # Transform to image coordinates
-        u = fx * x_c + cx
-        v = fy * y_c + cy
+        u = fx * y_c + cx
+        v = fy * x_c + cy
 
         print(f"post x y {u} {v}")
         # print(f" pre x {x}")
