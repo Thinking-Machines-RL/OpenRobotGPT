@@ -138,7 +138,9 @@ class PandaEnv(gym.Env):
         world_coords = np.array([x, y, 0.5, 1.0])
     
         # Transform to camera coordinates
-        camera_coords = self.view_matrix.T @ world_coords
+        camera_coords = self.view_matrix @ world_coords
+        print("projection matrix ")
+        print(self.proj_matrix)
         ndc_coords = self.proj_matrix @ camera_coords
         print("coordinates in clip space ", ndc_coords)    
         # Perspective division to normalize camera coordinates
@@ -158,6 +160,8 @@ class PandaEnv(gym.Env):
         # print(f"position of end effector {pos}")
         # x = x*(-prop) + 480
         # y = 720 - (y*prop - 140)
+        # u = (ndc_coords[0] * 0.5 + 0.5) * width
+        # v = (1 - (ndc_coords[1] * 0.5 + 0.5)) * height
         u = u + in_hand_size/2
         v = v + in_hand_size/2
         # print(f"x {x - in_hand_size/2}")
@@ -270,12 +274,12 @@ class PandaEnv(gym.Env):
                                                             pitch=-90,
                                                             roll=0,
                                                             upAxisIndex=2)
-        self.view_matrix = np.array(view_matrix).reshape(4, 4)
+        self.view_matrix = np.array(view_matrix).reshape(4, 4).T
         proj_matrix = p.computeProjectionMatrixFOV(fov=60,
                                                      aspect=float(960) /720,
                                                      nearVal=0.1,
                                                      farVal=10.0)
-        self.proj_matrix = np.array(proj_matrix).reshape(4, 4)
+        self.proj_matrix = np.array(proj_matrix).reshape(4, 4).T
         (width, height, px, depth_px, _) = p.getCameraImage(width=960,
                                               height=720,
                                               viewMatrix=view_matrix,
