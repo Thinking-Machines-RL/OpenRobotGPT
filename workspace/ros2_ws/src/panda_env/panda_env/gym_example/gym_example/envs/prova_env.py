@@ -127,45 +127,49 @@ class PandaEnv(gym.Env):
         height_map = np.pad(height_map, int(in_hand_size / 2), 'constant', constant_values=0.0)
 
         x, y = pos[0:2]
-        print(f"pre x y {x} {y}")
+        print(f"pre modify x y {x} {y}")
+
+        #Paramters used, the fov,fu, fv is needed if you are not using the projection matrix
         width = 960
         height = 720
         fov = 60
-        fx = width / (2 * np.tan(fov / 2))
-        fy = height / (2 * np.tan(fov / 2))
+        fu = width / (2 * np.tan(fov / 2))
+        fv = height / (2 * np.tan(fov / 2))
         cx = width / 2
         cy = height / 2
+        #coordinates of the cube to pick
         world_coords = np.array([x, y, 0.5, 1.0])
     
         # Transform to camera coordinates
         camera_coords = self.view_matrix @ world_coords
         print("projection matrix ")
         print(self.proj_matrix)
+        #transform to clip space
         ndc_coords = self.proj_matrix @ camera_coords
-        print("coordinates in clip space ", ndc_coords)    
+        #ndc_coords = ndc_coords / ndc_coords[3]
+        print("coordinates in clip space ", ndc_coords) 
+
         # Perspective division to normalize camera coordinates
         x_c = camera_coords[0] / camera_coords[3]
         y_c = camera_coords[1] / camera_coords[3]
         z_c = camera_coords[2] / camera_coords[3]
         print(f"coordinates in new space {x_c} {y_c} {z_c} ")
         #untile here are calcolated correctly
-        # Transform to image coordinates
-        u = fx * y_c + cx
-        v = fy * x_c + cy
 
-        print(f"post x y {u} {v}")
-        # print(f" pre x {x}")
-        # print(" pre y ", y)
-        # prop = 590/0.6
-        # print(f"position of end effector {pos}")
-        # x = x*(-prop) + 480
-        # y = 720 - (y*prop - 140)
-        # u = (ndc_coords[0] * 0.5 + 0.5) * width
-        # v = (1 - (ndc_coords[1] * 0.5 + 0.5)) * height
+        # Transform to image coordinates
+        #Method if using projection matrix
+        # u = (ndc_coords[0] * 0.5 + 0.5) * width + cx
+        # v = (1 - (ndc_coords[1] * 0.5 + 0.5)) * height + cy
+        
+        #method if calculating by hand fu, fv
+        print(f" fu {fu} and fv {fv}")
+        u = fu * x_c + cx
+        v = fv * y_c + cy
+
+        print(f"post u v {u} {v}")
         u = u + in_hand_size/2
         v = v + in_hand_size/2
-        # print(f"x {x - in_hand_size/2}")
-        # print("y ", y - in_hand_size/2)
+        
         # Get the corners of the crop
         x_min = int(u - in_hand_size / 2)
         x_max = int(u + in_hand_size / 2)
