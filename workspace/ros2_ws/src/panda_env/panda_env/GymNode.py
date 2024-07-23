@@ -15,6 +15,7 @@ import gymnasium
 import numpy as np
 import threading
 from queue import Queue
+import matplotlib.pyplot as plt
 
 class PandaEnvROSNode(Node):
     def __init__(self):
@@ -155,8 +156,14 @@ class PandaEnvROSNode(Node):
             print("[INFO] published message")
             print(msg)
         else:
-            for step in traj:
+            for i, step in enumerate(traj):
                 with self.lock:
+                    if i == 0:
+                        if self.env.Height_map is not None:
+                            plt.imshow(self.env.Height_map)
+                            plt.show()
+                            plt.imshow(self.env.get_in_hand_image(traj[traj.shape[0]-1,:]))
+                            plt.show()
                     next_state, _, done, _, _ = self.env.step(step)
                     rgb, depth = self.env.render()
                     self.curr_state = next_state[0:8]
@@ -165,7 +172,6 @@ class PandaEnvROSNode(Node):
             dataset_path = "/root/workspace/dataset"
             current_folder_date = self._retrieve_last_folder(dataset_path)
             current_folder_traj = self._retrieve_last_folder(current_folder_date)
-
             self._add_state_csv(current_folder_traj, self.curr_state.tolist())
     
     def _retrieve_last_folder(self, main_directory):
@@ -192,7 +198,7 @@ class PandaEnvROSNode(Node):
         csv_states_path = os.path.join(path, 'states.csv')
         file_exists = os.path.isfile(csv_states_path)
 
-        headers = ["image", "x", "y", "z", "q0", "q1", "q2", "q3"]
+        headers = ["Depth_image", "In_hand_image", "x", "y", "z", "q0", "q1", "q2", "q3"]
         # Open the CSV file in append mode and write the data
         with open(csv_states_path, 'a', newline='') as csvfile:
             csv_writer = csv.writer(csvfile)

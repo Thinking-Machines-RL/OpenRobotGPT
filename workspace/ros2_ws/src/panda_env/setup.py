@@ -21,7 +21,8 @@ setup(
     entry_points={
         'console_scripts': [
             'GymNode = panda_env.GymNode:main',
-            'MoveNodeBasic = panda_env.MoveNodeBasic:main'
+            'MoveNodeBasic = panda_env.MoveNodeBasic:main',
+            'ImitationNode = panda_env.ImitationNode:main'
         ],
     },
 )
