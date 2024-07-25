@@ -118,6 +118,7 @@ class CodeNode(Node):
         #creation of the folder
         new_folder_name = os.path.join(self.dataset_path, current_datetime)
         os.makedirs(new_folder_name)
+
         return new_folder_name
 
     def _create_trajectory_folder(self) -> str:
@@ -133,6 +134,10 @@ class CodeNode(Node):
         new_folder_name = os.path.join(self.current_folder, traj_name)
         os.makedirs(new_folder_name)
         print("created new traejctroy ", traj_name)
+
+        # Create imgs folder inside the new folder
+        os.makedirs(os.path.join(new_folder_name, "imgs"))
+
         return new_folder_name
 
     def _clean_code(self, code: str):

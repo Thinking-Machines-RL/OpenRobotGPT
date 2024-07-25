@@ -82,7 +82,7 @@ class PandaEnv(gym.Env):
 
         object_obs = {}
         for obj in self.objects.keys():
-            print(f"object {obj}")
+            # print(f"object {obj}")
             object_state, object_orientation = p.getBasePositionAndOrientation(self.objectUid[obj])
             object_state = list(object_state)
             object_orientation = R.from_matrix(R.from_quat(self.grip_rotation[obj]).as_matrix() @ R.from_quat(object_orientation).as_matrix()).as_quat().tolist()
@@ -91,6 +91,10 @@ class PandaEnv(gym.Env):
         state_robot = p.getLinkState(self.pandaUid, 11)[0]
         orientation_robot = p.getLinkState(self.pandaUid, 11)[1]
         state_fingers = (p.getJointState(self.pandaUid,9)[0], p.getJointState(self.pandaUid, 10)[0])
+        if state_fingers[0] < 0.03:
+            gripper = True   # closed gripper
+        else:
+            gripper = False  # open gripper
 
         #TODO: random goal, must be changed
         #we moved the object at a certain altitude 
@@ -112,9 +116,10 @@ class PandaEnv(gym.Env):
         info = {}
         self.observation = state_robot + orientation_robot + state_fingers
         #time limit is handled by the time wrapper
-        return np.array(self.observation).astype(np.float32), reward, done, False, info
+        imgs = [self.Height_map, self.get_in_hand_image(action)]
+        return [np.array(self.observation).astype(np.float32)] + imgs + [gripper], reward, done, False, info
     
-    def _get_in_hand_image(self, pos, rot, height_map):
+    def _get_in_hand_image(self, pos, rot, _height_map):
         '''The in-hand image depends on the action executed on the last time step (at time t - 1). 
             If the last action was a PICK, then Ht is a set of heightmaps that describe the 3D 
             volume centered and aligned with the gripper when the PICK occurred. Otherwise, Ht is set to the zero
@@ -123,70 +128,84 @@ class PandaEnv(gym.Env):
         #parameter
         in_hand_size =  200
 
+        x, y = pos[0:2]
+
+        viewMatrix = p.computeViewMatrixFromYawPitchRoll(cameraTargetPosition=[x,y,0.05],
+                                                            distance=.7,
+                                                            yaw=-90,
+                                                            pitch=-90,
+                                                            roll=0,
+                                                            upAxisIndex=2)
+        
+        projMatrix = p.computeProjectionMatrixFOV(fov=60,
+                                                     aspect=1,
+                                                     nearVal=0.1,
+                                                     farVal=10.0)
+
+        view_matrix = np.array(viewMatrix).reshape(4, 4).T
+        proj_matrix = np.array(projMatrix).reshape(4, 4).T
+
+        h = 720
+        w = 960
+
+        (width, height, px, depth_px, _) = p.getCameraImage(width=w,
+                                              height=h,
+                                              viewMatrix=viewMatrix,
+                                              projectionMatrix=projMatrix,
+                                              renderer=p.ER_BULLET_HARDWARE_OPENGL)
+
+        far = 10.0
+        near = 0.1
+    
+        depth_buffer_opengl = np.reshape(depth_px, (h,w))
+        depth_opengl = far * near / (far - (far - near) * depth_buffer_opengl)
+
+        height_map = depth_opengl
+
         # Pad heightmaps for grasps near the edges of the workspace
         height_map = np.pad(height_map, int(in_hand_size / 2), 'constant', constant_values=0.0)
-
-        x, y = pos[0:2]
-        print(f"pre modify x y {x} {y}")
 
         #Paramters used, the fov,fu, fv is needed if you are not using the projection matrix
         width = 960
         height = 720
-        fov = 60
-        fu = width / (2 * np.tan(fov / 2))
-        fv = height / (2 * np.tan(fov / 2))
+        fov = np.pi/3 # 60 degrees
+
+        #coordinates of the cube to pick
+        world_coords = np.array([x, y, 0.05, 1.0])
+
+        # Transform to camera coordinates
+        # camera_coords = self.view_matrix @ world_coords
+        camera_coords = view_matrix @ world_coords
+
+        x_c = camera_coords[0]
+        y_c = camera_coords[1]
+        z_c = -camera_coords[2]
+
+        # Image indexed by (u,v) --> u vertical and v lateral; 
+        # (0,0) upper-left corner
+
+        fu = (height/2) / np.tan(fov/2)
+        fv = (width/2) / np.tan(fov/2)
+
         cx = width / 2
         cy = height / 2
-        #coordinates of the cube to pick
-        world_coords = np.array([x, y, 0.5, 1.0])
-    
-        # Transform to camera coordinates
-        camera_coords = self.view_matrix @ world_coords
-        print("projection matrix ")
-        print(self.proj_matrix)
-        #transform to clip space
-        ndc_coords = self.proj_matrix @ camera_coords
-        #ndc_coords = ndc_coords / ndc_coords[3]
-        print("coordinates in clip space ", ndc_coords) 
 
-        # Perspective division to normalize camera coordinates
-        x_c = camera_coords[0] / camera_coords[3]
-        y_c = camera_coords[1] / camera_coords[3]
-        z_c = camera_coords[2] / camera_coords[3]
-        print(f"coordinates in new space {x_c} {y_c} {z_c} ")
-        #untile here are calcolated correctly
+        u = cy - fu * (y_c/z_c)
+        v = cx + fv * (x_c/z_c)
 
-        # Transform to image coordinates
-        #Method if using projection matrix
-        # u = (ndc_coords[0] * 0.5 + 0.5) * width + cx
-        # v = (1 - (ndc_coords[1] * 0.5 + 0.5)) * height + cy
-        
-        #method if calculating by hand fu, fv
-        print(f" fu {fu} and fv {fv}")
-        u = fu * x_c + cx
-        v = fv * y_c + cy
-
-        print(f"post u v {u} {v}")
-        u = u + in_hand_size/2
-        v = v + in_hand_size/2
+        # Correct pixel position for padding
+        u = u + (in_hand_size / 2)
+        v = v + (in_hand_size / 2)
         
         # Get the corners of the crop
-        x_min = int(u - in_hand_size / 2)
-        x_max = int(u + in_hand_size / 2)
-        y_min = int(v - in_hand_size / 2)
-        y_max = int(v + in_hand_size / 2)
+        u_min = int(u - (in_hand_size / 2))
+        u_max = int(u + (in_hand_size / 2))
+        v_min = int(v - (in_hand_size / 2))
+        v_max = int(v + (in_hand_size / 2))
 
         # Crop heightmap
-        crop = height_map[y_min:y_max, x_min:x_max]
-        print(f" crop size {crop.shape}")
+        crop = height_map[u_min:u_max, v_min:v_max]
         return crop
-        #Now we need to align the image withb the end effector
-        w, x, y, z = rot
-        theta = 2 * np.arctan2(z, w)
-        angle_degrees = np.degrees(theta)
-        print(f"angle of allignement {angle_degrees}")
-
-        # return rotate(crop, angle_degrees, axes=(1,0))
 
 
     def reset(self, seed=None, options=None):
@@ -279,29 +298,36 @@ class PandaEnv(gym.Env):
                                                             roll=0,
                                                             upAxisIndex=2)
         self.view_matrix = np.array(view_matrix).reshape(4, 4).T
+
         proj_matrix = p.computeProjectionMatrixFOV(fov=60,
-                                                     aspect=float(960) /720,
+                                                     aspect=1,
                                                      nearVal=0.1,
                                                      farVal=10.0)
+
         self.proj_matrix = np.array(proj_matrix).reshape(4, 4).T
-        (width, height, px, depth_px, _) = p.getCameraImage(width=960,
-                                              height=720,
+
+        h = 720
+        w = 960
+
+        (width, height, px, depth_px, _) = p.getCameraImage(width=w,
+                                              height=h,
                                               viewMatrix=view_matrix,
                                               projectionMatrix=proj_matrix,
                                               renderer=p.ER_BULLET_HARDWARE_OPENGL)
 
         rgb_array = np.array(px, dtype=np.uint8)
-        rgb_array = np.reshape(rgb_array, (720,960, 4))
+        rgb_array = np.reshape(rgb_array, (h,w, 4))
 
         rgb_array = rgb_array[:, :, :3]
 
         far = 10.0
         near = 0.1
-        depth_buffer_opengl = np.reshape(depth_px, (720,960))
+    
+        depth_buffer_opengl = np.reshape(depth_px, (h,w))
         depth_opengl = far * near / (far - (far - near) * depth_buffer_opengl)
 
         self.Height_map = depth_opengl
-        print(f"dimension heigh map ", self.Height_map.shape)
+        # print(f"dimension heigh map ", self.Height_map.shape)
         # projection_matrix_inv = np.linalg.inv(projection_matrix)
         # view_matrix_inv = np.linalg.inv(view_matrix)
 
