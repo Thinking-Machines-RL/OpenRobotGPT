@@ -15,6 +15,7 @@ import gymnasium
 import numpy as np
 import threading
 from queue import Queue
+import matplotlib.pyplot as plt
 
 class PandaEnvROSNode(Node):
     def __init__(self):
@@ -63,11 +64,13 @@ class PandaEnvROSNode(Node):
         self.lock = threading.Lock()
         self.request_queue = Queue()
         self.height_map = []
+        self.action_counter = 0
 
     def reset_callback(self, msg):
         with self.lock:
             print("[info]: reset call")
             self.reset()
+        self.action_counter = 0
         objStates = self.env.getObjStates()
 
         initObj = ObjectStates()
@@ -85,6 +88,7 @@ class PandaEnvROSNode(Node):
         #timer to publish the current state of the robot end effector
         # print("spinning")
         if self.curr_state is not None:
+            print("self.curr_state = ", self.curr_state)
             state_msg = State(state=self.curr_state)
             self.state_pub.publish(state_msg)
     
@@ -155,44 +159,64 @@ class PandaEnvROSNode(Node):
             print("[INFO] published message")
             print(msg)
         else:
-            for step in traj:
-                with self.lock:
-                    next_state, _, done, _, _ = self.env.step(step)
-                    rgb, depth = self.env.render()
-                    self.curr_state = next_state[0:8]
-                
-                        #Update the data in Dataset
             dataset_path = "/root/workspace/dataset"
             current_folder_date = self._retrieve_last_folder(dataset_path)
             current_folder_traj = self._retrieve_last_folder(current_folder_date)
 
-            self._add_state_csv(current_folder_traj, self.curr_state.tolist())
+            for i, step in enumerate(traj):
+                with self.lock:
+                    if i == 0:
+                        if self.env.Height_map is not None:
+                            self.action_counter += 1
+                            plt.imshow(self.env.Height_map)
+                            plt.axis("off")
+                            plt.savefig(os.path.join(current_folder_traj, "imgs", f"height_map_{self.action_counter}.png"), bbox_inches='tight', pad_inches=0)
+                            #plt.show()
+                            plt.imshow(self.env.get_in_hand_image(traj[traj.shape[0]-1,:]))
+                            plt.axis("off")
+                            plt.savefig(os.path.join(current_folder_traj, "imgs", f"in_hand_img_{self.action_counter}.png"), bbox_inches='tight', pad_inches=0)
+                            #plt.show()
+    
+                    next_state, _, done, _, _ = self.env.step(step)
+                    rgb, depth = self.env.render()
+                    self.curr_state = next_state[0]
+                    state_to_be_saved = next_state[-3:]
+                
+            #Update the data in Dataset
+            self._add_state_csv(current_folder_traj, state_to_be_saved)
     
     def _retrieve_last_folder(self, main_directory):
 
         #create list with all directories
-        print("directories")
-        print(os.listdir(main_directory))
+        # print("directories")
+        # print(os.listdir(main_directory))
 
         directories = [d for d in os.listdir(main_directory) if os.path.isdir(os.path.join(main_directory, d))]
         # Sort the directories based on their names (which are dates)
         sorted_directories = sorted(directories, reverse=True)
-        print(sorted_directories)
+        # print(sorted_directories)
         if sorted_directories:
             # Retrieve the most recent directory (the first one in the sorted list)
             last_folder = sorted_directories[0]
             last_folder_path = os.path.join(main_directory, last_folder)
-            print(f"Last folder retireved: {last_folder_path}")
+            # print(f"Last folder retireved: {last_folder_path}")
             return last_folder_path
         else:
             print("No folders found in the dataset directory.")
 
     def _add_state_csv(self, path, state):
+        # state is expected to look like this: [dpt_img, in_hand_img, gripper]
+        # where dpt_img, in_hand_img are images and gripper is a boolean (True if closed, False otherwise)
+        
+        # We write the opposite of the state, since images the state is written when the action is already terminated
+        _state = [f"heigh_map_{self.action_counter}.png", f"in_hand_img_{self.action_counter}.png", not state[2]]
+
         #path to data.cvs
         csv_states_path = os.path.join(path, 'states.csv')
         file_exists = os.path.isfile(csv_states_path)
 
-        headers = ["image", "x", "y", "z", "q0", "q1", "q2", "q3"]
+        headers = ["Height_map", "In_hand_image", "gripper"]
+
         # Open the CSV file in append mode and write the data
         with open(csv_states_path, 'a', newline='') as csvfile:
             csv_writer = csv.writer(csvfile)
@@ -202,11 +226,8 @@ class PandaEnvROSNode(Node):
                 csv_writer.writerow(headers)  # Write header
 
             # Write the data rows
-            image_name = "image"
-            for val in state:
-                image_name = image_name + "_" + str(int(val))
-            csv_writer.writerow([image_name] + state)
-        print(f"state appended to: {csv_states_path}")
+            csv_writer.writerow(_state)
+        # print(f"state appended to: {csv_states_path}")
 
     def _add_action_csv(self, path, state, gripper_state):
         #path to data.cvs
@@ -223,7 +244,7 @@ class PandaEnvROSNode(Node):
                 csv_writer.writerow(headers)  # Write header
 
             csv_writer.writerow(state + [gripper_state])
-        print(f"state appended to: {csv_action_path}")
+        # print(f"state appended to: {csv_action_path}")
             
 
     def reset(self):
