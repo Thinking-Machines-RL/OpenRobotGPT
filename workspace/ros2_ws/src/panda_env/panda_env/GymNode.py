@@ -4,7 +4,7 @@ from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallb
 from rclpy.node import Node
 import time
 
-from robotgpt_interfaces.msg import StateReward, Action, State, ObjectStatesRequest, ObjectStates, ObjectPose, TrajCompletionMsg, EECommandsM, ResetRequest
+from robotgpt_interfaces.msg import StateReward, Action, State, ObjectStatesRequest, ObjectStates, ObjectPose, TrajCompletionMsg, EECommandsM, ResetRequest, StateEnv
 from robotgpt_interfaces.srv import EECommands, Trajectory, ObjectStatesR
 from geometry_msgs.msg import Point
 
@@ -16,6 +16,7 @@ import numpy as np
 import threading
 from queue import Queue
 import matplotlib.pyplot as plt
+import cv2
 
 class PandaEnvROSNode(Node):
     def __init__(self):
@@ -32,6 +33,7 @@ class PandaEnvROSNode(Node):
         #publisher for environment state
         self.curr_state = None
         self.state_pub = self.create_publisher(State, '/panda_env/state', 10)
+        self.stateEnv_pub = self.create_publisher(StateEnv, '/panda_env/stateEnv', 10)
         timer_period = 1 # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback, timer_group)
         print("--------- state pub created -------")
@@ -184,6 +186,11 @@ class PandaEnvROSNode(Node):
                 
             #Update the data in Dataset
             self._add_state_csv(current_folder_traj, state_to_be_saved)
+            msg = StateEnv
+            msg.height_image = cv2.imread(os.path.join(current_folder_traj, "imgs", f"height_map_{self.action_counter}.png"), cv2.IMREAD_GRAYSCALE)
+            msg.inhand_image = cv2.imread(os.path.join(current_folder_traj, "imgs", f"in_hand_img_{self.action_counter}.png"),cv2.IMREAD_GRAYSCALE)
+            msg.gripper = self.curr_state[7]
+            self.stateEnv_pub.publish(msg)
     
     def _retrieve_last_folder(self, main_directory):
 
@@ -255,6 +262,11 @@ class PandaEnvROSNode(Node):
         self.env.render()
         state_msg = State(state=state)
         print(state_msg)
+        msg = StateEnv
+        msg.height_image = self.env.Height_map
+        msg.inhand_image = None
+        msg.gripper = False
+        self.stateEnv_pub.publish(msg)
         # self.state_pub.publish(state_msg)
     
     def step_callback(self, msg):

@@ -33,6 +33,7 @@ if(BUILD_TESTING)
 endif()
 
 find_package(rosidl_default_generators REQUIRED)
+find_package(sensor_msgs REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Action.msg"
@@ -47,11 +48,13 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/CodeExecutionM.msg"
   "msg/ResetRequest.msg"
   "msg/CodeError.msg"
+  "msg/StartM.msg"
+  "msg/StateEnv.msg"
   "srv/CodeExecution.srv"
   "srv/EECommands.srv"
   "srv/Trajectory.srv"
   "srv/EvaluationCode.srv"
   "srv/ObjectStatesR.srv"
+  DEPENDENCIES sensor_msgs
 )
-
 ament_package()

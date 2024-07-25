@@ -16,8 +16,12 @@ msg/ResetRequest.idl
 msg/ResetRequest.msg
 msg/ResultEvaluation.idl
 msg/ResultEvaluation.msg
+msg/StartM.idl
+msg/StartM.msg
 msg/State.idl
 msg/State.msg
+msg/StateEnv.idl
+msg/StateEnv.msg
 msg/StateReward.idl
 msg/StateReward.msg
 msg/TrajCompletionMsg.idl

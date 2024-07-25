@@ -4,7 +4,7 @@ from rclpy.executors import MultiThreadedExecutor
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallbackGroup
 import copy
 from robotgpt_interfaces.srv import CodeExecution, EECommands, Trajectory
-from robotgpt_interfaces.msg import StateReward, Action, State
+from robotgpt_interfaces.msg import StateReward, Action, StateEnv, StartM, ResetRequest
 from panda_env.PlannerInterface import PlannerInterface
 import numpy as np
 from geometry_msgs.msg import Point
@@ -21,10 +21,12 @@ class ImitationNode(Node):
 
         #subscription to start the imitation
         self.start_sub = self.create_subscription(StartM, 'imitation/start', self.start_callback, 10,  callback_group = service_group)
+
         #publisher of the action to the env, use for testing and trying the policy
         self.action_pub = self.create_publisher(EECommandsM,'trajectory_execution', 10, callback_group = service_group)
         #subscription to the state (image, in hand image, gripper boolean)
-        self.state_sub = self.create_subscription(State, '/panda_env/stateEnv', self.state_callback, 10, callback_group = topic_group)
+        self.state_sub = self.create_subscription(StateEnv, '/panda_env/stateEnv', self.state_callback, 10, callback_group = topic_group)
+
         #publisher to reset the env. Needed every time you want to start a simulation
         self.reset_pub = self.create_publisher(ResetRequest, '/panda_env/reset_request', 10)
 
@@ -43,12 +45,15 @@ class ImitationNode(Node):
         # the state will start the action-state response
     
     def state_callback(self, msg):
-        state = msg.state #the state needs to be defined, not working yet
+        height_map = msg.height_image
+        inhand_image = msg.inhand_image
+        gripper_status = msg.gripper
         #give the current state to the policy in order to obtain the action
         action = self.policy(state)
+        
         msg = EECommandsM()
         msg.target_state = action[a:b]
-        msg.pick_or_place = # True if pick, false if place
+        msg.pick_or_place = action[c]
         msg.end_task = False
 
         self.action_pub.publish(msg)
