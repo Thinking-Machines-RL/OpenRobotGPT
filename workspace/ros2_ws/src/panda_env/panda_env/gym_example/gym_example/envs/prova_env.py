@@ -160,7 +160,9 @@ class PandaEnv(gym.Env):
         depth_buffer_opengl = np.reshape(depth_px, (h,w))
         depth_opengl = far * near / (far - (far - near) * depth_buffer_opengl)
 
-        height_map = depth_opengl
+        # Convert depth_map to height_map
+        camera_height = 0.75  # distance from table
+        height_map = camera_height - depth_opengl
 
         # Pad heightmaps for grasps near the edges of the workspace
         height_map = np.pad(height_map, int(in_hand_size / 2), 'constant', constant_values=0.0)
