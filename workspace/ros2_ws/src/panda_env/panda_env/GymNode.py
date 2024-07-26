@@ -4,7 +4,7 @@ from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallb
 from rclpy.node import Node
 import time
 
-from robotgpt_interfaces.msg import StateReward, Action, State, ObjectStatesRequest, ObjectStates, ObjectPose, TrajCompletionMsg, EECommandsM, ResetRequest, StateEnv
+from robotgpt_interfaces.msg import StateReward, Action, State, ObjectStatesRequest, ObjectStates, ObjectPose, TrajCompletionMsg, EECommandsM, ResetRequest, StateEnv, CropM, CropRequest
 from robotgpt_interfaces.srv import EECommands, Trajectory, ObjectStatesR
 from geometry_msgs.msg import Point
 from sensor_msgs.msg import Image
@@ -60,6 +60,8 @@ class PandaEnvROSNode(Node):
         # Perception
         # Object states pusblisher
         self.ObjectStatesPublisher = self.create_publisher(ObjectStates, '/panda_env/ObjectStatesEval', 1)
+        self.Crop_image_pub = self.create_publisher(CropM, '/panda_env/Crop', 1)
+        self.Crop_image_request_sub = self.create_subscription(CropRequest, '/panda_env/CropRequest', self.crop_callback, 10, callback_group=service_group)
 
         # Trajectory completion
         self.trajCompletionPub = self.create_publisher(TrajCompletionMsg, 'traj_completion', 10, callback_group=completion_cb_group)
@@ -296,6 +298,15 @@ class PandaEnvROSNode(Node):
             self._traj_generation(position, gripper, end_task)
         # response.completion_flag = True
         return True
+    
+    def crop_callback(self, msg):
+        x = msg.x
+        y = msg.y
+        crop_image = self.env.get_in_hand_image(np.array([x, y, 0.05, 0, 0, 0, 1, 0]))
+        msg = CropM()
+        crop_msg = self.bridge.cv2_to_imgmsg(crop_image, encoding='32FC1')
+        msg.crop = crop_msg
+        self.Crop_image_pub.publish(msg)
 
     # def step_callback(self, request, response):
     #     print("received action")

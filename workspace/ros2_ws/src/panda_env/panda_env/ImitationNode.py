@@ -4,7 +4,7 @@ from rclpy.executors import MultiThreadedExecutor
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallbackGroup
 import copy
 from robotgpt_interfaces.srv import CodeExecution, EECommands, Trajectory
-from robotgpt_interfaces.msg import StateReward, Action, StateEnv, StartM, ResetRequest
+from robotgpt_interfaces.msg import StateReward, Action, StateEnv, StartM, ResetRequest, CropM, CropRequest
 from panda_env.PlannerInterface import PlannerInterface
 import numpy as np
 from geometry_msgs.msg import Point
@@ -34,6 +34,9 @@ class ImitationNode(Node):
         #publisher to reset the env. Needed every time you want to start a simulation
         self.reset_pub = self.create_publisher(ResetRequest, '/panda_env/reset_request', 10)
 
+        self.Crop_image_sub = self.create_publisher(CropM, '/panda_env/Crop', self.crop_callback, 1, callback_group=service_group)
+        self.Crop_image_request_pub = self.create_subscription(CropRequest, '/panda_env/CropRequest', 10)
+
         self.policy = None
 
     def start_callback(self, msg):
@@ -53,8 +56,16 @@ class ImitationNode(Node):
         inhand_image = self.bridge.imgmsg_to_cv2(msg.inhand_image, desired_encoding='8UC1')
         gripper_status = msg.gripper
         #give the current state to the policy in order to obtain the action
-        action = self.policy(state)
+        action_x_Y = self.policy_1(state)
+        msg = CropRequest()
+        msg.x = action_x_Y[0]
+        msg.y = action_x_Y[1]
+        self.Crop_image_request_pub.publish(msg)
         
+    
+    def crop_callback(msg):
+        crop = self.bridge.imgmsg_to_cv2(msg.crop, desired_encoding='8UC1')
+
         msg = EECommandsM()
         msg.target_state = action[a:b]
         msg.pick_or_place = action[c]

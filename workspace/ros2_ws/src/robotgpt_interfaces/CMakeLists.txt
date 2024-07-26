@@ -50,6 +50,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/CodeError.msg"
   "msg/StartM.msg"
   "msg/StateEnv.msg"
+  "msg/CropM.msg"
+  "msg/CropRequest.msg"
   "srv/CodeExecution.srv"
   "srv/EECommands.srv"
   "srv/Trajectory.srv"
