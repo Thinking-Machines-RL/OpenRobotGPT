@@ -4,6 +4,10 @@ msg/CodeError.idl
 msg/CodeError.msg
 msg/CodeExecutionM.idl
 msg/CodeExecutionM.msg
+msg/CropM.idl
+msg/CropM.msg
+msg/CropRequest.idl
+msg/CropRequest.msg
 msg/EECommandsM.idl
 msg/EECommandsM.msg
 msg/ObjectPose.idl
@@ -16,8 +20,12 @@ msg/ResetRequest.idl
 msg/ResetRequest.msg
 msg/ResultEvaluation.idl
 msg/ResultEvaluation.msg
+msg/StartM.idl
+msg/StartM.msg
 msg/State.idl
 msg/State.msg
+msg/StateEnv.idl
+msg/StateEnv.msg
 msg/StateReward.idl
 msg/StateReward.msg
 msg/TrajCompletionMsg.idl

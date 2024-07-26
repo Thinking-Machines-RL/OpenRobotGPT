@@ -4,9 +4,10 @@ from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallb
 from rclpy.node import Node
 import time
 
-from robotgpt_interfaces.msg import StateReward, Action, State, ObjectStatesRequest, ObjectStates, ObjectPose, TrajCompletionMsg, EECommandsM, ResetRequest
+from robotgpt_interfaces.msg import StateReward, Action, State, ObjectStatesRequest, ObjectStates, ObjectPose, TrajCompletionMsg, EECommandsM, ResetRequest, StateEnv, CropM, CropRequest
 from robotgpt_interfaces.srv import EECommands, Trajectory, ObjectStatesR
 from geometry_msgs.msg import Point
+from sensor_msgs.msg import Image
 
 import csv
 import os
@@ -16,13 +17,16 @@ import numpy as np
 import threading
 from queue import Queue
 import matplotlib.pyplot as plt
+import cv2
+from cv_bridge import CvBridge
 
 class PandaEnvROSNode(Node):
     def __init__(self):
         super().__init__('panda_env_node')
 
         self.env = gymnasium.make('PandaEnv-v0')
-
+        self.bridge = CvBridge()
+        
         self.SERVICE_TIMEOUT = 60
         client_cb_group = MutuallyExclusiveCallbackGroup()
         completion_cb_group = MutuallyExclusiveCallbackGroup()
@@ -32,6 +36,7 @@ class PandaEnvROSNode(Node):
         #publisher for environment state
         self.curr_state = None
         self.state_pub = self.create_publisher(State, '/panda_env/state', 10)
+        self.stateEnv_pub = self.create_publisher(StateEnv, '/panda_env/stateEnv', 10)
         timer_period = 1 # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback, timer_group)
         print("--------- state pub created -------")
@@ -55,6 +60,8 @@ class PandaEnvROSNode(Node):
         # Perception
         # Object states pusblisher
         self.ObjectStatesPublisher = self.create_publisher(ObjectStates, '/panda_env/ObjectStatesEval', 1)
+        self.Crop_image_pub = self.create_publisher(CropM, '/panda_env/Crop', 1)
+        self.Crop_image_request_sub = self.create_subscription(CropRequest, '/panda_env/CropRequest', self.crop_callback, 10, callback_group=service_group)
 
         # Trajectory completion
         self.trajCompletionPub = self.create_publisher(TrajCompletionMsg, 'traj_completion', 10, callback_group=completion_cb_group)
@@ -65,6 +72,7 @@ class PandaEnvROSNode(Node):
         self.request_queue = Queue()
         self.height_map = []
         self.action_counter = 0
+        self.last_action_pick = False
 
     def reset_callback(self, msg):
         with self.lock:
@@ -168,22 +176,39 @@ class PandaEnvROSNode(Node):
                     if i == 0:
                         if self.env.Height_map is not None:
                             self.action_counter += 1
-                            plt.imshow(self.env.Height_map)
-                            plt.axis("off")
-                            plt.savefig(os.path.join(current_folder_traj, "imgs", f"height_map_{self.action_counter}.png"), bbox_inches='tight', pad_inches=0)
+                            if self.last_action_pick:
+                                plt.imshow(self.env.get_in_hand_image(traj[traj.shape[0]-1,:]))
+                                plt.axis("off")
+                                plt.savefig(os.path.join(current_folder_traj, "imgs", f"in_hand_img_{self.action_counter}.png"), bbox_inches='tight', pad_inches=0)
+                            else:
+                                plt.imshow(np.zeros((200,200)))
+                                plt.axis("off")
+                                plt.savefig(os.path.join(current_folder_traj, "imgs", f"in_hand_img_{self.action_counter}.png"), bbox_inches='tight', pad_inches=0)
                             #plt.show()
-                            plt.imshow(self.env.get_in_hand_image(traj[traj.shape[0]-1,:]))
-                            plt.axis("off")
-                            plt.savefig(os.path.join(current_folder_traj, "imgs", f"in_hand_img_{self.action_counter}.png"), bbox_inches='tight', pad_inches=0)
-                            #plt.show()
-    
                     next_state, _, done, _, _ = self.env.step(step)
                     rgb, depth = self.env.render()
                     self.curr_state = next_state[0]
                     state_to_be_saved = next_state[-3:]
-                
+            
+            plt.imshow(self.env.Height_map)
+            plt.axis("off")
+            plt.savefig(os.path.join(current_folder_traj, "imgs", f"height_map_{self.action_counter}.png"), bbox_inches='tight', pad_inches=0)
+            #plt.show()
+            if step[7] <= 0.02:
+                self.last_action_pick = True
             #Update the data in Dataset
             self._add_state_csv(current_folder_traj, state_to_be_saved)
+            msg = StateEnv()
+            height_image = cv2.imread(os.path.join(current_folder_traj, "imgs", f"height_map_{self.action_counter}.png"), cv2.IMREAD_GRAYSCALE)
+            height_image_msg = self.bridge.cv2_to_imgmsg(height_image, encoding='8UC1')
+            msg.height_image = height_image_msg
+            in_hand_image = cv2.imread(os.path.join(current_folder_traj, "imgs", f"in_hand_img_{self.action_counter}.png"),cv2.IMREAD_GRAYSCALE)
+            in_hand_image_msg = self.bridge.cv2_to_imgmsg(in_hand_image, encoding='8UC1')
+            msg.inhand_image = in_hand_image_msg
+            grip = self.curr_state[7] < 0.04
+            print(f"gripper {grip}")
+            msg.gripper = bool(grip)
+            self.stateEnv_pub.publish(msg)
     
     def _retrieve_last_folder(self, main_directory):
 
@@ -255,6 +280,14 @@ class PandaEnvROSNode(Node):
         self.env.render()
         state_msg = State(state=state)
         print(state_msg)
+        msg = StateEnv()
+        height_image_msg = self.bridge.cv2_to_imgmsg(self.env.Height_map, encoding='32FC1')
+        msg.height_image = height_image_msg
+        in_hand_image = np.zeros((200,200))
+        in_hand_image_msg = self.bridge.cv2_to_imgmsg(in_hand_image, encoding='64FC1')
+        msg.inhand_image = in_hand_image_msg
+        msg.gripper = False
+        self.stateEnv_pub.publish(msg)
         # self.state_pub.publish(state_msg)
     
     def step_callback(self, msg):
@@ -272,6 +305,15 @@ class PandaEnvROSNode(Node):
             self._traj_generation(position, gripper, end_task)
         # response.completion_flag = True
         return True
+    
+    def crop_callback(self, msg):
+        x = msg.x
+        y = msg.y
+        crop_image = self.env.get_in_hand_image(np.array([x, y, 0.05, 0, 0, 0, 1, 0]))
+        msg = CropM()
+        crop_msg = self.bridge.cv2_to_imgmsg(crop_image, encoding='32FC1')
+        msg.crop = crop_msg
+        self.Crop_image_pub.publish(msg)
 
     # def step_callback(self, request, response):
     #     print("received action")

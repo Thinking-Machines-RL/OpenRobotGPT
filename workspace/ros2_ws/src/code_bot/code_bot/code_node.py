@@ -3,7 +3,7 @@ from rclpy.node import Node
 from robotgpt_interfaces.srv import CodeExecution, EvaluationCode, ObjectStatesR
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallbackGroup
-from robotgpt_interfaces.msg import ResultEvaluation, CodeExecutionM, CodeError
+from robotgpt_interfaces.msg import ResultEvaluation, CodeExecutionM, CodeError, StartM
 from .bots import DecisionBot, CorrectionBot, EvaluationBot, ChatGPT
 import pkg_resources
 import json
@@ -78,6 +78,8 @@ class CodeNode(Node):
         self._create_json_from_txt(self.correction_context_txt_path, self.correction_context_json_path)
         context = [self._read_json_to_dict(self.correction_context_json_path)]
         self.correction_bot.set_context(context)
+
+        self.Imitation_start_pub = self.create_publisher(StartM, 'imitation/start', 10)
 
 
     # Utility functions
@@ -274,6 +276,9 @@ class CodeNode(Node):
                     #creation of the folder
                     new_folder_name = os.path.join(self.current_folder, traj_name)
                     shutil.rmtree(new_folder_name)
+                msg = StartM()
+                msg.start = True
+                self.Imitation_start_pub.publish(msg)
         else:
             if msg.eval_except != "":
                 print("The evaluation generated the following error", msg.eval_except)

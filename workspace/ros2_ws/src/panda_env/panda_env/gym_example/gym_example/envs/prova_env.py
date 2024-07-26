@@ -115,7 +115,6 @@ class PandaEnv(gym.Env):
         #info = {'object_position': state_object}
         info = {}
         self.observation = state_robot + orientation_robot + state_fingers
-        #time limit is handled by the time wrapper
         imgs = [self.Height_map, self.get_in_hand_image(action)]
         return [np.array(self.observation).astype(np.float32)] + imgs + [gripper], reward, done, False, info
     
@@ -126,13 +125,14 @@ class PandaEnv(gym.Env):
             value image.'''
         
         #parameter
-        in_hand_size =  200
-
+        in_hand_size =  200 
         x, y = pos[0:2]
+        r =  R.from_quat(rot)
+        angles = r.as_euler('xyz', degrees=True)
 
         viewMatrix = p.computeViewMatrixFromYawPitchRoll(cameraTargetPosition=[x,y,0.05],
                                                             distance=.7,
-                                                            yaw=-90,
+                                                            yaw=-90 + angles[2],
                                                             pitch=-90,
                                                             roll=0,
                                                             upAxisIndex=2)
@@ -300,7 +300,6 @@ class PandaEnv(gym.Env):
                                                             roll=0,
                                                             upAxisIndex=2)
         self.view_matrix = np.array(view_matrix).reshape(4, 4).T
-
         proj_matrix = p.computeProjectionMatrixFOV(fov=60,
                                                      aspect=1,
                                                      nearVal=0.1,
@@ -359,3 +358,4 @@ class PandaEnv(gym.Env):
 
     def close(self):
         p.disconnect()
+
