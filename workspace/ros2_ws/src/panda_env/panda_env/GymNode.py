@@ -72,6 +72,7 @@ class PandaEnvROSNode(Node):
         self.request_queue = Queue()
         self.height_map = []
         self.action_counter = 0
+        self.last_action_pick = False
 
     def reset_callback(self, msg):
         with self.lock:
@@ -175,20 +176,26 @@ class PandaEnvROSNode(Node):
                     if i == 0:
                         if self.env.Height_map is not None:
                             self.action_counter += 1
-                            plt.imshow(self.env.Height_map)
-                            plt.axis("off")
-                            plt.savefig(os.path.join(current_folder_traj, "imgs", f"height_map_{self.action_counter}.png"), bbox_inches='tight', pad_inches=0)
+                            if self.last_action_pick:
+                                plt.imshow(self.env.get_in_hand_image(traj[traj.shape[0]-1,:]))
+                                plt.axis("off")
+                                plt.savefig(os.path.join(current_folder_traj, "imgs", f"in_hand_img_{self.action_counter}.png"), bbox_inches='tight', pad_inches=0)
+                            else:
+                                plt.imshow(np.zeros((200,200)))
+                                plt.axis("off")
+                                plt.savefig(os.path.join(current_folder_traj, "imgs", f"in_hand_img_{self.action_counter}.png"), bbox_inches='tight', pad_inches=0)
                             #plt.show()
-                            plt.imshow(self.env.get_in_hand_image(traj[traj.shape[0]-1,:]))
-                            plt.axis("off")
-                            plt.savefig(os.path.join(current_folder_traj, "imgs", f"in_hand_img_{self.action_counter}.png"), bbox_inches='tight', pad_inches=0)
-                            #plt.show()
-    
                     next_state, _, done, _, _ = self.env.step(step)
                     rgb, depth = self.env.render()
                     self.curr_state = next_state[0]
                     state_to_be_saved = next_state[-3:]
-                
+            
+            plt.imshow(self.env.Height_map)
+            plt.axis("off")
+            plt.savefig(os.path.join(current_folder_traj, "imgs", f"height_map_{self.action_counter}.png"), bbox_inches='tight', pad_inches=0)
+            #plt.show()
+            if step[7] <= 0.02:
+                self.last_action_pick = True
             #Update the data in Dataset
             self._add_state_csv(current_folder_traj, state_to_be_saved)
             msg = StateEnv()
