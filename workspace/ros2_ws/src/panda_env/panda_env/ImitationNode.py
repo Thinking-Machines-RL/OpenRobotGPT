@@ -9,6 +9,9 @@ from panda_env.PlannerInterface import PlannerInterface
 import numpy as np
 from geometry_msgs.msg import Point
 import time
+from cv_bridge import CvBridge
+import cv2
+
 
 class ImitationNode(Node):
 
@@ -18,6 +21,7 @@ class ImitationNode(Node):
 
         service_group = ReentrantCallbackGroup()
         topic_group = ReentrantCallbackGroup()
+        self.bridge = CvBridge()
 
         #subscription to start the imitation
         self.start_sub = self.create_subscription(StartM, 'imitation/start', self.start_callback, 10,  callback_group = service_group)
@@ -45,8 +49,8 @@ class ImitationNode(Node):
         # the state will start the action-state response
     
     def state_callback(self, msg):
-        height_map = msg.height_image
-        inhand_image = msg.inhand_image
+        height_map = self.bridge.imgmsg_to_cv2(msg.height_image, desired_encoding='8UC1')
+        inhand_image = self.bridge.imgmsg_to_cv2(msg.inhand_image, desired_encoding='8UC1')
         gripper_status = msg.gripper
         #give the current state to the policy in order to obtain the action
         action = self.policy(state)

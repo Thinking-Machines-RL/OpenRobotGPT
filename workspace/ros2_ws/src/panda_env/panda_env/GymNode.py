@@ -7,6 +7,7 @@ import time
 from robotgpt_interfaces.msg import StateReward, Action, State, ObjectStatesRequest, ObjectStates, ObjectPose, TrajCompletionMsg, EECommandsM, ResetRequest, StateEnv
 from robotgpt_interfaces.srv import EECommands, Trajectory, ObjectStatesR
 from geometry_msgs.msg import Point
+from sensor_msgs.msg import Image
 
 import csv
 import os
@@ -17,13 +18,15 @@ import threading
 from queue import Queue
 import matplotlib.pyplot as plt
 import cv2
+from cv_bridge import CvBridge
 
 class PandaEnvROSNode(Node):
     def __init__(self):
         super().__init__('panda_env_node')
 
         self.env = gymnasium.make('PandaEnv-v0')
-
+        self.bridge = CvBridge()
+        
         self.SERVICE_TIMEOUT = 60
         client_cb_group = MutuallyExclusiveCallbackGroup()
         completion_cb_group = MutuallyExclusiveCallbackGroup()
@@ -186,10 +189,16 @@ class PandaEnvROSNode(Node):
                 
             #Update the data in Dataset
             self._add_state_csv(current_folder_traj, state_to_be_saved)
-            msg = StateEnv
-            msg.height_image = cv2.imread(os.path.join(current_folder_traj, "imgs", f"height_map_{self.action_counter}.png"), cv2.IMREAD_GRAYSCALE)
-            msg.inhand_image = cv2.imread(os.path.join(current_folder_traj, "imgs", f"in_hand_img_{self.action_counter}.png"),cv2.IMREAD_GRAYSCALE)
-            msg.gripper = self.curr_state[7]
+            msg = StateEnv()
+            height_image = cv2.imread(os.path.join(current_folder_traj, "imgs", f"height_map_{self.action_counter}.png"), cv2.IMREAD_GRAYSCALE)
+            height_image_msg = self.bridge.cv2_to_imgmsg(height_image, encoding='8UC1')
+            msg.height_image = height_image_msg
+            in_hand_image = cv2.imread(os.path.join(current_folder_traj, "imgs", f"in_hand_img_{self.action_counter}.png"),cv2.IMREAD_GRAYSCALE)
+            in_hand_image_msg = self.bridge.cv2_to_imgmsg(in_hand_image, encoding='8UC1')
+            msg.inhand_image = in_hand_image_msg
+            grip = self.curr_state[7] < 0.04
+            print(f"gripper {grip}")
+            msg.gripper = bool(grip)
             self.stateEnv_pub.publish(msg)
     
     def _retrieve_last_folder(self, main_directory):
@@ -262,9 +271,12 @@ class PandaEnvROSNode(Node):
         self.env.render()
         state_msg = State(state=state)
         print(state_msg)
-        msg = StateEnv
-        msg.height_image = self.env.Height_map
-        msg.inhand_image = None
+        msg = StateEnv()
+        height_image_msg = self.bridge.cv2_to_imgmsg(self.env.Height_map, encoding='32FC1')
+        msg.height_image = height_image_msg
+        in_hand_image = np.zeros((200,200))
+        in_hand_image_msg = self.bridge.cv2_to_imgmsg(in_hand_image, encoding='64FC1')
+        msg.inhand_image = in_hand_image_msg
         msg.gripper = False
         self.stateEnv_pub.publish(msg)
         # self.state_pub.publish(state_msg)

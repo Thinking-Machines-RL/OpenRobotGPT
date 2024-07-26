@@ -276,7 +276,7 @@ class CodeNode(Node):
                     #creation of the folder
                     new_folder_name = os.path.join(self.current_folder, traj_name)
                     shutil.rmtree(new_folder_name)
-                msg = StartM
+                msg = StartM()
                 msg.start = True
                 self.Imitation_start_pub.publish(msg)
         else:

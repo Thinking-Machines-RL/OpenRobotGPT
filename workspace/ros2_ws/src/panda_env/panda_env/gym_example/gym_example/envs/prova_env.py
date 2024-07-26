@@ -127,10 +127,12 @@ class PandaEnv(gym.Env):
         #parameter
         in_hand_size =  200 
         x, y = pos[0:2]
+        r =  R.from_quat(rot)
+        angles = r.as_euler('xyz', degrees=True)
 
         viewMatrix = p.computeViewMatrixFromYawPitchRoll(cameraTargetPosition=[x,y,0.05],
                                                             distance=.7,
-                                                            yaw=-90,
+                                                            yaw=-90 + angles[2],
                                                             pitch=-90,
                                                             roll=0,
                                                             upAxisIndex=2)
