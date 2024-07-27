@@ -5,6 +5,7 @@ RUN apt-get update && apt-get install -qq -y --no-install-recommends \
         curl \
         gnupg2 \
         lsb-release \
+        git \
     && rm -rf /var/lib/apt/lists/*
 
 # Setup ROS 2 sources
@@ -21,7 +22,7 @@ ENV ROS_DISTRO iron
 
 # Update the package repository and install the required packages
 RUN apt-get update
-RUN apt-get install -qq -y --no-install-recommends\
+RUN apt-get install -qq -y --no-install-recommends \
   ros-$ROS_DISTRO-desktop \
   python3-rosdep
 
@@ -47,13 +48,12 @@ RUN pip install -U colcon-common-extensions
 COPY requirements.txt /tmp/requirements.txt
 RUN pip3 install --no-cache-dir -r /tmp/requirements.txt
 
-# Install x11 for graphic forwardingCannot call `env.render()` before calling `env.reset()`, if this is a intended action, set `disable_render_order_enforcing=True` on the OrderEnforcer wrapper.
+# Install x11 for graphic forwarding
 RUN apt-get update && \
     apt-get install -y \
     x11-apps \
     mesa-utils \
     && rm -rf /var/lib/apt/lists/*
-
 
 # Install SSH server
 RUN apt-get update && apt-get install -y openssh-server && \
@@ -72,8 +72,14 @@ WORKDIR /root
 
 ENV API_KEY_PATH=/root/workspace/secrets/api_key.json
 
+# Clone the ASRSE3_CoRL20 repository
+RUN git clone https://github.com/pointW/asrse3_corl20.git /root/asrse3_corl20
+
 # Expose SSH port
 EXPOSE 22
+
+# Copy the workspace directory
+COPY workspace /root/workspace
 
 # Add an entrypoint
 ENTRYPOINT ["/root/workspace/setup.sh"]

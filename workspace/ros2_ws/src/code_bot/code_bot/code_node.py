@@ -52,7 +52,7 @@ class CodeNode(Node):
         self.dataset_path = "/root/workspace/dataset"
         self.current_folder = None
         self.current_traj_folder = None
-        self.it = 0
+        self.it = 1
         #list where to store the index of all the failed trajectoeries
         self.failed = []
 

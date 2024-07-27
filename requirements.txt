@@ -1,3 +1,12 @@
+# OpenRobotGPT dependencies
 numpy==1.24.4
 pybullet==3.2.6
 openai==1.16.2
+
+# ASRSE3_CoRL20 dependencies
+torch==2.0.1
+torchvision==0.15.2
+torchaudio==2.0.2
+gymnasium==0.29.1
+farama-notifications==0.0.4
+cloudpickle==3.0.0
