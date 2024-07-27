@@ -194,6 +194,7 @@ class PandaEnvROSNode(Node):
             plt.axis("off")
             plt.savefig(os.path.join(current_folder_traj, "imgs", f"height_map_{self.action_counter}.png"), bbox_inches='tight', pad_inches=0)
             #plt.show()
+            # self.env.Height_map_prev = self.env.Height_map
             if step[7] <= 0.02:
                 self.last_action_pick = True
             #Update the data in Dataset

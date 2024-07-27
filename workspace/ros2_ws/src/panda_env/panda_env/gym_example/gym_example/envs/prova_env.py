@@ -27,6 +27,7 @@ class PandaEnv(gym.Env):
         self.observation_space = spaces.Box(np.array([-1]*9), np.array([1]*9))
 
         self.Height_map = None
+        self.Height_map_prev = None
         self.In_hand_image = None
 
     def getObjStates(self):
@@ -348,12 +349,14 @@ class PandaEnv(gym.Env):
         return self.observation
     
     def get_in_hand_image(self, action):
-        if self.Height_map is not None:
+        #if self.Height_map_prev is not None:
+        if self.Height_map is not None:   
             orientation = action[3:7]
             position = action[:3]
             fingers = action[7]
             
             self.In_hand_image = self._get_in_hand_image(position, orientation, self.Height_map)
+            # self.In_hand_image = self._get_in_hand_image(position, orientation, self.Height_map_prev)
             return self.In_hand_image
 
     def close(self):
