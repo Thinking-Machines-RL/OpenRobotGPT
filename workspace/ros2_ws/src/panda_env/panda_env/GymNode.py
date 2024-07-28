@@ -174,18 +174,21 @@ class PandaEnvROSNode(Node):
             # State
             height_map, in_hand_img = self.env.render_images(traj[0,:])
 
+            vmin = 0
+            vmax = 0.75 - 0.5
+
             # Save height_map
-            plt.imshow(height_map)
+            plt.imshow(height_map, vmin=vmin, vmax=vmax)
             plt.axis("off")
             plt.savefig(os.path.join(current_folder_traj, "imgs", f"height_map_{self.action_counter}.png"), bbox_inches='tight', pad_inches=0)
 
             # Save in_hand_img
             if self.last_action_pick:
-                plt.imshow(in_hand_img)
+                plt.imshow(in_hand_img, vmin=vmin, vmax=vmax)
                 plt.axis("off")
                 plt.savefig(os.path.join(current_folder_traj, "imgs", f"in_hand_img_{self.action_counter}.png"), bbox_inches='tight', pad_inches=0)
             else:
-                plt.imshow(np.zeros((200,200)))
+                plt.imshow(np.zeros((200,200)), vmin=vmin, vmax=vmax)
                 plt.axis("off")
                 plt.savefig(os.path.join(current_folder_traj, "imgs", f"in_hand_img_{self.action_counter}.png"), bbox_inches='tight', pad_inches=0)
 
@@ -208,17 +211,17 @@ class PandaEnvROSNode(Node):
             next_height_map, next_in_hand_img = self.env.render_images(traj[traj.shape[0]-1,:])
 
             # Save height_map
-            plt.imshow(next_height_map)
+            plt.imshow(next_height_map, vmin=vmin, vmax=vmax)
             plt.axis("off")
             plt.savefig(os.path.join(current_folder_traj, "imgs", f"next_height_map_{self.action_counter}.png"), bbox_inches='tight', pad_inches=0)
 
             # Save in_hand_img
             if self.last_action_pick:
-                plt.imshow(next_in_hand_img)
+                plt.imshow(next_in_hand_img, vmin=vmin, vmax=vmax)
                 plt.axis("off")
                 plt.savefig(os.path.join(current_folder_traj, "imgs", f"next_in_hand_img_{self.action_counter}.png"), bbox_inches='tight', pad_inches=0)
             else:
-                plt.imshow(np.zeros((200,200)))
+                plt.imshow(np.zeros((200,200)), vmin=vmin, vmax=vmax)
                 plt.axis("off")
                 plt.savefig(os.path.join(current_folder_traj, "imgs", f"next_in_hand_img_{self.action_counter}.png"), bbox_inches='tight', pad_inches=0)
 

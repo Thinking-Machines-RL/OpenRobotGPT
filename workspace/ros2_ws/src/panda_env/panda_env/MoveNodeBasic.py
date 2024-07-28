@@ -47,6 +47,9 @@ class MoveNodeBasic(Node):
         target_pose_2[0] = final_pose[0]
         target_pose_2[1] = final_pose[1]
         
+        final_pose_hover = copy.deepcopy(final_pose)
+        final_pose_hover[2] = SAFE_HEIGHT # 5 cube heights higher than the final pose
+        
         # Get the 3 trajectories and the grip
         traj_1, vel_traj_1 = self.planner.plan_trajectory(curr_state, target_pose_1)
         traj_2, vel_traj_2 = self.planner.plan_trajectory(target_pose_1, target_pose_2)
@@ -55,6 +58,7 @@ class MoveNodeBasic(Node):
             traj_p, vel_traj_p = self.planner.pick_cube(final_pose)
         else:
             traj_p, vel_traj_p = self.planner.release_cube(final_pose)
+        traj_4, vel_traj_4 = self.planner.plan_trajectory(final_pose, final_pose_hover)
 
         # Add extra termination points to the trajectories
         pose_setpt_1 = copy.deepcopy(traj_1[-8:])
@@ -78,12 +82,21 @@ class MoveNodeBasic(Node):
         add_vel_3 = np.hstack([vel_setpt_3 for i in range(8)])
         vel_traj_3 = np.concatenate((vel_traj_3,add_vel_3),axis=0)
 
+        pose_setpt_4 = copy.deepcopy(traj_4[-8:])
+        vel_setpt_4 = np.zeros_like(vel_traj_4[-3:])
+        add_pose_4 = np.hstack([pose_setpt_4 for i in range(8)])
+        traj_4 = np.concatenate((traj_4,add_pose_4),axis=0)
+        add_vel_4 = np.hstack([vel_setpt_4 for i in range(8)])
+        vel_traj_4 = np.concatenate((vel_traj_4,add_vel_4),axis=0)
+
+
+
         print("Requested final pose = ", final_pose)
         print("Actual final pose = ", traj_3[-8:])
 
         # Build unique trajectory
-        traj = np.concatenate((traj_1, traj_2, traj_3, traj_p),axis=0)
-        vel_traj = np.concatenate((vel_traj_1, vel_traj_2, vel_traj_3, vel_traj_p),axis=0)
+        traj = np.concatenate((traj_1, traj_2, traj_3, traj_p, traj_4),axis=0)
+        vel_traj = np.concatenate((vel_traj_1, vel_traj_2, vel_traj_3, vel_traj_p, vel_traj_4),axis=0)
 
         response.completion_flag = True
         response.position = traj

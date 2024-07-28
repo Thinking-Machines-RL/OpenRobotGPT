@@ -297,6 +297,9 @@ class PandaEnv(gym.Env):
         Render height_map and in_hand image
         '''
 
+        far = 10.0
+        near = 0.5
+
         view_matrix = p.computeViewMatrixFromYawPitchRoll(cameraTargetPosition=[0.7,0,0.05],
                                                             distance=.7,
                                                             yaw=-90,
@@ -306,8 +309,8 @@ class PandaEnv(gym.Env):
         self.view_matrix = np.array(view_matrix).reshape(4, 4).T
         proj_matrix = p.computeProjectionMatrixFOV(fov=60,
                                                      aspect=1,
-                                                     nearVal=0.1,
-                                                     farVal=10.0)
+                                                     nearVal=near,
+                                                     farVal=far)
 
         self.proj_matrix = np.array(proj_matrix).reshape(4, 4).T
 
@@ -315,13 +318,28 @@ class PandaEnv(gym.Env):
         w = 960
 
         # Make the robot and the picked cube transparent
-        body_id = self.pandaUid
         alpha = 0.0
+
+        body_id = self.pandaUid
         for joint in range(p.getNumJoints(body_id) - 1):
             r, g, b, _ = p.getVisualShapeData(body_id)[joint][7]
             p.changeVisualShape(body_id, joint, rgbaColor=[r, g, b, alpha])
         r, g, b, _ = p.getVisualShapeData(body_id)[0][7]
         p.changeVisualShape(body_id, -1, rgbaColor=[r, g, b, alpha])
+
+        '''
+        SAFE_HEIGHT = 0.3
+        for obj in self.objectUid.keys():
+            position, orientation = p.getBasePositionAndOrientation(self.objectUid[obj]) 
+            position = list(position)
+            print(f"{obj} is in position ", position)
+            if position[2] >= SAFE_HEIGHT - 0.03:
+                print(f"{obj} should be invisible")
+                data = p.getVisualShapeData(self.objectUid[obj])
+                for idx in range(len(data)):
+                    r, g, b, _ = data[idx][7]
+                    p.changeVisualShape(self.objectUid[obj], idx, rgbaColor=[r, g, b, alpha])
+        '''
 
         # height_map
         (width, height, px, depth_px, _) = p.getCameraImage(width=w,
@@ -329,9 +347,6 @@ class PandaEnv(gym.Env):
                                               viewMatrix=view_matrix,
                                               projectionMatrix=proj_matrix,
                                               renderer=p.ER_BULLET_HARDWARE_OPENGL)
-
-        far = 10.0
-        near = 0.1
     
         depth_buffer_opengl = np.reshape(depth_px, (h,w))
         depth_opengl = far * near / (far - (far - near) * depth_buffer_opengl)
@@ -346,14 +361,27 @@ class PandaEnv(gym.Env):
         in_hand_img = self._get_in_hand_image(pos, rot, height_map)
 
         # Reset visibility
-        body_id = self.pandaUid
         alpha = 1.0
+
+        body_id = self.pandaUid
         for joint in range(p.getNumJoints(body_id)-1):
             r, g, b, _ = p.getVisualShapeData(body_id)[joint][7]
             p.changeVisualShape(body_id, joint, rgbaColor=[r, g, b, alpha])
         r, g, b, _ = p.getVisualShapeData(body_id)[0][7]
         p.changeVisualShape(body_id, -1, rgbaColor=[r, g, b, alpha])
 
+        '''
+        SAFE_HEIGHT = 0.3
+        for obj in self.objectUid.keys():
+            position, orientation = p.getBasePositionAndOrientation(self.objectUid[obj]) 
+            position = list(position)
+            if position[2] >= SAFE_HEIGHT - 0.03:
+                print(f"{obj} should be visible again")
+                data = p.getVisualShapeData(self.objectUid[obj])
+                for idx in range(len(data)):
+                    r, g, b, _ = data[idx][7]
+                    p.changeVisualShape(self.objectUid[obj], idx, rgbaColor=[r, g, b, alpha])
+        '''
 
         return height_map, in_hand_img
 
