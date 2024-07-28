@@ -13,7 +13,7 @@ from scipy.spatial.transform import Rotation as R
 from scipy.ndimage import rotate
 
 class PandaEnv(gym.Env):
-    metadata = {'render_modes': ['human'], 'render_fps' : 60}
+    metadata = {'render_modes': ['human'], 'render_fps' : 200}
 
     def __init__(self):
         self.step_counter = 0
@@ -291,6 +291,71 @@ class PandaEnv(gym.Env):
         p.configureDebugVisualizer(p.COV_ENABLE_RENDERING,1)
         info = {"object_position" : objects}
         return np.array(self.observation).astype(np.float32), info
+    
+    def render_images(self, state):
+        '''
+        Render height_map and in_hand image
+        '''
+
+        view_matrix = p.computeViewMatrixFromYawPitchRoll(cameraTargetPosition=[0.7,0,0.05],
+                                                            distance=.7,
+                                                            yaw=-90,
+                                                            pitch=-90,
+                                                            roll=0,
+                                                            upAxisIndex=2)
+        self.view_matrix = np.array(view_matrix).reshape(4, 4).T
+        proj_matrix = p.computeProjectionMatrixFOV(fov=60,
+                                                     aspect=1,
+                                                     nearVal=0.1,
+                                                     farVal=10.0)
+
+        self.proj_matrix = np.array(proj_matrix).reshape(4, 4).T
+
+        h = 720
+        w = 960
+
+        # Make the robot and the picked cube transparent
+        body_id = self.pandaUid
+        alpha = 0.0
+        for joint in range(p.getNumJoints(body_id) - 1):
+            r, g, b, _ = p.getVisualShapeData(body_id)[joint][7]
+            p.changeVisualShape(body_id, joint, rgbaColor=[r, g, b, alpha])
+        r, g, b, _ = p.getVisualShapeData(body_id)[0][7]
+        p.changeVisualShape(body_id, -1, rgbaColor=[r, g, b, alpha])
+
+        # height_map
+        (width, height, px, depth_px, _) = p.getCameraImage(width=w,
+                                              height=h,
+                                              viewMatrix=view_matrix,
+                                              projectionMatrix=proj_matrix,
+                                              renderer=p.ER_BULLET_HARDWARE_OPENGL)
+
+        far = 10.0
+        near = 0.1
+    
+        depth_buffer_opengl = np.reshape(depth_px, (h,w))
+        depth_opengl = far * near / (far - (far - near) * depth_buffer_opengl)
+
+        camera_height = 0.75
+        height_map = camera_height - depth_opengl
+
+
+        # in_hand_img
+        pos = state[:3]
+        rot = state[3:7]
+        in_hand_img = self._get_in_hand_image(pos, rot, height_map)
+
+        # Reset visibility
+        body_id = self.pandaUid
+        alpha = 1.0
+        for joint in range(p.getNumJoints(body_id)-1):
+            r, g, b, _ = p.getVisualShapeData(body_id)[joint][7]
+            p.changeVisualShape(body_id, joint, rgbaColor=[r, g, b, alpha])
+        r, g, b, _ = p.getVisualShapeData(body_id)[0][7]
+        p.changeVisualShape(body_id, -1, rgbaColor=[r, g, b, alpha])
+
+
+        return height_map, in_hand_img
 
     def render(self, mode='human'):
         #info on matrix characteristics and position
@@ -328,7 +393,8 @@ class PandaEnv(gym.Env):
         depth_buffer_opengl = np.reshape(depth_px, (h,w))
         depth_opengl = far * near / (far - (far - near) * depth_buffer_opengl)
 
-        self.Height_map = depth_opengl
+        camera_height = 0.75
+        self.Height_map = camera_height - depth_opengl
         # print(f"dimension heigh map ", self.Height_map.shape)
         # projection_matrix_inv = np.linalg.inv(projection_matrix)
         # view_matrix_inv = np.linalg.inv(view_matrix)
@@ -349,15 +415,15 @@ class PandaEnv(gym.Env):
         return self.observation
     
     def get_in_hand_image(self, action):
-        #if self.Height_map_prev is not None:
-        if self.Height_map is not None:   
+        if self.Height_map_prev is not None: 
             orientation = action[3:7]
             position = action[:3]
             fingers = action[7]
             
-            self.In_hand_image = self._get_in_hand_image(position, orientation, self.Height_map)
-            # self.In_hand_image = self._get_in_hand_image(position, orientation, self.Height_map_prev)
+            self.In_hand_image = self._get_in_hand_image(position, orientation, self.Height_map_prev)
             return self.In_hand_image
+        else: 
+            return "Not the in hand image"
 
     def close(self):
         p.disconnect()

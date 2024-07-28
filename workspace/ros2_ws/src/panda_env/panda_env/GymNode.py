@@ -171,34 +171,62 @@ class PandaEnvROSNode(Node):
             current_folder_date = self._retrieve_last_folder(dataset_path)
             current_folder_traj = self._retrieve_last_folder(current_folder_date)
 
-            for i, step in enumerate(traj):
+            # State
+            height_map, in_hand_img = self.env.render_images(traj[0,:])
+
+            # Save height_map
+            plt.imshow(height_map)
+            plt.axis("off")
+            plt.savefig(os.path.join(current_folder_traj, "imgs", f"height_map_{self.action_counter}.png"), bbox_inches='tight', pad_inches=0)
+
+            # Save in_hand_img
+            if self.last_action_pick:
+                plt.imshow(in_hand_img)
+                plt.axis("off")
+                plt.savefig(os.path.join(current_folder_traj, "imgs", f"in_hand_img_{self.action_counter}.png"), bbox_inches='tight', pad_inches=0)
+            else:
+                plt.imshow(np.zeros((200,200)))
+                plt.axis("off")
+                plt.savefig(os.path.join(current_folder_traj, "imgs", f"in_hand_img_{self.action_counter}.png"), bbox_inches='tight', pad_inches=0)
+
+            # Write states.csv
+            state = [self.action_counter, self.action_counter, True if traj[0,7] <= 0.02 else False]
+            self._add_state_csv(current_folder_traj, state)
+
+            for i, step in enumerate(traj):   
                 with self.lock:
-                    if i == 0:
-                        if self.env.Height_map is not None:
-                            self.action_counter += 1
-                            if self.last_action_pick:
-                                plt.imshow(self.env.get_in_hand_image(traj[traj.shape[0]-1,:]))
-                                plt.axis("off")
-                                plt.savefig(os.path.join(current_folder_traj, "imgs", f"in_hand_img_{self.action_counter}.png"), bbox_inches='tight', pad_inches=0)
-                            else:
-                                plt.imshow(np.zeros((200,200)))
-                                plt.axis("off")
-                                plt.savefig(os.path.join(current_folder_traj, "imgs", f"in_hand_img_{self.action_counter}.png"), bbox_inches='tight', pad_inches=0)
-                            #plt.show()
                     next_state, _, done, _, _ = self.env.step(step)
                     rgb, depth = self.env.render()
                     self.curr_state = next_state[0]
                     state_to_be_saved = next_state[-3:]
+                    if step[7] <= 0.02:
+                        self.last_action_pick = True
+                    else:
+                        self.last_action_pick = False
             
-            plt.imshow(self.env.Height_map)
+            # Next state
+            next_height_map, next_in_hand_img = self.env.render_images(traj[traj.shape[0]-1,:])
+
+            # Save height_map
+            plt.imshow(next_height_map)
             plt.axis("off")
-            plt.savefig(os.path.join(current_folder_traj, "imgs", f"height_map_{self.action_counter}.png"), bbox_inches='tight', pad_inches=0)
-            #plt.show()
-            # self.env.Height_map_prev = self.env.Height_map
-            if step[7] <= 0.02:
-                self.last_action_pick = True
-            #Update the data in Dataset
-            self._add_state_csv(current_folder_traj, state_to_be_saved)
+            plt.savefig(os.path.join(current_folder_traj, "imgs", f"next_height_map_{self.action_counter}.png"), bbox_inches='tight', pad_inches=0)
+
+            # Save in_hand_img
+            if self.last_action_pick:
+                plt.imshow(next_in_hand_img)
+                plt.axis("off")
+                plt.savefig(os.path.join(current_folder_traj, "imgs", f"next_in_hand_img_{self.action_counter}.png"), bbox_inches='tight', pad_inches=0)
+            else:
+                plt.imshow(np.zeros((200,200)))
+                plt.axis("off")
+                plt.savefig(os.path.join(current_folder_traj, "imgs", f"next_in_hand_img_{self.action_counter}.png"), bbox_inches='tight', pad_inches=0)
+
+            # Write states.csv
+            next_state = [self.action_counter, self.action_counter, True if traj[0,7] <= 0.02 else False]
+            self._add_next_state_csv(current_folder_traj, next_state)
+            
+            # Publish state
             msg = StateEnv()
             height_image = cv2.imread(os.path.join(current_folder_traj, "imgs", f"height_map_{self.action_counter}.png"), cv2.IMREAD_GRAYSCALE)
             height_image_msg = self.bridge.cv2_to_imgmsg(height_image, encoding='8UC1')
@@ -210,6 +238,8 @@ class PandaEnvROSNode(Node):
             print(f"gripper {grip}")
             msg.gripper = bool(grip)
             self.stateEnv_pub.publish(msg)
+            # Update action counter
+            self.action_counter += 1
     
     def _retrieve_last_folder(self, main_directory):
 
@@ -230,7 +260,64 @@ class PandaEnvROSNode(Node):
         else:
             print("No folders found in the dataset directory.")
 
+    def _edit_csv(self, path, state, action, reward, next_state):
+        '''
+        Save (s,a,r,s') into a new row of the dataset
+        s  <-- (height map, in hand image, gripper)
+        a  <-- (x, y, theta, gripper)
+        r  <-- 1/0
+        s' <-- (height map, in hand image, gripper)
+        '''
+
+        csv_action_path = os.path.join(path, 'transitions.csv')
+        file_exists = os.path.isfile(csv_action_path)
+
+        state_headers = ["height_map", "in_hand_img", "gripper"]
+        action_headers = ["x", "y", "theta", "gripper"]
+        reward_headers = ["reward"]
+        next_state_headers = state_headers
+
+        headers = state_headers + action_headers + reward_headers + next_state_headers
+
+        transition = state + action + reward + next_state
+
+        # Open the CSV file in append mode and write the data
+        with open(csv_action_path, 'a', newline='') as csvfile:
+            csv_writer = csv.writer(csvfile)
+
+            # If the file doesn't exist, write the header
+            if not file_exists:
+                csv_writer.writerow(headers)  # Write header
+
+            csv_writer.writerow(transition)
+
+
     def _add_state_csv(self, path, state):
+        # state is expected to look like this: [dpt_img, in_hand_img, gripper]
+        # where dpt_img, in_hand_img are images and gripper is a boolean (True if closed, False otherwise)
+        
+        # We write the opposite of the state, since images the state is written when the action is already terminated
+        _state = [f"heigh_map_{state[0]}.png", f"in_hand_img_{state[1]}.png", state[2]]
+
+        #path to data.cvs
+        csv_states_path = os.path.join(path, 'states.csv')
+        file_exists = os.path.isfile(csv_states_path)
+
+        headers = ["height_map", "in_hand_img", "gripper"]
+
+        # Open the CSV file in append mode and write the data
+        with open(csv_states_path, 'a', newline='') as csvfile:
+            csv_writer = csv.writer(csvfile)
+
+            # If the file doesn't exist, write the header
+            if not file_exists:
+                csv_writer.writerow(headers)  # Write header
+
+            # Write the data rows
+            csv_writer.writerow(_state)
+        # print(f"state appended to: {csv_states_path}")
+            
+    def _add_next_state_csv(self, path, state):
         # state is expected to look like this: [dpt_img, in_hand_img, gripper]
         # where dpt_img, in_hand_img are images and gripper is a boolean (True if closed, False otherwise)
         
@@ -238,10 +325,10 @@ class PandaEnvROSNode(Node):
         _state = [f"heigh_map_{self.action_counter}.png", f"in_hand_img_{self.action_counter}.png", not state[2]]
 
         #path to data.cvs
-        csv_states_path = os.path.join(path, 'states.csv')
+        csv_states_path = os.path.join(path, 'next_states.csv')
         file_exists = os.path.isfile(csv_states_path)
 
-        headers = ["Height_map", "In_hand_image", "gripper"]
+        headers = ["height_map", "in_hand_img", "gripper"]
 
         # Open the CSV file in append mode and write the data
         with open(csv_states_path, 'a', newline='') as csvfile:
