@@ -203,20 +203,21 @@ class Agent:
                 gn = gn.unsqueeze(0)
             r = D[3][0]
 
-            #a1 are the x,y coordinates
-            q1_map, e = self.Q1_target(In, Hn, gn)
-            a1_n = torch.argmax(q1_map)
-            #a2 is the rotation angle
-            q1_map_small = q1_map[0,19:109,19:109]
-            uv = divmod(uv.item(), q1_map_small.size(1))
-            u,v = uv[0]+19,uv[1]+19
+            with torch.no_grad():
+                #a1 are the x,y coordinates
+                q1_map, e = self.Q1_target(In, Hn, gn)
+                a1_n = torch.argmax(q1_map)
+                #a2 is the rotation angle
+                q1_map_small = q1_map[0,19:109,19:109]
+                uv = divmod(uv.item(), q1_map_small.size(1))
+                u,v = uv[0]+19,uv[1]+19
 
-            # Crop patch
-            half_patch = int(Params.patch_size/2)
-            P = In[:,:,u-half_patch:u+half_patch, v-half_patch:v+half_patch]
-            q2_map = self.Q2_target(P, Hn, e)
-            a2_n = torch.argmax(q2_map)
-            y = r + Params.gamma*torch.max(q2_map)
+                # Crop patch
+                half_patch = int(Params.patch_size/2)
+                P = In[:,:,u-half_patch:u+half_patch, v-half_patch:v+half_patch]
+                q2_map = self.Q2_target(P, Hn, e)
+                a2_n = torch.argmax(q2_map)
+                y = r + Params.gamma*torch.max(q2_map)
 
             q1_map, e = self.Q1(I, H, g)
             a1 = torch.argmax(q1_map)
@@ -248,6 +249,11 @@ class Agent:
             self.optimizer_q2.zero_grad()
             L.backward(retain_graph=True)
             self.optimizer_q2.step()
+
+            # Soft update
+            self._soft_update(self.q1_target, self.q1)
+            self._soft_update(self.q2_target, self.q2)
+
     
     def train(self, De, D):
         # We want to sample half transitions from De and half from D
