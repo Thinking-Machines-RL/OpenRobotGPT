@@ -86,6 +86,7 @@ class PandaEnv(gym.Env):
             # print(f"object {obj}")
             object_state, object_orientation = p.getBasePositionAndOrientation(self.objectUid[obj])
             object_state = list(object_state)
+            print(f" object {obj} with orientation {object_orientation}")
             object_orientation = R.from_matrix(R.from_quat(self.grip_rotation[obj]).as_matrix() @ R.from_quat(object_orientation).as_matrix()).as_quat().tolist()
             object_obs[obj] = object_state + object_orientation
 
@@ -117,7 +118,7 @@ class PandaEnv(gym.Env):
         info = {}
         self.observation = state_robot + orientation_robot + state_fingers
         imgs = [self.Height_map, self.get_in_hand_image(action)]
-        return [np.array(self.observation).astype(np.float32)] + imgs + [gripper], reward, done, False, info
+        return np.array(self.observation).astype(np.float32), reward, done, False, info
     
     def _get_in_hand_image(self, pos, rot, _height_map):
         '''The in-hand image depends on the action executed on the last time step (at time t - 1). 
@@ -296,7 +297,7 @@ class PandaEnv(gym.Env):
         '''
         Render height_map and in_hand image
         '''
-
+        print("render with transparency")
         far = 10.0
         near = 0.5
 

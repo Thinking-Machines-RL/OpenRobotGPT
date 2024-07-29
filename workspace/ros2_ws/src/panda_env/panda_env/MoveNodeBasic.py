@@ -58,8 +58,9 @@ class MoveNodeBasic(Node):
             traj_p, vel_traj_p = self.planner.pick_cube(final_pose)
         else:
             traj_p, vel_traj_p = self.planner.release_cube(final_pose)
-        traj_4, vel_traj_4 = self.planner.plan_trajectory(final_pose, final_pose_hover)
-
+        print("traj 4")
+        traj_4, vel_traj_4 = self.planner.plan_trajectory(final_pose, final_pose_hover, debug = True)
+        print(f"traj 4 {traj_4}")
         # Add extra termination points to the trajectories
         pose_setpt_1 = copy.deepcopy(traj_1[-8:])
         vel_setpt_1 = np.zeros_like(vel_traj_1[-3:])

@@ -202,10 +202,11 @@ class PandaEnvROSNode(Node):
 
             for i, step in enumerate(traj):   
                 with self.lock:
+                    print(f"step {step}")
                     next_state, _, done, _, _ = self.env.step(step)
                     rgb, depth = self.env.render()
                     self.curr_state = next_state[0]
-                    state_to_be_saved = next_state[-3:]
+                    state_to_be_saved = self.curr_state
                     if step[7] <= 0.02:
                         self.last_action_pick = True
                     else:

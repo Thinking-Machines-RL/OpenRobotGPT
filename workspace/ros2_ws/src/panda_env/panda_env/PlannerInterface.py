@@ -69,23 +69,33 @@ class PlannerInterface:
         quat = self._axis_to_quat(axis, angle)
         return quat
 
-    def plan_trajectory(self, A: np.array, B: np.array):
+    def plan_trajectory(self, A: np.array, B: np.array, debug = False):
         print("[INFO] calculating the trajectory")
         # Plan direct path from A to B
         A_rot = np.array(R.from_quat(A[3:].tolist()).as_matrix())
         B_rot = np.array(R.from_quat(B[3:].tolist()).as_matrix())
         AB_rot = inv(A_rot) @ B_rot
+        print(f" AB_rot {AB_rot}")
+        identity = False
+        if np.linalg.norm(AB_rot - np.eye(3)) == 0:
+            quat = np.array([1, 0, 0, 0]) 
+            print("rotation identity")
+            theta_f = 0
+            identity = True
 
-        vector = np.array(R.from_matrix(AB_rot).as_rotvec())
+        if not identity:
+            vector = np.array(R.from_matrix(AB_rot).as_rotvec())
+            if debug:
+                print(f"vector {vector}")
 
-        theta_f = np.linalg.norm(vector)
-        axis = vector / theta_f
+            theta_f = np.linalg.norm(vector)
+            axis = vector / theta_f
 
-        # ***** DEBUG *****
-        print("Rotation:")
-        print("axis: ", axis)
-        print("theta_f: ", theta_f)
-        # *****************
+            # ***** DEBUG *****
+            print("Rotation:")
+            print("axis: ", axis)
+            print("theta_f: ", theta_f)
+            # *****************
 
         x_y_z_theta_0 = np.concatenate((A[:3],np.array([0])))
         x_y_z_theta_f = np.concatenate((B[:3],np.array([theta_f])))
@@ -105,10 +115,11 @@ class PlannerInterface:
             position = np.array([x_y_z_theta[0][i], x_y_z_theta[1][i], x_y_z_theta[2][i]])
 
             # Orientation
-            vector = x_y_z_theta[3][i] * axis
-            R_theta = np.array(R.from_rotvec(vector).as_matrix())
-            Rot = A_rot @ R_theta
-            quat = np.array(R.from_matrix(Rot).as_quat())
+            if not identity:
+                vector = x_y_z_theta[3][i] * axis
+                R_theta = np.array(R.from_rotvec(vector).as_matrix())
+                Rot = A_rot @ R_theta
+                quat = np.array(R.from_matrix(Rot).as_quat())
 
             orientation = quat.T
             traj_point = np.concatenate((position, orientation, grip))
