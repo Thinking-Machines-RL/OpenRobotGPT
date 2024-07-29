@@ -16,6 +16,8 @@ class Params:
     margin = 0
     gamma = 0.99
     w = 0.5
+    M = 10
+    N = 10
 
 class Agent:
     def __init__(self):
@@ -79,12 +81,15 @@ class Agent:
             height_images, one for the in hand images and one for the
             boolean related to the gripper status
             
-        a: tensor of actions
+        a: tensor of actions, which x,y pixels we want to know the Q value
         y: TD target
         
         return the TD loss for Q1
         '''
-        Q1_pred = self.Q1(s[0], s[1], s[2])[:, a]
+        q1_map, e = self.Q1(s[0], s[1], s[2])
+        a1 = a[:,0]
+        a2 = a[:,1]
+        Q1_pred = q1_map(torch.arange(q1_map.size(0)), a1, a2)
         loss = F.huber_loss(Q1_pred, y)
         return loss
 
@@ -101,8 +106,12 @@ class Agent:
         
         return the TD loss for Q2
         '''
-
-        Q2_pred = self.Q2(s[0], s[1], s[2], e)[:, a]
+        #TODO: fix input
+        q2_map = self.Q2(s[0], s[1], s[2], e)
+        a1 = a[:,0]
+        a2 = a[:,1]
+        a3 = a[:,2]
+        Q2_pred = q2_map(torch.arange(q2_map.size(0)), a3)
         loss = F.huber_loss(Q2_pred, y)
         return loss
 
@@ -112,7 +121,6 @@ class Agent:
             height_images, one for the in hand images and one for the
             boolean related to the gripper status
             
-        a: tensor of actions
         a_e: tensor of expert actions
         y: TD target
         
@@ -122,44 +130,116 @@ class Agent:
         # TODO: recheck tomorrow, we don't need the action a
 
         # Calculating the strict large margin loss (SLM)
-        margin_loss = self.l(a, a_e)
-        e = self.Q1(s[0], s[1], s[2])[:, 0]
-        Q_s_a1 = self.Q1(s[0], s[1], s[2])[:, 1] 
-        #I take the Q values at the expert position
-        Q_s_a_e1 = self.Q1(s[0], s[1], s[2])[a_e[:,0:2]][:, 1]
-        a1 = torch.argmax(Q_s_a1)
-        Q_s_a = self.Q2(s[0], s[1], s[2], e, a1)  # Assuming Q is a network attribute
-        Q_s_a_e = self.Q2(s[0], s[1], s[2], e, a_e[:,0:2])
-        index = Q_s_a[Q_s_a > Q_s_a_e - margin_loss]
-        LSLM = torch.mean(Q_s_a[index] + self.l(a, a_e)[index] - Q_s_a_e[index])
+        u = s[0].size(1)
+        v = s[0].size(2)
+        n = s[0].size(0) # aks: in theory should be 1?
+        u_coords, v_coords = torch.meshgrid(torch.arange(u), torch.arange(v), indexing='ij')
+        action_q1 = torch.stack((u_coords, v_coords), dim=-1).reshape(-1, 2) #(UV)x2
+        action_q1 = action_q1.unsqueeze(1) #dimension (UV)x1x2
+        ae1 = ae[0:2].unsqueeze(0) #dimension 1x(N)x2
+        #TODO: should be equal in norm or what? can I just sum x+y?
+        margin_loss_1 = self.l(action_q1, a_e[0:2]) #dimension loss((UV)x1x2 - 1xNx2) = Relu((uv)x(n)x2) = (UV)xN
+        q1_map, e = self.Q1(s[0], s[1], s[2]) #q1_map = tensor nxuxv
+        #NxUxV > (1xN - (UXV)xN) = UxVxN > (UV)xN
+        #case N = 1 > UxV > 1 - UV
+        q1_map_reshape = q1_map.reshape(n, -1)
+        a1 = ae[:,0]
+        a2 = ae[:,1]
+        q1_e = q1_map(torch.arange(q1_map.size(0)), a1, a2).reshape(n, -1)
+        filter1 = q1_map_reshape[q1_map_reshape > q1_e - margin_loss.transpose(0,1)] #(NxUV)
+        q2_map = self.Q2(s[0], s[1], s[2], e, a_e[:,0:2])
+        #to-do: ask Nico, if array angles is centered in 0 or 180
+        margin_loss_2 = self.l(action_q2, a_e[:,2])
+        #q1 only values in the range
+        LSLM = torch.mean(q1_map_reshape[filter1] + margin_loss_1.transpose(0,1)[filter1] -  q1_e)
+        LSLM += torch.mean(q2_map.view(n, -1) + margin_loss_2 -  q2_map(torch.arange(q2_map.size(0)),a_e[:,2]))
         return LSLM
 
-    def train(self, De: torch.Torch):
-        #Pre_training for M
-        s = De[0]
-        sn = De[2]
-        a_e = De[1]
-        r = De[4]
-        #a1 are the x,y coordinates
-        a1_n = torch.argmax(self.Q1_target(sn[0], sn[1], sn[2])[:, 1])
-        #a2 is the rotation angle
-        e = self.Q1_target(sn[0], sn[1], sn[2])[:, 0]
-        a2_n = torch.argmax(self.Q2_target(sn[0], sn[1], sn[2], e, a1_n))
-        y = r + Params.gamma*torch.max(a2)
+    def pre_train(self, De: torch.Torch):
+        for i in range(Params.M):
+            #Pre_training for M
+            s = De[0]
+            a_e = De[1]
+            sn = De[2]
+            r = De[3]
 
-        a1 = torch.argmax(self.Q1(s[0], s[1], s[2])[:, 1])
-        e = self.Q1(s[0], s[1], s[2])[:, 0]
-        a2 = torch.argmax(self.Q2(sn[0], s[1], s[2], e, a2))
+            #a1 are the x,y coordinates
+            q1_map, e = self.Q1_target(sn[0], sn[1], sn[2])
+            a1_n = torch.argmax(q1_map)
+            #a2 is the rotation angle
+            q1_map_small = q1_map[0,19:109,19:109]
+            uv = divmod(uv.item(), q1_map_small.size(1))
+            u,v = uv[0]+19,uv[1]+19
 
-        ltd_loss = self.lossTD1(s, a1, y) + self.lossTD2(s, torch.concatenate(a1, a2), e, y)
-        lslm = self.LSLM(s,torch.concatenate(a1, a2), a_e)
-        # w = something
-        L = ltd_loss + Params.w* lslm
-        # gradient descent
+            # Crop patch
+            half_patch = int(Params.patch_size/2)
+            P = sn[0][:,:,u-half_patch:u+half_patch, v-half_patch:v+half_patch]
+            q2_map = self.Q2_target(P, sn[1], e)
+            a2_n = torch.argmax(q2_map)
+            y = r + Params.gamma*torch.max(q2_map)
 
-        # Training for N:
-        # Copy some part before and self play
-        #  better understand how to talk with the env
+            q1_map, e = self.Q1_target(sn[0], sn[1], sn[2])
+            a1 = torch.argmax(q1_map)
+            q1_map_small = q1_map[0,19:109,19:109]
+            uv = divmod(uv.item(), q1_map_small.size(1))
+            u,v = uv[0]+19,uv[1]+19
+
+            # Crop patch
+            half_patch = int(Params.patch_size/2)
+            P = s[0][:,:,u-half_patch:u+half_patch, v-half_patch:v+half_patch]
+            q2_map = self.Q2_target(P, s[1] e)
+            a2 = torch.argmax(q2_map)
+
+            ltd_loss = self.lossTD1(s, a1, y) + self.lossTD2(s, torch.cat((a1, a2)), e, y)
+            lslm = self.LSLM(s, a_e)
+            # w = something
+            L = ltd_loss + Params.w* lslm
+            # gradient descent
+            #TODO: implement gradient descent
+    
+    def train(De, s, a, r):
+        #1) sammple DE:
+        #2) sample DS:
+        for D in Combined_dataset:
+            s = D[0]
+            a_e = D[1]
+            sn = D[2]
+            r = D[3]
+
+            #a1 are the x,y coordinates
+            q1_map, e = self.Q1_target(sn[0], sn[1], sn[2])
+            a1_n = torch.argmax(q1_map)
+            #a2 is the rotation angle
+            q1_map_small = q1_map[0,19:109,19:109]
+            uv = divmod(uv.item(), q1_map_small.size(1))
+            u,v = uv[0]+19,uv[1]+19
+
+            # Crop patch
+            half_patch = int(Params.patch_size/2)
+            P = sn[0][:,:,u-half_patch:u+half_patch, v-half_patch:v+half_patch]
+            q2_map = self.Q2_target(P, sn[1], e)
+            a2_n = torch.argmax(q2_map)
+            y = r + Params.gamma*torch.max(q2_map)
+
+            q1_map, e = self.Q1_target(sn[0], sn[1], sn[2])
+            a1 = torch.argmax(q1_map)
+            q1_map_small = q1_map[0,19:109,19:109]
+            uv = divmod(uv.item(), q1_map_small.size(1))
+            u,v = uv[0]+19,uv[1]+19
+
+            # Crop patch
+            half_patch = int(Params.patch_size/2)
+            P = s[0][:,:,u-half_patch:u+half_patch, v-half_patch:v+half_patch]
+            q2_map = self.Q2_target(P, s[1] e)
+            a2 = torch.argmax(q2_map)
+
+            ltd_loss = self.lossTD1(s, a1, y) + self.lossTD2(s, torch.cat((a1, a2)), e, y)
+            lslm = self.LSLM(s, a_e)
+            # w = something
+            L = ltd_loss + Params.w* lslm
+            # gradient descent
+            #TODO: implement gradient descent
+
 
 
 def read_csv(path):
