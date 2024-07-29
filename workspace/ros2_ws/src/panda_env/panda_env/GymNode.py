@@ -205,7 +205,7 @@ class PandaEnvROSNode(Node):
                     print(f"step {step}")
                     next_state, _, done, _, _ = self.env.step(step)
                     rgb, depth = self.env.render()
-                    self.curr_state = next_state[0]
+                    self.curr_state = next_state
                     state_to_be_saved = self.curr_state
                     if step[7] <= 0.02:
                         self.last_action_pick = True
@@ -216,11 +216,13 @@ class PandaEnvROSNode(Node):
             next_height_map, next_in_hand_img = self.env.render_images(traj[traj.shape[0]-1,:])
 
             # Save height_map
+            print("save height map")
             plt.imshow(next_height_map, cmap='gray', vmin=vmin, vmax=vmax)
             plt.axis("off")
             plt.savefig(os.path.join(current_folder_traj, "imgs", f"next_height_map_{self.action_counter}.png"), bbox_inches='tight', pad_inches=0)
 
             # Save in_hand_img
+            print("save inhan image")
             if self.last_action_pick:
                 plt.imshow(next_in_hand_img, cmap='gray', vmin=vmin, vmax=vmax)
                 plt.axis("off")
@@ -231,6 +233,7 @@ class PandaEnvROSNode(Node):
                 plt.savefig(os.path.join(current_folder_traj, "imgs", f"next_in_hand_img_{self.action_counter}.png"), bbox_inches='tight', pad_inches=0)
 
             # Write states.csv
+            print("write next state")
             next_state = [self.action_counter, self.action_counter, True if traj[0,7] <= 0.02 else False]
             self._add_next_state_csv(current_folder_traj, next_state)
             

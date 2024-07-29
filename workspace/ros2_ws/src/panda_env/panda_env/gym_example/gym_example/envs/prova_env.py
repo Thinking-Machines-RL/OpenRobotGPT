@@ -321,6 +321,7 @@ class PandaEnv(gym.Env):
         # Make the robot and the picked cube transparent
         alpha = 0.0
 
+        print("make transparent")
         body_id = self.pandaUid
         for joint in range(p.getNumJoints(body_id) - 1):
             r, g, b, _ = p.getVisualShapeData(body_id)[joint][7]
@@ -364,6 +365,7 @@ class PandaEnv(gym.Env):
         # Reset visibility
         alpha = 1.0
 
+        print("reset visibility")
         body_id = self.pandaUid
         for joint in range(p.getNumJoints(body_id)-1):
             r, g, b, _ = p.getVisualShapeData(body_id)[joint][7]
