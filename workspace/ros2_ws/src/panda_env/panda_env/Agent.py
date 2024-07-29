@@ -7,6 +7,7 @@ from PIL import Image
 from torchvision import transforms
 import os
 import torch.nn.functional as F
+import random
 
 
 class Params:
@@ -87,17 +88,16 @@ class Agent:
         return the TD loss for Q1
         '''
         q1_map, e = self.Q1(s[0], s[1], s[2])
-        a1 = a[:,0]
-        a2 = a[:,1]
-        Q1_pred = q1_map(torch.arange(q1_map.size(0)), a1, a2)
+        u = a[:,0]
+        v = a[:,1]
+        idx = torch.arange(q1_map.size(0))
+        Q1_pred = q1_map[idx, u[idx], v[idx]]
         loss = F.huber_loss(Q1_pred, y)
-        return loss
+        return loss, e
 
-    def lossTD2(self, s: tuple, a: torch.Tensor, e: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+    def lossTD2(self, s: tuple, a: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
         '''calculate the first TD loss for Q2
-        s: it's a tuple of 3 dimension containing 3 tensor, one for the 
-            height_images, one for the in hand images and one for the
-            boolean related to the gripper status
+        s: [P, H, e]
         
         e: tensor for encoding
             
@@ -106,12 +106,10 @@ class Agent:
         
         return the TD loss for Q2
         '''
-        #TODO: fix input
-        q2_map = self.Q2(s[0], s[1], s[2], e)
-        a1 = a[:,0]
-        a2 = a[:,1]
-        a3 = a[:,2]
-        Q2_pred = q2_map(torch.arange(q2_map.size(0)), a3)
+        q2_map = self.Q2(s[0], s[1], s[2])
+        j = a[:,0]
+        idx = torch.arange(q2_map.size(0))
+        Q2_pred = q2_map[idx, j[idx]]
         loss = F.huber_loss(Q2_pred, y)
         return loss
 
@@ -154,6 +152,11 @@ class Agent:
         LSLM = torch.mean(q1_map_reshape[filter1] + margin_loss_1.transpose(0,1)[filter1] -  q1_e)
         LSLM += torch.mean(q2_map.view(n, -1) + margin_loss_2 -  q2_map(torch.arange(q2_map.size(0)),a_e[:,2]))
         return LSLM
+
+    def _sample(dataset):
+        n = len(dataset)
+        idx = random.randint(0,n-1)
+        return dataset[idx]
 
     def pre_train(self, De: torch.Torch):
         #DE = list of tuple of the transition
@@ -200,46 +203,60 @@ class Agent:
             # gradient descent
             #TODO: implement gradient descent
     
-    def train(De, s, a, r):
-        #1) sammple DE:
-        #2) sample DS:
-        for D in Combined_dataset:
-            s = D[0]
-            a_e = D[1]
-            sn = D[2]
-            r = D[3]
+    def train(self, De, D):
+        # We want to sample half transitions from De and half from D
+        # We use two separete cycles
 
-            #a1 are the x,y coordinates
-            q1_map, e = self.Q1_target(sn[0], sn[1], sn[2])
-            a1_n = torch.argmax(q1_map)
-            #a2 is the rotation angle
+        # Expert transitions
+        for i in range (Params.N/2):
+            s, a, r, ns = self._sample(De)
+
+            # Compute optimal action from next state
+            q1_map, e = self.Q1_target(ns[0], ns[1], ns[2])
             q1_map_small = q1_map[0,19:109,19:109]
+            uv = torch.argmax(q1_map)
             uv = divmod(uv.item(), q1_map_small.size(1))
             u,v = uv[0]+19,uv[1]+19
 
             # Crop patch
             half_patch = int(Params.patch_size/2)
-            P = sn[0][:,:,u-half_patch:u+half_patch, v-half_patch:v+half_patch]
-            q2_map = self.Q2_target(P, sn[1], e)
-            a2_n = torch.argmax(q2_map)
-            y = r + Params.gamma*torch.max(q2_map)
+            P = ns[0][:,:,u-half_patch:u+half_patch, v-half_patch:v+half_patch]
+            q2_map = self.Q2_target(P, ns[1], e)
+            j = torch.argmax(q2_map).item()
+            y = r[0] + Params.gamma * torch.max(q2_map)
+            loss_TD1, e = self.lossTD1(s, uv, y)
+            s2 = [s[:,:,a[0]-half_patch:a[0]+half_patch, a[1]-half_patch:a[1]+half_patch]]
+            loss_TD2 = self.lossTD2([s2,s[1],e], a[3], y)
+            loss_TD =  loss_TD1 + loss_TD2
+            loss_SLM = self.LSLM(s, a)
 
-            q1_map, e = self.Q1_target(sn[0], sn[1], sn[2])
-            a1 = torch.argmax(q1_map)
+            L = loss_TD + Params.w* loss_SLM
+            # gradient descent
+            #TODO: implement gradient descent
+
+        # Our transitions
+        for i in range (Params.N/2):
+            s, a, r, ns = self._sample(D)
+
+            # Compute optimal action from next state
+            q1_map, e = self.Q1_target(ns[0], ns[1], ns[2])
             q1_map_small = q1_map[0,19:109,19:109]
+            a_1 = torch.argmax(q1_map)
             uv = divmod(uv.item(), q1_map_small.size(1))
             u,v = uv[0]+19,uv[1]+19
 
             # Crop patch
             half_patch = int(Params.patch_size/2)
-            P = s[0][:,:,u-half_patch:u+half_patch, v-half_patch:v+half_patch]
-            q2_map = self.Q2_target(P, s[1] e)
-            a2 = torch.argmax(q2_map)
+            P = ns[0][:,:,u-half_patch:u+half_patch, v-half_patch:v+half_patch]
+            q2_map = self.Q2_target(P, ns[1], e)
+            j = torch.argmax(q2_map).item()
+            y = r[0] + Params.gamma * torch.max(q2_map)
+            loss_TD1, e = self.lossTD1(s, uv, y)
+            s2 = [s[:,:,a[0]-half_patch:a[0]+half_patch, a[1]-half_patch:a[1]+half_patch]]
+            loss_TD2 = self.lossTD2([s2,s[1],e], a[3], y)
+            loss_TD =  loss_TD1 + loss_TD2
 
-            ltd_loss = self.lossTD1(s, a1, y) + self.lossTD2(s, torch.cat((a1, a2)), e, y)
-            lslm = self.LSLM(s, a_e)
-            # w = something
-            L = ltd_loss + Params.w* lslm
+            L = loss_TD 
             # gradient descent
             #TODO: implement gradient descent
 
