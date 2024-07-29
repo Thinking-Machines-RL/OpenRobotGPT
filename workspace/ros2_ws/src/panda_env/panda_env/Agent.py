@@ -80,7 +80,7 @@ class Agent:
         '''
         # large margin loss penalty for non-expert actions
         # https://arxiv.org/pdf/1704.03732
-        l = Params.l * (1 - (a == a_e))
+        l = Params.l * torch.where(a == a_e, 0, 1)
         return l
 
     def lossTD1(self, s: tuple, a: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
@@ -148,14 +148,14 @@ class Agent:
         action_q1 = action_q1.unsqueeze(1) #dimension (UV)x1x2
         ae1 = a_e[0:2].unsqueeze(0) #dimension 1x(N)x2
         #TODO: should be equal in norm or what? can I just sum x+y?
-        margin_loss_1 = self.l(action_q1, a_e[0:2]) #dimension loss((UV)x1x2 - 1xNx2) = Relu((uv)x(n)x2) = (UV)xN
+        margin_loss_1 = self.l(action_q1, a_e[0,0:2]) #dimension loss((UV)x1x2 - 1xNx2) = Relu((uv)x(n)x2) = (UV)xN
         q1_map, e = self.Q1(s[0], s[1], s[2]) #q1_map = tensor nxuxv
         #NxUxV > (1xN - (UXV)xN) = UxVxN > (UV)xN
         #case N = 1 > UxV > 1 - UV
         q1_map_reshape = q1_map.reshape(n, -1)
         a1 = a_e[:,0]
         a2 = a_e[:,1]
-        q1_e = q1_map(torch.arange(q1_map.size(0)), a1, a2).reshape(n, -1)
+        q1_e = q1_map[torch.arange(q1_map.size(0)), a1, a2].reshape(n, -1)
         filter1 = q1_map_reshape[q1_map_reshape > q1_e] #(NxUV)
 
         q2_map = self.Q2(s[0], s[1], s[2], e, a_e[:,0:2]) #dimension Nx180
