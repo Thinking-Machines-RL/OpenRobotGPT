@@ -72,7 +72,7 @@ class Agent:
         '''
         # large margin loss penalty for non-expert actions
         # https://arxiv.org/pdf/1704.03732
-        l = Params.l * F.relu(a - a_e + Params.margin)
+        l = Params.l * (1 - (a == a_e))
         return l
 
     def lossTD1(self, s: tuple, a: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
@@ -148,7 +148,7 @@ class Agent:
         q1_e = q1_map(torch.arange(q1_map.size(0)), a1, a2).reshape(n, -1)
         filter1 = q1_map_reshape[q1_map_reshape > q1_e - margin_loss.transpose(0,1)] #(NxUV)
         q2_map = self.Q2(s[0], s[1], s[2], e, a_e[:,0:2])
-        #to-do: ask Nico, if array angles is centered in 0 or 180
+        action_q2 = 
         margin_loss_2 = self.l(action_q2, a_e[:,2])
         #q1 only values in the range
         LSLM = torch.mean(q1_map_reshape[filter1] + margin_loss_1.transpose(0,1)[filter1] -  q1_e)
@@ -156,6 +156,9 @@ class Agent:
         return LSLM
 
     def pre_train(self, De: torch.Torch):
+        #DE = list of tuple of the transition
+        # S = list
+
         for i in range(Params.M):
             #Pre_training for M
             s = De[0]
