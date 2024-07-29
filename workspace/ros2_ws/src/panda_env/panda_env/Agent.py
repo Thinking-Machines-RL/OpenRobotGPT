@@ -5,6 +5,7 @@ import copy
 import matplotlib.pyplot as plt
 from PIL import Image
 from torchvision import transforms
+import os
 
 
 class Params:
@@ -70,10 +71,31 @@ class Agent:
     def train(self, dataset):
         pass
 
+
+def read_csv(path):
+    with open(path, 'r') as csvfile:
+        csvreader = csv.reader(csvfile)
+        data = []
+        for row in csvreader:
+            data.append(row)
+    return data[1:]
+
 if __name__ == "__main__":
     agent = Agent()
-    path_height_map = "height_map_0.png"
-    path_in_hand_img = "in_hand_img_0.png"
+    path = 'dataset/trajectory_1'
+
+    states_path = os.path.join(path,"states.csv")
+    actions_path = os.path.join(path,"actions.csv")
+    rewards_path = os.path.join(path,"rewards.csv")
+    next_states_path = os.path.join(path,"next_states.csv")
+
+    states = read_csv(states_path)
+    actions = read_csv(actions_path)
+    rewards = read_csv(rewards_path)
+    next_states = read_csv(next_states_path)
+
+    path_height_map = os.path.join(path, "imgs", states[0][0])
+    path_in_hand_img = os.path.join(path, "imgs", states[0][1])
 
     height_map = Image.open(path_height_map)
     in_hand_img = Image.open(path_in_hand_img)

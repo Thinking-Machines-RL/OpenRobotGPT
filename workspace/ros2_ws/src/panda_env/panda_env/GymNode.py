@@ -273,7 +273,7 @@ class PandaEnvROSNode(Node):
         # where dpt_img, in_hand_img are images and gripper is a boolean (True if closed, False otherwise)
         
         # We write the opposite of the state, since images the state is written when the action is already terminated
-        _state = [f"heigh_map_{state[0]}.png", f"in_hand_img_{state[1]}.png", state[2]]
+        _state = [f"height_map_{state[0]}.png", f"in_hand_img_{state[1]}.png", state[2]]
 
         #path to data.cvs
         csv_states_path = os.path.join(path, 'states.csv')
@@ -314,7 +314,7 @@ class PandaEnvROSNode(Node):
         # where dpt_img, in_hand_img are images and gripper is a boolean (True if closed, False otherwise)
         
         # We write the opposite of the state, since images the state is written when the action is already terminated
-        _state = [f"heigh_map_{self.action_counter}.png", f"in_hand_img_{self.action_counter}.png", not state[2]]
+        _state = [f"height_map_{self.action_counter}.png", f"in_hand_img_{self.action_counter}.png", not state[2]]
 
         #path to data.cvs
         csv_states_path = os.path.join(path, 'next_states.csv')
@@ -336,7 +336,7 @@ class PandaEnvROSNode(Node):
 
     def _add_action_csv(self, path, state, gripper_state):
         #path to data.cvs
-        csv_action_path = os.path.join(path, 'action.csv')
+        csv_action_path = os.path.join(path, 'actions.csv')
         file_exists = os.path.isfile(csv_action_path)
 
         headers = ["x", "y", "z", "q0", "q1", "q2", "q3", "gripper_state"]
