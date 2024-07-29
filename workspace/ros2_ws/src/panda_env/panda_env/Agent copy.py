@@ -11,12 +11,11 @@ import random
 from scipy.spatial.transform import Rotation as R
 import numpy as np
 import math
-from torch.nn.functional import relu
 
 
 class Params:
     patch_size = 24
-    theta_n = 360
+    theta_resolution = 360
     l = 1
     margin = 0
     gamma = 0.99
@@ -30,7 +29,7 @@ class Agent:
     def __init__(self):
         self.q1 = ResUCatShared()
         self.q1_target = copy.deepcopy(self.q1)
-        self.q2 = CNNShared((2, Params.patch_size, Params.patch_size),Params.theta_n)
+        self.q2 = CNNShared((2, Params.patch_size, Params.patch_size),Params.theta_resolution)
         self.q2_target = copy.deepcopy(self.q2)
         self.optimizer_q1 = torch.optim.Adam(self.q1.parameters(),lr=Params.lr)
         self.optimizer_q2 = torch.optim.Adam(self.q2.parameters(),lr=Params.lr)
@@ -132,25 +131,65 @@ class Agent:
         # Compute q1_map
         q1_map, e = self.Q1(s[0],s[1],s[2])
         q1_a_e = q1_map[0,a_e[0][0],a_e[0][1]]
-        l = Params.l * torch.ones((q1_map.size(1), q1_map.size(2)))
-        l[a_e[0][0],a_e[0][1]] = 0
-        loss_SLM1 = torch.mean(relu(q1_map + l - q1_a_e))
+        l = Params.l * torch.ones((q1_map.size(0), q1_map.size(1)))
+        l[:,a_e[0][0],a_e[0][1]] = 0
+        loss_SLM1 = torch.mean(torch.ReLu(q1_map + l - q1_a_e))
         
         # Compute q2_map
         u, v = a_e[0][0], a_e[0][1]
-        print("u = ", u)
-        print("v = ", v)
         half_patch = int(Params.patch_size/2)
-        P = s[0][:,:,u-half_patch:u+half_patch, v-half_patch:v+half_patch]
-        print("P.shape = ", P.shape)
-        print("H.shape = ", s[1].shape)
+        P = s[0][u-half_patch:u+half_patch, v-half_patch:v+half_patch]
         q2_map = self.Q2(P, s[1], e)
         q2_a_e = q2_map[0,a_e[0][2]]
         l = Params.l * torch.ones((q2_map.size(0), q2_map.size(1)))
         l[:,a_e[0][2]] = 0
-        loss_SLM2 = torch.mean(relu(q2_map + l - q2_a_e))
+        loss_SLM2 = torch.mean(torch.ReLu(q2_map + l - q2_a_e))
 
         return loss_SLM1 + loss_SLM2
+
+    """
+    def lossSLM(self, s: tuple, a_e: torch.Tensor) -> torch.Tensor:
+        '''calculate the SLM loss
+        s: it's a tuple of 3 dimension containing 3 tensor, one for the 
+            height_images, one for the in hand images and one for the
+            boolean related to the gripper status
+            
+        a_e: tensor of expert actions
+        y: TD target
+        
+        return the TD loss for Q2
+        '''
+
+        # Calculating the strict large margin loss (SLM)
+        u = s[0].size(1)
+        v = s[0].size(2)
+        n = s[0].size(0) # aks: in theory should be 1?
+        u_coords, v_coords = torch.meshgrid(torch.arange(u), torch.arange(v), indexing='ij')
+        action_q1 = torch.stack((u_coords, v_coords), dim=-1).reshape(-1, 2) #(UV)x2
+        action_q1 = action_q1.unsqueeze(1) #dimension (UV)x1x2
+        ae1 = a_e[0:2].unsqueeze(0) #dimension 1x(N)x2
+        #TODO: should be equal in norm or what? can I just sum x+y?
+        margin_loss_1 = self.l(action_q1, a_e[0,0:2]) #dimension loss((UV)x1x2 - 1xNx2) = Relu((uv)x(n)x2) = (UV)xN
+        q1_map, e = self.Q1(s[0], s[1], s[2]) #q1_map = tensor nxuxv
+        #NxUxV > (1xN - (UXV)xN) = UxVxN > (UV)xN
+        #case N = 1 > UxV > 1 - UV
+        q1_map_reshape = q1_map.reshape(n, -1)
+        a1 = a_e[:,0]
+        a2 = a_e[:,1]
+        q1_e = q1_map[torch.arange(q1_map.size(0)), a1, a2].reshape(n, -1)
+        filter1 = q1_map_reshape[q1_map_reshape > q1_e] #(NxUV)
+
+        q2_map = self.Q2(s[0], s[1], s[2], e, a_e[:,0:2]) #dimension Nx180
+        action_q2 = torch.arange(q2_map.size(1)) + 0.5 #dimension Nx180
+        ae3 = a_e[0:2]#dimension 1x(N)
+        margin_loss_2 = self.l(action_q2, ae3) 
+        q2_e = q2_map[torch.arange(q1_map.size(0)), int(ae3)] #Nx1
+        filter2 = q2_map[q2_map > q2_e] #Nx180 > Nx1
+        #q1 only values in the range
+        LSLM = torch.mean(q1_map_reshape[filter1] + margin_loss_1.transpose(0,1)[filter1] -  q1_e)
+        LSLM += torch.mean(q2_map[filter2] + margin_loss_2 -  q2_e)
+        return LSLM
+    """
 
     def _sample(self, dataset):
         n = len(dataset)
@@ -346,44 +385,6 @@ def read_csv(path):
             data.append(row)
     return data[1:]
 
-def discretize_action(action, beta):
-    '''
-    beta <-- pixel dim in meters
-    '''
-    x,y = [float(a) for a in action[0:2]]
-    quat = [float(a) for a in action[3:7]]
-
-    L_p = 90
-    L_m = beta * L_p
-
-    # From world coords to img center coords
-    x = x - 0.7
-    y = y
-
-    u = math.floor((L_m/2 - x) / beta)
-    v = math.floor((L_m/2 - y) / beta)
-
-    u = min(u,L_p - 1)
-    v = min(v,L_p - 1)
-
-    # quat to theta
-    rotation = R.from_quat(np.array(quat))
-    angle_axis = rotation.as_rotvec()
-    theta_abs = np.linalg.norm(angle_axis)
-    theta_rad = theta_abs if angle_axis[2] > 0 else (2*math.pi - theta_abs)
-    theta = 2*math.pi / Params.theta_n
-    j = math.floor(theta_rad / theta)
-    j = min(j, Params.theta_n-1)
-
-    assert 0 <= u and u < L_p, f"x has value {u}"
-    assert 0 <= v and v < L_p, f"x has value {v}"
-    assert 0 <= j and j < Params.theta_n, f"x has value {j}"
-
-    return int(u), int(v), int(j)
-
-
-
-
 
 def loadD(path):
     conv_factor = os.path.join(path,"conv_factor.csv")
@@ -433,10 +434,22 @@ def loadD(path):
     L_pixel = 90
     L_meters = conv_factor * L_pixel
     for action in actions:
-        x, y, theta = discretize_action(action, conv_factor)
-        action[0] = x
-        action[1] = y
-        action[2] = theta
+        u = math.floor((L_meters - float(action[0])) / conv_factor)
+        v = math.floor(float(action[1]) / conv_factor)
+        u = min(u,90-1)
+        v = min(v,90-1)
+        # Create a Rotation object from the quaternion
+        rotation = R.from_quat(np.array([float(a) for a in action[3:7]]))
+        # Convert to angle-axis representation
+        angle_axis = rotation.as_rotvec()
+        # The angle of rotation (magnitude of the rotation vector)
+        theta_abs = math.floor(np.linalg.norm(angle_axis) / (2*math.pi/Params.theta_resolution))
+        theta = theta_abs if angle_axis[2] > 0 else (2*math.pi-theta_abs)
+        theta = min(theta,Params.theta_resolution-1)
+
+        action[0] = int(u)
+        action[1] = int(v)
+        action[2] = int(theta)
         for i in range(5):
             action.pop()
 
