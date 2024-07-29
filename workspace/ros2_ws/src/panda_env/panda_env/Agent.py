@@ -414,15 +414,15 @@ def loadD(path):
     for action in actions:
         u = math.floor((L_meters - float(action[0])) / conv_factor)
         v = math.floor(float(action[1]) / conv_factor)
-        u = max(u,90-1)
-        v = max(v,90-1)
+        u = min(u,90-1)
+        v = min(v,90-1)
         # Create a Rotation object from the quaternion
         rotation = R.from_quat(np.array([float(a) for a in action[3:7]]))
         # Convert to angle-axis representation
         angle_axis = rotation.as_rotvec()
         # The angle of rotation (magnitude of the rotation vector)
         theta = math.floor(np.linalg.norm(angle_axis) / (math.pi/Params.theta_resolution))
-        theta = max(theta,Params.theta_resolution-1)
+        theta = min(theta,Params.theta_resolution-1)
 
         action[0] = int(u)
         action[1] = int(v)
