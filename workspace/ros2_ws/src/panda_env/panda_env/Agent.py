@@ -19,7 +19,8 @@ class Params:
     w = 0.5
     M = 10
     N = 10
-    lr = 
+    lr = 0.003
+    alpha = 0.01
 
 class Agent:
     def __init__(self):
@@ -28,15 +29,13 @@ class Agent:
         self.q2 = CNNShared((2, Params.patch_size, Params.patch_size),Params.theta_resolution)
         self.q2_target = copy.deepcopy(self.q2)
         self.optimizer_q1 = torch.optim.Adam(self.q1.parameters(),lr=Params.lr)
-        self.optimizer_q1_target = torch.optim.Adam(self.q1_target.parameters(),lr=Params.lr)
         self.optimizer_q2 = torch.optim.Adam(self.q2.parameters(),lr=Params.lr)
-        self.optimizer_q2_target = torch.optim.Adam(self.q2_target.model.parameters(),lr=Params.lr)
 
     def Q1(self, I, H, g):
         q1_map, e = self.q1(I, H)
         return q1_map[:,g,:,:], e
     
-    def Q1_traget(self, I, H, g):
+    def Q1_target(self, I, H, g):
         q1_map, e = self.q1_target(I, H)
         return q1_map[:,g,:,:], e
 
@@ -139,38 +138,38 @@ class Agent:
         u_coords, v_coords = torch.meshgrid(torch.arange(u), torch.arange(v), indexing='ij')
         action_q1 = torch.stack((u_coords, v_coords), dim=-1).reshape(-1, 2) #(UV)x2
         action_q1 = action_q1.unsqueeze(1) #dimension (UV)x1x2
-        ae1 = ae[0:2].unsqueeze(0) #dimension 1x(N)x2
+        ae1 = a_e[0:2].unsqueeze(0) #dimension 1x(N)x2
         #TODO: should be equal in norm or what? can I just sum x+y?
         margin_loss_1 = self.l(action_q1, a_e[0:2]) #dimension loss((UV)x1x2 - 1xNx2) = Relu((uv)x(n)x2) = (UV)xN
         q1_map, e = self.Q1(s[0], s[1], s[2]) #q1_map = tensor nxuxv
         #NxUxV > (1xN - (UXV)xN) = UxVxN > (UV)xN
         #case N = 1 > UxV > 1 - UV
         q1_map_reshape = q1_map.reshape(n, -1)
-        a1 = ae[:,0]
-        a2 = ae[:,1]
+        a1 = a_e[:,0]
+        a2 = a_e[:,1]
         q1_e = q1_map(torch.arange(q1_map.size(0)), a1, a2).reshape(n, -1)
-        filter1 = q1_map_reshape[q1_map_reshape > q1_e - margin_loss.transpose(0,1)] #(NxUV)
+        filter1 = q1_map_reshape[q1_map_reshape > q1_e] #(NxUV)
 
         q2_map = self.Q2(s[0], s[1], s[2], e, a_e[:,0:2]) #dimension Nx180
         action_q2 = torch.arange(q2_map.size(1)) + 0.5 #dimension Nx180
-        ae3 = ae[0:2]#dimension 1x(N)
+        ae3 = a_e[0:2]#dimension 1x(N)
         margin_loss_2 = self.l(action_q2, ae3) 
         q2_e = q2_map[torch.arange(q1_map.size(0)), int(ae3)] #Nx1
-        filter2 = q2_map[q2_map > q2_e - margin_loss] #Nx180 > Nx1 - Nx180
+        filter2 = q2_map[q2_map > q2_e] #Nx180 > Nx1
         #q1 only values in the range
         LSLM = torch.mean(q1_map_reshape[filter1] + margin_loss_1.transpose(0,1)[filter1] -  q1_e)
         LSLM += torch.mean(q2_map[filter2] + margin_loss_2 -  q2_e)
         return LSLM
-    
-    def _sample(dataset):
-        n = len(dataset)
-        idx = random.randint(0,n-1)
-        return dataset[idx]
 
     def _sample(dataset):
         n = len(dataset)
         idx = random.randint(0,n-1)
         return dataset[idx]
+    
+    def _soft_update(target_q_network, q_network):
+        for target_param, param in zip(target_q_network.parameters(), q_network.parameters()):
+            target_param.data.copy_((1 - Params.alpha) * target_param.data + Params.alpha * param.data)
+    
 
     def pre_train(self, De: torch.Torch):
         #DE = list of tuple of the transition
@@ -237,7 +236,7 @@ class Agent:
             loss_TD2 = self.lossTD2([P,H,e], a_e[2], y)
 
             ltd_loss =  loss1 + loss_TD2
-            lslm = self.LSLM(s, a_e)
+            lslm = self.lossSLM(s, a_e)
             # w = something
             L = ltd_loss + Params.w* lslm
             # gradient descent
@@ -258,54 +257,85 @@ class Agent:
         for i in range (Params.N/2):
             s, a, r, ns = self._sample(De)
 
-            # Compute optimal action from next state
-            q1_map, e = self.Q1_target(ns[0], ns[1], ns[2])
-            q1_map_small = q1_map[0,19:109,19:109]
-            uv = torch.argmax(q1_map)
-            uv = divmod(uv.item(), q1_map_small.size(1))
-            u,v = uv[0]+19,uv[1]+19
+            with torch.no_grad():
+                # Compute optimal action from next state
+                q1_map, e = self.Q1_target(ns[0], ns[1], ns[2])
+                q1_map_small = q1_map[0,19:109,19:109]
+                uv = torch.argmax(q1_map)
+                uv = divmod(uv.item(), q1_map_small.size(1))
+                u,v = uv[0]+19,uv[1]+19
 
-            # Crop patch
-            half_patch = int(Params.patch_size/2)
-            P = ns[0][:,:,u-half_patch:u+half_patch, v-half_patch:v+half_patch]
-            q2_map = self.Q2_target(P, ns[1], e)
-            j = torch.argmax(q2_map).item()
-            y = r[0] + Params.gamma * torch.max(q2_map)
-            loss_TD1, e = self.lossTD1(s, uv, y)
+                # Crop patch
+                half_patch = int(Params.patch_size/2)
+                P = ns[0][:,:,u-half_patch:u+half_patch, v-half_patch:v+half_patch]
+                q2_map = self.Q2_target(P, ns[1], e)
+                j = torch.argmax(q2_map).item()
+                y = r[0] + Params.gamma * torch.max(q2_map)
+
+
+
+            loss_TD1, e = self.lossTD1(s, a[0:2], y)
             s2 = [s[:,:,a[0]-half_patch:a[0]+half_patch, a[1]-half_patch:a[1]+half_patch]]
-            loss_TD2 = self.lossTD2([s2,s[1],e], a[3], y)
+            loss_TD2 = self.lossTD2([s2,s[1],e], a[2], y)
             loss_TD =  loss_TD1 + loss_TD2
-            loss_SLM = self.LSLM(s, a)
+            loss_SLM = self.lossSLM(s, a)
 
             L = loss_TD + Params.w* loss_SLM
-            # gradient descent
-            #TODO: implement gradient descent
 
-        # Our transitions
+            # Gradient descent step
+            self.optimizer_q1.zero_grad()
+            L.backward(retain_graph=True)
+            self.optimizer_q1.step()
+            #Second Q2
+            self.optimizer_q2.zero_grad()
+            L.backward(retain_graph=True)
+            self.optimizer_q2.step()
+
+            # Update target network
+            self._soft_update(self.q1_target, self.q1)
+            self._soft_update(self.q2_target, self.q2)
+            
+
+        # Acquired transitions
         for i in range (Params.N/2):
             s, a, r, ns = self._sample(D)
 
-            # Compute optimal action from next state
-            q1_map, e = self.Q1_target(ns[0], ns[1], ns[2])
-            q1_map_small = q1_map[0,19:109,19:109]
-            a_1 = torch.argmax(q1_map)
-            uv = divmod(uv.item(), q1_map_small.size(1))
-            u,v = uv[0]+19,uv[1]+19
+            with torch.no_grad():
+                # Compute optimal action from next state
+                q1_map, e = self.Q1_target(ns[0], ns[1], ns[2])
+                q1_map_small = q1_map[0,19:109,19:109]
+                uv = torch.argmax(q1_map)
+                uv = divmod(uv.item(), q1_map_small.size(1))
+                u,v = uv[0]+19,uv[1]+19
 
-            # Crop patch
-            half_patch = int(Params.patch_size/2)
-            P = ns[0][:,:,u-half_patch:u+half_patch, v-half_patch:v+half_patch]
-            q2_map = self.Q2_target(P, ns[1], e)
-            j = torch.argmax(q2_map).item()
-            y = r[0] + Params.gamma * torch.max(q2_map)
-            loss_TD1, e = self.lossTD1(s, uv, y)
+                # Crop patch
+                half_patch = int(Params.patch_size/2)
+                P = ns[0][:,:,u-half_patch:u+half_patch, v-half_patch:v+half_patch]
+                q2_map = self.Q2_target(P, ns[1], e)
+                j = torch.argmax(q2_map).item()
+                y = r[0] + Params.gamma * torch.max(q2_map)
+
+
+
+            loss_TD1, e = self.lossTD1(s, a[0:2], y)
             s2 = [s[:,:,a[0]-half_patch:a[0]+half_patch, a[1]-half_patch:a[1]+half_patch]]
-            loss_TD2 = self.lossTD2([s2,s[1],e], a[3], y)
+            loss_TD2 = self.lossTD2([s2,s[1],e], a[2], y)
             loss_TD =  loss_TD1 + loss_TD2
 
-            L = loss_TD 
-            # gradient descent
-            #TODO: implement gradient descent
+            L = loss_TD
+
+            # Gradient descent step
+            self.optimizer_q1.zero_grad()
+            L.backward(retain_graph=True)
+            self.optimizer_q1.step()
+            #Second Q2
+            self.optimizer_q2.zero_grad()
+            L.backward(retain_graph=True)
+            self.optimizer_q2.step()
+
+            # Update target network
+            self._soft_update(self.q1_target, self.q1)
+            self._soft_update(self.q2_target, self.q2)
 
 
 
