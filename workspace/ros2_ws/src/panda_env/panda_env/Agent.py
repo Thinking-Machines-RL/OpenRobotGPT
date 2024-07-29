@@ -7,6 +7,7 @@ from PIL import Image
 from torchvision import transforms
 import os
 import torch.nn.functional as F
+import random
 
 
 class Params:
@@ -161,6 +162,11 @@ class Agent:
         LSLM += torch.mean(q2_map[filter2] + margin_loss_2 -  q2_e)
         return LSLM
     
+    def _sample(dataset):
+        n = len(dataset)
+        idx = random.randint(0,n-1)
+        return dataset[idx]
+
     def _sample(dataset):
         n = len(dataset)
         idx = random.randint(0,n-1)
