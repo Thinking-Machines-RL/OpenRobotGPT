@@ -10,6 +10,7 @@ import torch.nn.functional as F
 import random
 from scipy.spatial.transform import Rotation as R
 import numpy as np
+import math
 
 
 class Params:
@@ -191,9 +192,6 @@ class Agent:
             H = s[1]
             g = 1 if s[2] else 0
 
-            print("I.shape = ", I.shape)
-            print("H.shape = ", H.shape)
-
             a_e = torch.tensor(D[1][0:3]).unsqueeze(0)
         
             sn = D[3]
@@ -206,37 +204,47 @@ class Agent:
             with torch.no_grad():
                 #a1 are the x,y coordinates
                 q1_map, e = self.Q1_target(In, Hn, gn)
-                print("q1_map = ", q1_map)  # !!!! If removed argmax thinks q1_map is empty (numel()==0)
-                a1_n = torch.argmax(q1_map)
-                print("a1_n = ", a1_n)
-                #a2 is the rotation angle
                 q1_map_small = q1_map[0,19:109,19:109]
+                a1_n = torch.argmax(q1_map_small)
                 uv = divmod(a1_n.item(), q1_map_small.size(1))
                 u,v = uv[0]+19,uv[1]+19
+
+                print("u = ", u)
+                print("v = ", v)
 
                 # Crop patch
                 half_patch = int(Params.patch_size/2)
                 P = In[:,:,u-half_patch:u+half_patch, v-half_patch:v+half_patch]
+                print("P.shape = ", P.shape)
+                print("H.shape = ", H.shape)
                 q2_map = self.Q2_target(P, Hn, e)
                 a2_n = torch.argmax(q2_map)
                 y = r + Params.gamma*torch.max(q2_map)
 
             q1_map, e = self.Q1(I, H, g)
-            a1 = torch.argmax(q1_map)
             q1_map_small = q1_map[0,19:109,19:109]
+            a1 = torch.argmax(q1_map_small)
             uv = divmod(a1.item(), q1_map_small.size(1))
             u,v = uv[0]+19,uv[1]+19
+
+            print("u = ", u)
+            print("v = ", v)
 
             # Crop patch
             half_patch = int(Params.patch_size/2)
             P = I[:,:,u-half_patch:u+half_patch, v-half_patch:v+half_patch]
+            print("P.shape = ", P.shape)
+            print("H.shape = ", H.shape)
             q2_map = self.Q2_target(P, H, e)
             a2 = torch.argmax(q2_map)
 
             s = tuple([I, H, g])
-            loss_TD1, e = self.lossTD1(s, a_e[0:2], y)
-            P = H[:,:,a_e[0]-half_patch:a_e[0]+half_patch, a_e[1]-half_patch:a_e[1]+half_patch]
-            loss_TD2 = self.lossTD2([P,H,e], a_e[2], y)
+            loss_TD1, e = self.lossTD1(s, a_e[:,0:2], y)
+
+            print("a_e = ", a_e)
+
+            P = I[:,:,a_e[0][0].item()-half_patch:a_e[0][0].item()+half_patch, a_e[0][1].item()-half_patch:a_e[0][1].item()+half_patch]
+            loss_TD2 = self.lossTD2([P,H,e], a_e[:,2:], y)
 
             loss_TD =  loss_TD1 + loss_TD2
             loss_SLM = self.lossSLM(s, a_e)
@@ -363,7 +371,7 @@ def loadD(path):
     rewards_path = os.path.join(path,"rewards.csv")
     next_states_path = os.path.join(path,"next_states.csv")
 
-    conv_factor = read_csv(conv_factor)[1][0]
+    conv_factor = read_csv(conv_factor)[0][0]
     states = read_csv(states_path)
     actions = read_csv(actions_path)
     rewards = read_csv(rewards_path)
@@ -400,23 +408,25 @@ def loadD(path):
         state[1]= in_hand_img
         state[-1] = bool_conversion[state[-1]]
 
-    L_pixel = state[0].size(0)
+    conv_factor = float(conv_factor)
+    L_pixel = 90
     L_meters = conv_factor * L_pixel
     for action in actions:
-        u = (L_meters - action[0]) // conv_factor
-        v = action[1] // conv_factor
+        u = math.floor((L_meters - float(action[0])) / conv_factor)
+        v = math.floor(float(action[1]) / conv_factor)
         u = max(u,90-1)
         v = max(v,90-1)
         # Create a Rotation object from the quaternion
-        rotation = R.from_quat(np.array(action[3:7]))
+        rotation = R.from_quat(np.array([float(a) for a in action[3:7]]))
         # Convert to angle-axis representation
         angle_axis = rotation.as_rotvec()
         # The angle of rotation (magnitude of the rotation vector)
-        theta = np.linalg.norm(angle_axis)
+        theta = math.floor(np.linalg.norm(angle_axis) / (math.pi/Params.theta_resolution))
+        theta = max(theta,Params.theta_resolution-1)
 
-        action[0] = u
-        action[1] = v
-        action[2] = theta
+        action[0] = int(u)
+        action[1] = int(v)
+        action[2] = int(theta)
         for i in range(5):
             action.pop()
 
