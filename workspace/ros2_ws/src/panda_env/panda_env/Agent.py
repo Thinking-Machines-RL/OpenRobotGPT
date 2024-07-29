@@ -97,6 +97,11 @@ class Agent:
         u = a[:,0]
         v = a[:,1]
         idx = torch.arange(q1_map.size(0))
+
+        print("u = ", u)
+        print("v = ", v)
+        print("idx = ", idx)
+
         Q1_pred = q1_map[idx, u[idx], v[idx]]
         loss = F.huber_loss(Q1_pred, y)
         return loss, e
@@ -161,17 +166,17 @@ class Agent:
         LSLM += torch.mean(q2_map[filter2] + margin_loss_2 -  q2_e)
         return LSLM
 
-    def _sample(dataset):
+    def _sample(self, dataset):
         n = len(dataset)
         idx = random.randint(0,n-1)
         return dataset[idx]
     
-    def _soft_update(target_q_network, q_network):
+    def _soft_update(self, target_q_network, q_network):
         for target_param, param in zip(target_q_network.parameters(), q_network.parameters()):
             target_param.data.copy_((1 - Params.alpha) * target_param.data + Params.alpha * param.data)
     
 
-    def pre_train(self, De: torch.Torch):
+    def pre_train(self, De: torch.Tensor):
         #DE = list of tuple of the transition
         # S = list
 
@@ -181,35 +186,30 @@ class Agent:
             #Pre_training for M
             s = D[0]
             I = s[0]
-            if I.ndim < 3:
-                I = I.unsqueeze(0)
             H = s[1]
-            if H.ndim < 3:
-                H = H.unsqueeze(0)
-            g = s[2]
-            if g.ndim < 2:
-                g = g.unsqueeze(0)
+            g = 1 if s[2] else 0
 
-            a_e = torch.from_numpy(D[1][0]).unsqueeze(0)
-            sn = D[2]
+            print("I.shape = ", I.shape)
+            print("H.shape = ", H.shape)
+
+            a_e = torch.tensor(D[1][0:3]).unsqueeze(0)
+        
+            sn = D[3]
             In = sn[0]
-            if In.ndim < 3:
-                In = In.unsqueeze(0)
             Hn = sn[1]
-            if Hn.ndim < 3:
-                Hn = Hn.unsqueeze(0)
-            gn = sn[2]
-            if gn.ndim < 2:
-                gn = gn.unsqueeze(0)
-            r = D[3][0]
+            gn = 1 if sn[2] else 0
+
+            r = D[2][0]
 
             with torch.no_grad():
                 #a1 are the x,y coordinates
                 q1_map, e = self.Q1_target(In, Hn, gn)
+                print("q1_map = ", q1_map)  # !!!! If removed argmax thinks q1_map is empty (numel()==0)
                 a1_n = torch.argmax(q1_map)
+                print("a1_n = ", a1_n)
                 #a2 is the rotation angle
                 q1_map_small = q1_map[0,19:109,19:109]
-                uv = divmod(uv.item(), q1_map_small.size(1))
+                uv = divmod(a1_n.item(), q1_map_small.size(1))
                 u,v = uv[0]+19,uv[1]+19
 
                 # Crop patch
@@ -222,7 +222,7 @@ class Agent:
             q1_map, e = self.Q1(I, H, g)
             a1 = torch.argmax(q1_map)
             q1_map_small = q1_map[0,19:109,19:109]
-            uv = divmod(uv.item(), q1_map_small.size(1))
+            uv = divmod(a1.item(), q1_map_small.size(1))
             u,v = uv[0]+19,uv[1]+19
 
             # Crop patch
@@ -232,14 +232,14 @@ class Agent:
             a2 = torch.argmax(q2_map)
 
             s = tuple([I, H, g])
-            loss1, e = self.lossTD1(s, a_e[0:2], y)
-            P = H[:,:,a[0]-half_patch:a_e[0]+half_patch, a_e[1]-half_patch:a[1]+half_patch]
+            loss_TD1, e = self.lossTD1(s, a_e[0:2], y)
+            P = H[:,:,a_e[0]-half_patch:a_e[0]+half_patch, a_e[1]-half_patch:a_e[1]+half_patch]
             loss_TD2 = self.lossTD2([P,H,e], a_e[2], y)
 
-            ltd_loss =  loss1 + loss_TD2
-            lslm = self.lossSLM(s, a_e)
+            loss_TD =  loss_TD1 + loss_TD2
+            loss_SLM = self.lossSLM(s, a_e)
             # w = something
-            L = ltd_loss + Params.w* lslm
+            L = loss_TD + Params.w* loss_SLM
             # gradient descent
             #Fist Q1
             self.optimizer_q1.zero_grad()
@@ -353,10 +353,8 @@ def read_csv(path):
             data.append(row)
     return data[1:]
 
-if __name__ == "__main__":
-    agent = Agent()
-    path = 'dataset/trajectory_1'
 
+def loadD(path):
     states_path = os.path.join(path,"states.csv")
     actions_path = os.path.join(path,"actions.csv")
     rewards_path = os.path.join(path,"rewards.csv")
@@ -367,30 +365,87 @@ if __name__ == "__main__":
     rewards = read_csv(rewards_path)
     next_states = read_csv(next_states_path)
 
-    path_height_map = os.path.join(path, "imgs", states[0][0])
-    path_in_hand_img = os.path.join(path, "imgs", states[0][1])
+    bool_conversion = {'True': True, 'False': False}
 
-    height_map = Image.open(path_height_map)
-    in_hand_img = Image.open(path_in_hand_img)
+    for state in states:
+        path_height_map = os.path.join(path, "imgs", state[0])
+        path_in_hand_img = os.path.join(path, "imgs", state[1])
 
-    resize_patch = transforms.Resize((Params.patch_size, Params.patch_size))
-    resize_img = transforms.Resize((90,90))
-    to_tensor = transforms.ToTensor()
+        height_map = Image.open(path_height_map)
+        in_hand_img = Image.open(path_in_hand_img)
 
-    height_map = resize_img(height_map)
-    in_hand_img = resize_patch(in_hand_img)
+        resize_patch = transforms.Resize((Params.patch_size, Params.patch_size))
+        resize_img = transforms.Resize((90,90))
+        to_tensor = transforms.ToTensor()
 
-    height_map = to_tensor(height_map)[0,:,:]
-    in_hand_img = to_tensor(in_hand_img)[0,:,:]
+        height_map = resize_img(height_map)
+        in_hand_img = resize_patch(in_hand_img)
 
-    # Pad height_map to 128x128
-    I = torch.zeros((128, 128))
-    I[19:109,19:109] = height_map
-    height_map = I
+        height_map = to_tensor(height_map)[0,:,:]
+        in_hand_img = to_tensor(in_hand_img)[0,:,:]
 
-    height_map = height_map.unsqueeze(0).unsqueeze(0)
-    in_hand_img = in_hand_img.unsqueeze(0).unsqueeze(0)
+        # Pad height_map to 128x128
+        I = torch.zeros((128, 128))
+        I[19:109,19:109] = height_map
+        height_map = I
 
-    a = agent.predict(height_map, in_hand_img, 0)
+        height_map = height_map.unsqueeze(0).unsqueeze(0)
+        in_hand_img = in_hand_img.unsqueeze(0).unsqueeze(0)
 
-    print("a = ", a)
+        state[0] = height_map
+        state[1]= in_hand_img
+        state[-1] = bool_conversion[state[-1]]
+
+    for action in actions:
+        for i in range(len(action)-1):
+            action[i] = float(action[i])
+
+        action[-1] = bool_conversion[action[-1]]
+
+    for reward in rewards:
+        for i in range(len(reward)):
+            reward[i] = float(reward[i])
+
+    for next_state in next_states:
+        path_height_map = os.path.join(path, "imgs", next_state[0])
+        path_in_hand_img = os.path.join(path, "imgs", next_state[1])
+
+        height_map = Image.open(path_height_map)
+        in_hand_img = Image.open(path_in_hand_img)
+
+        resize_patch = transforms.Resize((Params.patch_size, Params.patch_size))
+        resize_img = transforms.Resize((90,90))
+        to_tensor = transforms.ToTensor()
+
+        height_map = resize_img(height_map)
+        in_hand_img = resize_patch(in_hand_img)
+
+        height_map = to_tensor(height_map)[0,:,:]
+        in_hand_img = to_tensor(in_hand_img)[0,:,:]
+
+        # Pad height_map to 128x128
+        I = torch.zeros((128, 128))
+        I[19:109,19:109] = height_map
+        height_map = I
+
+        height_map = height_map.unsqueeze(0).unsqueeze(0)
+        in_hand_img = in_hand_img.unsqueeze(0).unsqueeze(0)
+
+        next_state[0] = height_map
+        next_state[1]= in_hand_img
+        next_state[-1] = bool_conversion[next_state[-1]]
+
+    return list(zip(states,actions,rewards,next_states))
+
+
+
+if __name__ == '__main__':
+    agent = Agent()
+    path = 'dataset/trajectory_1'
+
+    De = loadD(path)
+
+    agent.pre_train(De)
+
+
+
