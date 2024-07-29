@@ -8,6 +8,8 @@ from torchvision import transforms
 import os
 import torch.nn.functional as F
 import random
+from scipy.spatial.transform import Rotation as R
+import numpy as np
 
 
 class Params:
@@ -355,11 +357,13 @@ def read_csv(path):
 
 
 def loadD(path):
+    conv_factor = os.path.join(path,"conv_factor.csv")
     states_path = os.path.join(path,"states.csv")
     actions_path = os.path.join(path,"actions.csv")
     rewards_path = os.path.join(path,"rewards.csv")
     next_states_path = os.path.join(path,"next_states.csv")
 
+    conv_factor = read_csv(conv_factor)[1][0]
     states = read_csv(states_path)
     actions = read_csv(actions_path)
     rewards = read_csv(rewards_path)
@@ -396,11 +400,25 @@ def loadD(path):
         state[1]= in_hand_img
         state[-1] = bool_conversion[state[-1]]
 
+    L_pixel = state[0].size(0)
+    L_meters = conv_factor * L_pixel
     for action in actions:
-        for i in range(len(action)-1):
-            action[i] = float(action[i])
+        u = (L_meters - action[0]) // conv_factor
+        v = action[1] // conv_factor
+        u = max(u,90-1)
+        v = max(v,90-1)
+        # Create a Rotation object from the quaternion
+        rotation = R.from_quat(np.array(action[3:7]))
+        # Convert to angle-axis representation
+        angle_axis = rotation.as_rotvec()
+        # The angle of rotation (magnitude of the rotation vector)
+        theta = np.linalg.norm(angle_axis)
 
-        action[-1] = bool_conversion[action[-1]]
+        action[0] = u
+        action[1] = v
+        action[2] = theta
+        for i in range(5):
+            action.pop()
 
     for reward in rewards:
         for i in range(len(reward)):
