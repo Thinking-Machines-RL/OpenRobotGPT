@@ -153,6 +153,10 @@ class PandaEnvROSNode(Node):
         print("Starting trajectory")
         # curr_state = traj[-1,0:7]
 
+        dataset_path = "/root/workspace/dataset"
+        current_folder_date = self._retrieve_last_folder(dataset_path)
+        current_folder_traj = self._retrieve_last_folder(current_folder_date)
+
         if self.end_task:
             objStates = self.env.getObjStates()
             msg = ObjectStates()
@@ -166,11 +170,11 @@ class PandaEnvROSNode(Node):
             self.ObjectStatesPublisher.publish(msg)
             print("[INFO] published message")
             print(msg)
-        else:
-            dataset_path = "/root/workspace/dataset"
-            current_folder_date = self._retrieve_last_folder(dataset_path)
-            current_folder_traj = self._retrieve_last_folder(current_folder_date)
+            for i in range(self.action_counter-1):
+                self._add_reward_csv(current_folder_traj,0)
+            self._add_reward_csv(current_folder_traj,1)
 
+        else:
             # State
             height_map, in_hand_img = self.env.render_images(traj[0,:])
 
@@ -178,17 +182,17 @@ class PandaEnvROSNode(Node):
             vmax = 0.75 - 0.5
 
             # Save height_map
-            plt.imshow(height_map, vmin=vmin, vmax=vmax)
+            plt.imshow(height_map, cmap='gray', vmin=vmin, vmax=vmax)
             plt.axis("off")
             plt.savefig(os.path.join(current_folder_traj, "imgs", f"height_map_{self.action_counter}.png"), bbox_inches='tight', pad_inches=0)
 
             # Save in_hand_img
             if self.last_action_pick:
-                plt.imshow(in_hand_img, vmin=vmin, vmax=vmax)
+                plt.imshow(in_hand_img, cmap='gray', vmin=vmin, vmax=vmax)
                 plt.axis("off")
                 plt.savefig(os.path.join(current_folder_traj, "imgs", f"in_hand_img_{self.action_counter}.png"), bbox_inches='tight', pad_inches=0)
             else:
-                plt.imshow(np.zeros((200,200)), vmin=vmin, vmax=vmax)
+                plt.imshow(np.zeros((200,200)), cmap='gray', vmin=vmin, vmax=vmax)
                 plt.axis("off")
                 plt.savefig(os.path.join(current_folder_traj, "imgs", f"in_hand_img_{self.action_counter}.png"), bbox_inches='tight', pad_inches=0)
 
@@ -211,17 +215,17 @@ class PandaEnvROSNode(Node):
             next_height_map, next_in_hand_img = self.env.render_images(traj[traj.shape[0]-1,:])
 
             # Save height_map
-            plt.imshow(next_height_map, vmin=vmin, vmax=vmax)
+            plt.imshow(next_height_map, cmap='gray', vmin=vmin, vmax=vmax)
             plt.axis("off")
             plt.savefig(os.path.join(current_folder_traj, "imgs", f"next_height_map_{self.action_counter}.png"), bbox_inches='tight', pad_inches=0)
 
             # Save in_hand_img
             if self.last_action_pick:
-                plt.imshow(next_in_hand_img, vmin=vmin, vmax=vmax)
+                plt.imshow(next_in_hand_img, cmap='gray', vmin=vmin, vmax=vmax)
                 plt.axis("off")
                 plt.savefig(os.path.join(current_folder_traj, "imgs", f"next_in_hand_img_{self.action_counter}.png"), bbox_inches='tight', pad_inches=0)
             else:
-                plt.imshow(np.zeros((200,200)), vmin=vmin, vmax=vmax)
+                plt.imshow(np.zeros((200,200)), cmap='gray', vmin=vmin, vmax=vmax)
                 plt.axis("off")
                 plt.savefig(os.path.join(current_folder_traj, "imgs", f"next_in_hand_img_{self.action_counter}.png"), bbox_inches='tight', pad_inches=0)
 
@@ -263,37 +267,6 @@ class PandaEnvROSNode(Node):
         else:
             print("No folders found in the dataset directory.")
 
-    def _edit_csv(self, path, state, action, reward, next_state):
-        '''
-        Save (s,a,r,s') into a new row of the dataset
-        s  <-- (height map, in hand image, gripper)
-        a  <-- (x, y, theta, gripper)
-        r  <-- 1/0
-        s' <-- (height map, in hand image, gripper)
-        '''
-
-        csv_action_path = os.path.join(path, 'transitions.csv')
-        file_exists = os.path.isfile(csv_action_path)
-
-        state_headers = ["height_map", "in_hand_img", "gripper"]
-        action_headers = ["x", "y", "theta", "gripper"]
-        reward_headers = ["reward"]
-        next_state_headers = state_headers
-
-        headers = state_headers + action_headers + reward_headers + next_state_headers
-
-        transition = state + action + reward + next_state
-
-        # Open the CSV file in append mode and write the data
-        with open(csv_action_path, 'a', newline='') as csvfile:
-            csv_writer = csv.writer(csvfile)
-
-            # If the file doesn't exist, write the header
-            if not file_exists:
-                csv_writer.writerow(headers)  # Write header
-
-            csv_writer.writerow(transition)
-
 
     def _add_state_csv(self, path, state):
         # state is expected to look like this: [dpt_img, in_hand_img, gripper]
@@ -319,6 +292,22 @@ class PandaEnvROSNode(Node):
             # Write the data rows
             csv_writer.writerow(_state)
         # print(f"state appended to: {csv_states_path}")
+    
+    def _add_reward_csv(self, path, reward):
+        csv_states_path = os.path.join(path, 'rewards.csv')
+        file_exists = os.path.isfile(csv_states_path)
+
+        headers = ["reward"]
+
+        with open(csv_states_path, 'a', newline='') as csvfile:
+            csv_writer = csv.writer(csvfile)
+
+            # If the file doesn't exist, write the header
+            if not file_exists:
+                csv_writer.writerow(headers)  # Write header
+
+            # Write the data rows
+            csv_writer.writerow([reward])
             
     def _add_next_state_csv(self, path, state):
         # state is expected to look like this: [dpt_img, in_hand_img, gripper]

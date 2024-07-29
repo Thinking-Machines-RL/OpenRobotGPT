@@ -372,6 +372,7 @@ class ResUCatShared(ResUCat):
         feature_map_16 = self.conv_down_16(feature_map_8)
 
         in_hand_out = self.in_hand_conv(in_hand)
+
         feature_map_up_16 = self.conv_cat_in_hand(torch.cat((feature_map_16, in_hand_out), dim=1))
 
         feature_map_up_8 = self.conv_up_8(torch.cat((feature_map_8, F.interpolate(feature_map_up_16, size=feature_map_8.shape[-1], mode='bilinear', align_corners=False)), dim=1))
