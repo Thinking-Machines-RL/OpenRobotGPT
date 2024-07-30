@@ -260,7 +260,8 @@ class PandaEnv(gym.Env):
             "green_cube":[0, 0, 0, 1],
             "blue_cube": [0, 0, 0, 1],
             "yellow_triangle":[-1, 0, 0, 0],
-            "bin": [1,0,0,0]
+            "bin": [1, 0, 0, 0],
+            "bottle": [0, 0, 0, 1]
         }
 
         self.objectUid = {}
@@ -317,6 +318,16 @@ class PandaEnv(gym.Env):
         )
 
         self.objectUid["bin"] = bin_id
+
+        # Bottles
+
+        urdf_filepath = os.path.join(urdfRootPathOurs, 'bottle1.urdf')
+        scale = 1
+        pos=(0.65,-0.1,0.05)
+        rot=(0,0,0,1)
+        bottle_id = p.loadURDF(urdf_filepath, basePosition=pos, baseOrientation=rot, globalScaling=scale)
+
+        self.objectUid["bottle"] = bottle_id
         
         self.objects = {}
         for obj in self.objectUid.keys():

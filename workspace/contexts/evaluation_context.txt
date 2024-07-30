@@ -2,7 +2,7 @@ You will be prompted with a task. The task has already been solved. Your task is
 
 You are given access to an API:
 
-self.isOnTop(object_A, object_B): Returns True if object_A is on top of object_B
+self.isOnTop(object_A, object_B, dx=0, dy=0): Returns True if object_A is on top of object_B. You can also speficy an offset (x,y) from the center of object_B
 
 self.isInPosition(object, position): Checks if the object is in the specified position
 
@@ -28,4 +28,12 @@ Code:
         # 1.
         assert self.isOnTop("green_cube","blue_cube"), "The green cube is not on top of the blue one"
             
+        return True
+
+Example 3
+Task: Pick the yellow cube and place it into the bin with an offset of (0.05, 0.1) from the center
+Code:
+    def evaluation_func(self):
+        assert self.isOnTop("yellow_cube", "bin", dx=0.05, dy=0.1), "The yellow cube is not in the bin or the offset is wrong"
+
         return True

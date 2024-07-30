@@ -150,14 +150,14 @@ class RobotAPINode(Node):
         self.pickedObject = None
 
 
-    def isOnTop(self, object_A, object_B):
+    def isOnTop(self, object_A, object_B, dx=0, dy=0):
         ''' Checks whether an object A is on top of an object B '''
         BLOCK_DIM = 0.05
         TOLERANCE = 0.01
         position_A = self.objStates[object_A]
         position_B = self.objStates[object_B]
-        if abs(position_A[0] - position_B[0]) < BLOCK_DIM and \
-           abs(position_A[1] - position_B[1]) < BLOCK_DIM and \
+        if abs(position_A[0] - position_B[0] - dx) < TOLERANCE and \
+           abs(position_A[1] - position_B[1] - dy) < TOLERANCE and \
            abs(position_A[2] - (position_B[2] + BLOCK_DIM)) < TOLERANCE:
             return True
         return False
