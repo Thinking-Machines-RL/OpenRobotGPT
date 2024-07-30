@@ -48,7 +48,7 @@ class RobotAPINode(Node):
             "blue_cube": 0.025,
             "yellow_triangle": 0.025,
             "bin": 0.025,
-            "bottle": 0.16
+            "bottle": 0.155
         }
 
         self.bottom_offset = {
@@ -147,7 +147,9 @@ class RobotAPINode(Node):
         PLACE_POSE[1] += dy
         PLACE_POSE[2] += offset
         self.place(PLACE_POSE)
-        self.objStates[self.pickedObject] = PLACE_POSE + 0.05 - self.top_offset[object]
+        new_z = PLACE_POSE[2] + 0.05 - self.top_offset[object]
+        self.objStates[self.pickedObject] = copy.deepcopy(PLACE_POSE)
+        self.objStates[self.pickedObject][2] = new_z
         self.pickedObject = None
 
 
