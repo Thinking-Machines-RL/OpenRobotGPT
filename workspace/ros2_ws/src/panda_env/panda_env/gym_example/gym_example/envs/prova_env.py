@@ -245,9 +245,9 @@ class PandaEnv(gym.Env):
         #self.objectUid = p.loadURDF(os.path.join(urdfRootPath, "cube_small.urdf"), basePosition=state_object)
         
         objects = {"red_cube":[0.6,0.1,0.05, 1, 0, 0, 0],
-                   "green_cube":[0.5,-0.1,0.05, cos(pi/8), sin(pi/8), 0, 0],
+                   "green_cube":[0.5,0.1,0.05, cos(pi/8), sin(pi/8), 0, 0],
                    "blue_cube": [0.7,0.1,0.05, cos(pi/16), sin(pi/16), 0, 0],
-                   "yellow_triangle":[0.8,-0.05,0.05, 1, 0, 0, 0]}
+                   "yellow_triangle":[0.8,0.1,0.05, 1, 0, 0, 0]}
         urdf_files = {
                     "red_cube": "cube_red.urdf",
                     "green_cube": "cube_green.urdf",
@@ -259,7 +259,8 @@ class PandaEnv(gym.Env):
             "red_cube":[0, 0, 0, 1],
             "green_cube":[0, 0, 0, 1],
             "blue_cube": [0, 0, 0, 1],
-            "yellow_triangle":[-1, 0, 0, 0]
+            "yellow_triangle":[-1, 0, 0, 0],
+            "bin": [1,0,0,0]
         }
 
         self.objectUid = {}
@@ -273,6 +274,49 @@ class PandaEnv(gym.Env):
             print("pose[:3] = ", pose[:3])
             print("pose[3:] = ", pose[3:])
             self.objectUid[object_name] = p.loadURDF(urdf_path, basePosition=pose[:3], baseOrientation=pose[3:])
+
+        # Bin
+        pos=(0.65,-0.1,0.05)
+        rot=(0,0,0,1)
+        size=(0.2, 0.2, 0.05)
+        thickness=0.005
+
+        bottom_visual = p.createVisualShape(p.GEOM_BOX, halfExtents=[size[0]/2, size[1]/2, thickness], rgbaColor=[1, 1, 1, 1])
+        bottom_collision = p.createCollisionShape(p.GEOM_BOX, halfExtents=[size[0]/2, size[1]/2, thickness])
+
+        front_visual = p.createVisualShape(p.GEOM_BOX, halfExtents=[thickness, size[1]/2, size[2]/2], rgbaColor=[1, 1, 1, 1])
+        front_collision = p.createCollisionShape(p.GEOM_BOX, halfExtents=[thickness, size[1]/2, size[2]/2])
+
+        back_visual = p.createVisualShape(p.GEOM_BOX, halfExtents=[thickness, size[1] / 2, size[2] / 2], rgbaColor=[1, 1, 1, 1])
+        back_collision = p.createCollisionShape(p.GEOM_BOX, halfExtents=[thickness, size[1] / 2, size[2] / 2])
+
+        left_visual = p.createVisualShape(p.GEOM_BOX, halfExtents=[size[0]/2, thickness, size[2] / 2], rgbaColor=[1, 1, 1, 1])
+        left_collision = p.createCollisionShape(p.GEOM_BOX, halfExtents=[size[0]/2, thickness, size[2] / 2])
+
+        right_visual = p.createVisualShape(p.GEOM_BOX, halfExtents=[size[0]/2, thickness, size[2]/2], rgbaColor=[1, 1, 1, 1])
+        right_collision = p.createCollisionShape(p.GEOM_BOX, halfExtents=[size[0]/2, thickness, size[2]/2])
+
+        bin_id = p.createMultiBody(baseMass=0,
+                                    baseCollisionShapeIndex=bottom_collision,
+                                    baseVisualShapeIndex=bottom_visual,
+                                    basePosition=pos,
+                                    baseOrientation=rot,
+                                    linkMasses=[1, 1, 1, 1],
+                                    linkCollisionShapeIndices=[front_collision, back_collision, left_collision, right_collision],
+                                    linkVisualShapeIndices=[front_visual, back_visual, left_visual, right_visual],
+                                    linkPositions=[[-size[0]/2, 0, size[2]/2],
+                                                    [size[0]/2, 0, size[2]/2],
+                                                    [0, -size[1]/2, size[2]/2],
+                                                    [0, size[1]/2, size[2]/2]],
+                                    linkOrientations=[[0, 0, 0, 1], [0, 0, 0, 1], [0, 0, 0, 1], [0, 0, 0, 1]],
+                                    linkInertialFramePositions=[[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]],
+                                    linkInertialFrameOrientations=[[0, 0, 0, 1], [0, 0, 0, 1], [0, 0, 0, 1], [0, 0, 0, 1]],
+                                    linkParentIndices=[0, 0, 0, 0],
+                                    linkJointTypes=[p.JOINT_FIXED, p.JOINT_FIXED, p.JOINT_FIXED, p.JOINT_FIXED],
+                                    linkJointAxis=[[0, 0, 1], [0, 0, 1], [0, 0, 1], [0, 0, 1]]
+        )
+
+        self.objectUid["bin"] = bin_id
         
         self.objects = {}
         for obj in self.objectUid.keys():
@@ -329,20 +373,6 @@ class PandaEnv(gym.Env):
         r, g, b, _ = p.getVisualShapeData(body_id)[0][7]
         p.changeVisualShape(body_id, -1, rgbaColor=[r, g, b, alpha])
 
-        '''
-        SAFE_HEIGHT = 0.3
-        for obj in self.objectUid.keys():
-            position, orientation = p.getBasePositionAndOrientation(self.objectUid[obj]) 
-            position = list(position)
-            print(f"{obj} is in position ", position)
-            if position[2] >= SAFE_HEIGHT - 0.03:
-                print(f"{obj} should be invisible")
-                data = p.getVisualShapeData(self.objectUid[obj])
-                for idx in range(len(data)):
-                    r, g, b, _ = data[idx][7]
-                    p.changeVisualShape(self.objectUid[obj], idx, rgbaColor=[r, g, b, alpha])
-        '''
-
         # height_map
         (width, height, px, depth_px, _) = p.getCameraImage(width=w,
                                               height=h,
@@ -372,19 +402,6 @@ class PandaEnv(gym.Env):
             p.changeVisualShape(body_id, joint, rgbaColor=[r, g, b, alpha])
         r, g, b, _ = p.getVisualShapeData(body_id)[0][7]
         p.changeVisualShape(body_id, -1, rgbaColor=[r, g, b, alpha])
-
-        '''
-        SAFE_HEIGHT = 0.3
-        for obj in self.objectUid.keys():
-            position, orientation = p.getBasePositionAndOrientation(self.objectUid[obj]) 
-            position = list(position)
-            if position[2] >= SAFE_HEIGHT - 0.03:
-                print(f"{obj} should be visible again")
-                data = p.getVisualShapeData(self.objectUid[obj])
-                for idx in range(len(data)):
-                    r, g, b, _ = data[idx][7]
-                    p.changeVisualShape(self.objectUid[obj], idx, rgbaColor=[r, g, b, alpha])
-        '''
 
         return height_map, in_hand_img
 

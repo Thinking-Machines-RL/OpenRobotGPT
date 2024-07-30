@@ -116,12 +116,14 @@ class RobotAPINode(Node):
         self.pick(PICK_POSE)
 
 
-    def placeObjectOn(self, object):
+    def placeObjectOn(self, object, dx=0, dy=0):
         ''' Place the object that we have grasped on top of the specified object '''
         assert self.pickedObject, "placeObjectOn({object}): No object has been picked yet."
         assert object in self.objStates.keys(), f"placeOnObject({object}): '{object}' is not an object."
         BLOCK_HEIGHT = 0.05
         PLACE_POSE = copy.deepcopy(self.objStates[object])
+        PLACE_POSE[0] += dx
+        PLACE_POSE[1] += dy
         PLACE_POSE[2] += BLOCK_HEIGHT
         self.place(PLACE_POSE)
         self.objStates[self.pickedObject] = PLACE_POSE
