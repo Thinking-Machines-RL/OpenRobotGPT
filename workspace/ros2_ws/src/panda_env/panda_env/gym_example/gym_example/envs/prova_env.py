@@ -98,14 +98,6 @@ class PandaEnv(gym.Env):
         else:
             gripper = False  # open gripper
 
-        #TODO: random goal, must be changed
-        #we moved the object at a certain altitude 
-        """ if object_obs["red_cube"][-1]>0.45:
-            reward = 1
-            done = True
-        else:
-            reward = 0
-            done = False """
         reward = 0
         done = False
 
@@ -261,7 +253,7 @@ class PandaEnv(gym.Env):
             "blue_cube": [0, 0, 0, 1],
             "yellow_triangle":[-1, 0, 0, 0],
             "bin": [1, 0, 0, 0],
-            "bottle": [0, 0, 0, 1]
+            "bottle": [1, 0, 0, 0]
         }
 
         self.objectUid = {}
