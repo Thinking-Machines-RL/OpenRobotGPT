@@ -1,0 +1,16 @@
+# cube_stacking.yaml
+panda_env_node:
+  ros__parameters:
+    objects: '{
+      "cube_1": {
+        "type": "red_cube",
+        "position": [0.7,0.0,0.0],
+        "orientation": [1.0,0.0,0.0,0.0]
+      },
+
+      "cube_2": {
+        "type": "blue_cube",
+        "position": [0.75,0.05,0.0],
+        "orientation": [1.0,0.0,0.0,0.0]
+      }
+    }'

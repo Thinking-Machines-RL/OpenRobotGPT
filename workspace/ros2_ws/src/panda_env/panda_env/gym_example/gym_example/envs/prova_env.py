@@ -13,7 +13,7 @@ from scipy.spatial.transform import Rotation as R
 from scipy.ndimage import rotate
 
 class PandaEnv(gym.Env):
-    metadata = {'render_modes': ['human'], 'render_fps' : 200}
+    metadata = {'render_modes': ['human'], 'render_fps' : 60}
 
     def __init__(self):
         self.step_counter = 0
@@ -30,15 +30,21 @@ class PandaEnv(gym.Env):
         self.Height_map_prev = None
         self.In_hand_image = None
 
+        self.objects = None
+
     def getObjStates(self):
         object_obs = {}
-        for obj in self.objects.keys():
+        for obj in self.object_states.keys():
             object_state, object_orientation = p.getBasePositionAndOrientation(self.objectUid[obj])
             object_state = list(object_state)
             object_orientation = R.from_matrix(R.from_quat(self.grip_rotation[obj]).as_matrix() @ R.from_quat(object_orientation).as_matrix()).as_quat().tolist()
             object_obs[obj] = object_state + object_orientation
 
         return object_obs
+
+    def setObjects(self, objects):
+        self.objects = objects
+        print("Objects have been set")
 
     def step(self, action):
         '''Contains the logic of the environment, computes the state
@@ -236,7 +242,7 @@ class PandaEnv(gym.Env):
         grip_orientation = [0,0,0,1]
         return objUid, grip_orientation
     
-    def loadSamllCube(self, position=(0.7,0,0.05), orientation=(1,0,0,0)):
+    def loadSmallCube(self, position=(0.7,0,0.05), orientation=(1,0,0,0)):
         urdfRootPathOurs = "/root/workspace/ros2_ws/src/panda_env/panda_env/gym_example/gym_example/envs/objects"
         urdf_path = os.path.join(urdfRootPathOurs, 'cube_small.urdf')
         objUid = p.loadURDF(urdf_path, basePosition=position, baseOrientation=orientation)
@@ -326,27 +332,44 @@ class PandaEnv(gym.Env):
         # trayUid = p.loadURDF(os.path.join(urdfRootPath, "tray/traybox.urdf"),basePosition=[0.65,0,0])
         self.pandaUid = self.loadPanda()
         
-        objects = {}
+        gen_funcs = {
+            "red_cube" : self.loadRedCube,
+            "green_cube" : self.loadGreenCube,
+            "blue_cube" : self.loadBlueCube,
+            "cube" : self.loadCube,
+            "small_cube" : self.loadSmallCube,
+            "yellow_triangle" : self.loadYellowTriangle,
+            "bin" : self.loadBin,
+            "bottle" : self.loadBottle
+        }
+
         self.grip_rotation = {}
         self.objectUid = {}
 
-            
-        self.objectUid["red_cube"], self.grip_rotation["red_cube"] = self.loadRedCube()
-        self.objectUid["green_cube"], self.grip_rotation["green_cube"] = self.loadGreenCube()
-        self.objectUid["blue_cube"], self.grip_rotation["blue_cube"] = self.loadBlueCube()
-        self.objectUid["yellow_triangle"], self.grip_rotation["yellow_triangle"] = self.loadYellowTriangle()
-        self.objectUid["bin"], self.grip_rotation["bin"] = self.loadBin()
-        self.objectUid["bottle"], self.grip_rotation["bottle"] = self.loadBottle()
+        # Load objects
+        if self.objects is not None:
+            for obj_name, data in self.objects.items():
+                self.objectUid[obj_name],self.grip_rotation[obj_name] = gen_funcs[data["type"]](position=data["position"], orientation=data["orientation"])
+        else:
+            # If self.objects does not exist load predefined objects
+            self.objectUid["red_cube"], self.grip_rotation["red_cube"] = gen_funcs["red_cube"]()
+            self.objectUid["green_cube"], self.grip_rotation["green_cube"] = gen_funcs["green_cube"]()
+            self.objectUid["blue_cube"], self.grip_rotation["blue_cube"] = gen_funcs["blue_cube"]()
+            self.objectUid["yellow_triangle"], self.grip_rotation["yellow_triangle"] = gen_funcs["yellow_triangle"]()
+            self.objectUid["bin"], self.grip_rotation["bin"] = gen_funcs["bin"]()
+            self.objectUid["bottle"], self.grip_rotation["bottle"] = gen_funcs["bottle"]()
+
+        print("self.objectUid = ", self.objectUid)
         
         # Log object positionand orientation
-        self.objects = {}
+        self.object_states = {}
         for obj in self.objectUid.keys():
             position, orientation = p.getBasePositionAndOrientation(self.objectUid[obj]) 
             position = list(position)
             orientation = R.from_matrix(R.from_quat(self.grip_rotation[obj]).as_matrix() @ R.from_quat(orientation).as_matrix()).as_quat().tolist()
-            self.objects[obj] = position + orientation
+            self.object_states[obj] = position + orientation
 
-        print("RESET objStates = ", self.objects)
+        print("RESET objStates = ", self.object_states)
 
         #we return the first observation
         state_robot = p.getLinkState(self.pandaUid, 11)[0]
@@ -355,7 +378,7 @@ class PandaEnv(gym.Env):
         self.observation = state_robot + orientation_robot + state_fingers
         #Now that everything is done, we can load 
         p.configureDebugVisualizer(p.COV_ENABLE_RENDERING,1)
-        info = {"object_position" : objects}
+        info = {"object_position" : self.object_states}
         return np.array(self.observation).astype(np.float32), info
     
     def render_images(self, state):

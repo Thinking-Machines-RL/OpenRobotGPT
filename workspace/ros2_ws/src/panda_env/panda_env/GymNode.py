@@ -19,13 +19,24 @@ from queue import Queue
 import matplotlib.pyplot as plt
 import cv2
 from cv_bridge import CvBridge
+import json
 
 class PandaEnvROSNode(Node):
     def __init__(self):
         super().__init__('panda_env_node')
 
+        # Declare a parameter to hold the objects dictionary
+        self.declare_parameter('objects', '{}')
+
+        # Get the objects parameter
+        objects_param = self.get_parameter('objects').get_parameter_value().string_value
+        objects = json.loads(objects_param)
+        
         self.env = gymnasium.make('PandaEnv-v0')
         self.bridge = CvBridge()
+
+        self.env.setObjects(objects)
+        self.env.reset()
         
         self.SERVICE_TIMEOUT = 60
         client_cb_group = MutuallyExclusiveCallbackGroup()
