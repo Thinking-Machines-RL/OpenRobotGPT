@@ -13,16 +13,16 @@ panda_env_node:
         "type": "red_cube",
         "position": [0.6,0.0,0.0],
         "orientation": [1.0,0.0,0.0,0.0]
-      }
+      },
 
       "rectangle": {
         "type": "green_rectangle",
         "position": [0.8,0.0,0.0],
         "orientation": [1.0,0.0,0.0,0.0]
-      }
+      },
 
       "triangle": {
-        "type": "yellow_long_triangle",
+        "type": "long_yellow_triangle",
         "position": [0.6,0.2,0.0],
         "orientation": [1.0,0.0,0.0,0.0]
       }

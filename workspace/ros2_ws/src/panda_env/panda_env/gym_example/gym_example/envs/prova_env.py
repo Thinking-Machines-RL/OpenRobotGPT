@@ -263,6 +263,20 @@ class PandaEnv(gym.Env):
         grip_orientation = [-1,0,0,0]
         return objUid, grip_orientation
     
+    def loadLongYellowTriangle(self, position=(0.8,0.1,0.05), orientation=(1,0,0,0)):
+        urdfRootPathOurs = "/root/workspace/ros2_ws/src/panda_env/panda_env/gym_example/gym_example/envs/objects"
+        urdf_path = os.path.join(urdfRootPathOurs, 'long_yellow_triangle.urdf')
+        objUid = p.loadURDF(urdf_path, basePosition=position, baseOrientation=orientation)
+        grip_orientation = [-1,0,0,0]
+        return objUid, grip_orientation
+    
+    def loadGreenRectangle(self, position=(0.5,0.1,0.05), orientation=(cos(pi/8),sin(pi/8),0,0)):
+        urdfRootPathOurs = "/root/workspace/ros2_ws/src/panda_env/panda_env/gym_example/gym_example/envs/objects"
+        urdf_path = os.path.join(urdfRootPathOurs, 'rectangle_green.urdf')
+        objUid = p.loadURDF(urdf_path, basePosition=position, baseOrientation=orientation)
+        grip_orientation = [0,0,0,1]
+        return objUid, grip_orientation
+    
     def loadBin(self, position=(0.65,-0.1,0.05), orientation=(0,0,0,1)):
         size=(0.2, 0.2, 0.05)
         thickness=0.005
@@ -340,7 +354,9 @@ class PandaEnv(gym.Env):
             "small_cube" : self.loadSmallCube,
             "yellow_triangle" : self.loadYellowTriangle,
             "bin" : self.loadBin,
-            "bottle" : self.loadBottle
+            "bottle" : self.loadBottle,
+            "long_yellow_triangle" : self.loadLongYellowTriangle,
+            "green_rectangle" : self.loadGreenRectangle 
         }
 
         self.grip_rotation = {}

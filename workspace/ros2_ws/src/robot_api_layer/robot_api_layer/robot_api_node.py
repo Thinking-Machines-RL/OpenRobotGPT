@@ -48,7 +48,9 @@ class RobotAPINode(Node):
             "blue_cube": 0,
             "yellow_triangle": 0,
             "bin": 0.05,
-            "bottle": 0.12
+            "bottle": 0.12,
+            "green_rectangle": 0,
+            "long_yellow_triangle": 0
         }
 
         self.bottom_offset = {
@@ -57,7 +59,9 @@ class RobotAPINode(Node):
             "blue_cube": 0.05,
             "yellow_triangle": 0.05,
             "bin": 0.05,
-            "bottle": 0
+            "bottle": 0,
+            "green_rectangle": 0.05,
+            "long_yellow_triangle": 0.05
         }
 
         self.types = {}
