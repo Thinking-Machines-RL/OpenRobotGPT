@@ -60,6 +60,8 @@ class RobotAPINode(Node):
             "bottle": 0
         }
 
+        self.types = {}
+
         self.PICK_DEPTH = 0.025
 
         #CHATGPT client and service -----
@@ -131,7 +133,7 @@ class RobotAPINode(Node):
         ''' Pick up the specified object '''
         assert object in self.objStates.keys(), f"pickUp({object}): '{object}' is not an object."
         assert not self.pickedObject, f"You already picked the object {self.pickedObject}, but you didn't place it"
-        PICK_POSE = self.objStates[self.types[object]]
+        PICK_POSE = self.objStates[object]
         PICK_POSE[2] += self.top_offset[self.types[object]] - self.PICK_DEPTH
         self.objStates.pop(object)
         self.pickedObject = object
@@ -183,6 +185,12 @@ class RobotAPINode(Node):
         position_A = self.objStates[object_A]
         position_B = self.objStates[object_B]
 
+        # ***** DEBUG *****
+        print("delta_x = ", abs(position_A[0] - position_B[0] - dx))
+        print("delta_y = ", abs(position_A[1] - position_B[1] - dy))
+        print("delta_z = ", abs(position_A[2] - (position_B[2] + offset)))
+        # *****************
+
         if abs(position_A[0] - position_B[0] - dx) < TOLERANCE and \
            abs(position_A[1] - position_B[1] - dy) < TOLERANCE and \
            abs(position_A[2] - (position_B[2] + offset)) < TOLERANCE:
@@ -209,6 +217,8 @@ class RobotAPINode(Node):
         self.objStates = {object:list(state) for object,state in zip(objects, states)}
 
         self.types = {obj:type for obj,type in zip(objects,msg.types)}
+
+        print("objectStatesEval_callback --> self.types = ", self.types)
 
         future = self.client_evaluation_code.call_async(self.req_eval)
         future.add_done_callback(self.code_eval_callback)
@@ -291,8 +301,10 @@ class RobotAPINode(Node):
         states = [states[i].pose for i in range(len(states))]
         objStates = {object:list(state) for object,state in zip(objects, states)}
         self.objStates = objStates
+        self.types = {obj:type for obj,type in zip(objects,msg.types)}
 
         print("objStates = ", self.objStates)
+        print("types = ", self.types)
 
         self.pickedObject = None
 

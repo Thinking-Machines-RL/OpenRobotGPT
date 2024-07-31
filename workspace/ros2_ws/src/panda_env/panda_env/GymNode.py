@@ -102,7 +102,7 @@ class PandaEnvROSNode(Node):
             op.pose = state
             states.append(op)
         initObj.states = states
-        initObj.types = [self.types[obj] for obj in self.objStates.keys()]
+        initObj.types = [self.types[obj] for obj in objStates.keys()]
         self.initial_object_states_pub.publish(initObj)
 
 
@@ -181,6 +181,7 @@ class PandaEnvROSNode(Node):
                 op.pose = state
                 states.append(op)
             msg.states = states
+            msg.types = [self.types[obj] for obj in objStates.keys()]
             self.ObjectStatesPublisher.publish(msg)
             print("[INFO] published message")
             print(msg)
