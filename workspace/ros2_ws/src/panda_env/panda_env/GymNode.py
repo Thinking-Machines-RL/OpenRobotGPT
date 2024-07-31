@@ -31,6 +31,8 @@ class PandaEnvROSNode(Node):
         # Get the objects parameter
         objects_param = self.get_parameter('objects').get_parameter_value().string_value
         objects = json.loads(objects_param)
+
+        self.types = {item[0]:item[1]["type"] for item in objects.items()}
         
         self.env = gymnasium.make('PandaEnv-v0')
         self.bridge = CvBridge()
@@ -100,6 +102,7 @@ class PandaEnvROSNode(Node):
             op.pose = state
             states.append(op)
         initObj.states = states
+        initObj.types = [self.types[obj] for obj in self.objStates.keys()]
         self.initial_object_states_pub.publish(initObj)
 
 
