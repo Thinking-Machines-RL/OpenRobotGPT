@@ -356,7 +356,7 @@ class PandaEnv(gym.Env):
             "bin" : self.loadBin,
             "bottle" : self.loadBottle,
             "long_yellow_triangle" : self.loadLongYellowTriangle,
-            "green_rectangle" : self.loadGreenRectangle 
+            "green_rectangle" : self.loadGreenRectangle,
         }
 
         self.grip_rotation = {}

@@ -7,6 +7,8 @@ self.pickUp(object): Makes the robt gripper pick up the specified object
 
 self.placeObjectOn(object, dx=0, dy=0): Places whatever object we have in our gripper on top of the specified object. dx and dy allow to specify an offset on x and y with respect to the center of the underlying object. Can be used only after self.pickUp(), since it requires an object to be already in the gripper.
 
+self.placeObjectNextTo(self, object, dx=0, dy=0): Places whatever object we have in our gripper next to the specified object. dx and dy allow to specify an offset on x and y with respect to the center of the underlying object. Can be used only after self.pickUp(), since it requires an object to be already in the gripper.
+
 self.placeSafe(object): Places the object in a safe position, free of collisions. Useful for placing starting blocks
 
 Here are some examples on how to use the API to solve tasks:

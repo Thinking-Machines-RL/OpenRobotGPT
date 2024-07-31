@@ -1,15 +1,15 @@
-# move_cube.yaml
+# stacking.yaml
 panda_env_node:
   ros__parameters:
     objects: '{
-      "small_cube": {
-        "type": "small_cube",
+      "cube": {
+        "type": "red_cube",
         "position": [0.7,0.0,0.0],
         "orientation": [1.0,0.0,0.0,0.0]
       },
 
-      "big_cube": {
-        "type": "blue_cube",
+      "triangle": {
+        "type": "yellow_triangle",
         "position": [0.6,0.0,0.0],
         "orientation": [1.0,0.0,0.0,0.0]
       }

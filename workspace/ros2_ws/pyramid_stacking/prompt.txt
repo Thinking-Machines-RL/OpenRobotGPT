@@ -1,0 +1,1 @@
+You have at your disposal 3 cubes: cube_1, cube_2 and cube_3. Please stack them into a pyramid, with two cubes side by side as a base and a cube on top. We want the top cube to be above the separation line between the two cubes. The cubes are identical with side 0.05

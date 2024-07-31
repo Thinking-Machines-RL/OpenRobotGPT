@@ -4,19 +4,19 @@ panda_env_node:
   ros__parameters:
     objects: '{
       "cube_1": {
-        "type": "small_cube",
+        "type": "cube",
         "position": [0.7,0.0,0.0],
         "orientation": [1.0,0.0,0.0,0.0]
       },
 
       "cube_2": {
-        "type": "small_cube",
+        "type": "cube",
         "position": [0.6,0.0,0.0],
         "orientation": [1.0,0.0,0.0,0.0]
       },
 
       "triangle": {
-        "type": "yellow_triangle",
+        "type": "long_yellow_triangle",
         "position": [0.6,0.2,0.0],
         "orientation": [1.0,0.0,0.0,0.0]
       }

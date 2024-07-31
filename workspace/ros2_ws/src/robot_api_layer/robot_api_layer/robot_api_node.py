@@ -50,7 +50,9 @@ class RobotAPINode(Node):
             "bin": 0.05,
             "bottle": 0.12,
             "green_rectangle": 0,
-            "long_yellow_triangle": 0
+            "long_yellow_triangle": 0,
+            "small_cube": 0,
+            "cube": 0
         }
 
         self.bottom_offset = {
@@ -61,7 +63,9 @@ class RobotAPINode(Node):
             "bin": 0.05,
             "bottle": 0,
             "green_rectangle": 0.05,
-            "long_yellow_triangle": 0.05
+            "long_yellow_triangle": 0.05,
+            "small_cube" : 0.025,
+            "cube": 0.05
         }
 
         self.types = {}
@@ -160,6 +164,21 @@ class RobotAPINode(Node):
         self.objStates[self.pickedObject][2] = new_z
         self.pickedObject = None
 
+    def placeObjectNextTo(self, object, dx=0, dy=0):
+        ''' Place the object that we have grasped on top of the specified object '''
+        assert self.pickedObject, f"placeObjectOn({object}): No object has been picked yet."
+        assert object in self.objStates.keys(), f"placeOnObject({object}): '{object}' is not an object."
+        # BLOCK_HEIGHT = 0.05
+        offset = -self.bottom_offset[self.types[object]] + self.bottom_offset[self.types[self.pickedObject]] + self.top_offset[self.types[self.pickedObject]] - self.PICK_DEPTH
+        PLACE_POSE = copy.deepcopy(self.objStates[object])
+        PLACE_POSE[0] += dx
+        PLACE_POSE[1] += dy
+        PLACE_POSE[2] += offset
+        self.place(PLACE_POSE)
+        new_z = PLACE_POSE[2] + self.PICK_DEPTH - self.top_offset[self.types[object]]
+        self.objStates[self.pickedObject] = copy.deepcopy(PLACE_POSE)
+        self.objStates[self.pickedObject][2] = new_z
+        self.pickedObject = None
 
     def placeInPosition(self, target_position):
         ''' Place the object that we have grasped in the specified position '''
@@ -174,7 +193,7 @@ class RobotAPINode(Node):
         ''' Place the object in a safe position '''
         assert self.pickedObject, "placeInPosition({object}): No object has been picked yet."
         # We choose default orientation [1,0,0,0]
-        offset = self.bottom_offset[self.types[self.pickedObject]]
+        offset = self.bottom_offset[self.types[self.pickedObject]] - self.PICK_DEPTH
         target_position = [0.7, -0.1, offset]
         PLACE_POSE = target_position + [1, 0, 0, 0]
         self.place(PLACE_POSE)
