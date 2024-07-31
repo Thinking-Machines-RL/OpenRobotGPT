@@ -1,0 +1,46 @@
+# bottle_arrangement.yaml
+panda_env_node:
+  ros__parameters:
+    objects: '{
+      "bottle_1": {
+        "type": "bottle",
+        "position": [0.5,0.4,0.0],
+        "orientation": [1.0,0.0,0.0,0.0]
+      },
+
+      "bottle_2": {
+        "type": "bottle",
+        "position": [0.7,0.4,0.0],
+        "orientation": [1.0,0.0,0.0,0.0]
+      },
+
+      "bottle_3": {
+        "type": "bottle",
+        "position": [0.9,0.4,0.0],
+        "orientation": [1.0,0.0,0.0,0.0]
+      },
+
+      "bottle_4": {
+        "type": "bottle",
+        "position": [0.5,0.2,0.0],
+        "orientation": [1.0,0.0,0.0,0.0]
+      },
+
+      "bottle_5": {
+        "type": "bottle",
+        "position": [0.7,0.2,0.0],
+        "orientation": [1.0,0.0,0.0,0.0]
+      },
+
+      "bottle_6": {
+        "type": "bottle",
+        "position": [0.9,0.2,0.0],
+        "orientation": [1.0,0.0,0.0,0.0]
+      },    
+
+      "bin": {
+        "type": "bin",
+        "position": [0.7,-0.2,0.0],
+        "orientation": [1.0,0.0,0.0,0.0]
+      }
+    }'
