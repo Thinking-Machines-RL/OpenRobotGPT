@@ -43,29 +43,29 @@ class RobotAPINode(Node):
         self.pickedObject = None
 
         self.top_offset = {
-            "red_cube": 0,
-            "green_cube": 0,
-            "blue_cube": 0,
-            "yellow_triangle": 0,
+            "red_cube": 0.025,
+            "green_cube": 0.025,
+            "blue_cube": 0.025,
+            "yellow_triangle": 0.025,
             "bin": 0.05,
             "bottle": 0.12,
-            "green_rectangle": 0,
-            "long_yellow_triangle": 0,
+            "green_rectangle": 0.025,
+            "long_yellow_triangle": 0.025,
             "small_cube": 0,
-            "cube": 0
+            "cube": 0.025
         }
 
         self.bottom_offset = {
-            "red_cube": 0.05,
-            "green_cube": 0.05,
-            "blue_cube": 0.05,
-            "yellow_triangle": 0.05,
+            "red_cube": 0.025,
+            "green_cube": 0.025,
+            "blue_cube": 0.025,
+            "yellow_triangle": 0.025,
             "bin": 0.05,
             "bottle": 0,
-            "green_rectangle": 0.05,
-            "long_yellow_triangle": 0.05,
+            "green_rectangle": 0.025,
+            "long_yellow_triangle": 0.025,
             "small_cube" : 0.025,
-            "cube": 0.05
+            "cube": 0.025
         }
 
         self.types = {}
@@ -193,7 +193,8 @@ class RobotAPINode(Node):
         ''' Place the object in a safe position '''
         assert self.pickedObject, "placeInPosition({object}): No object has been picked yet."
         # We choose default orientation [1,0,0,0]
-        offset = self.bottom_offset[self.types[self.pickedObject]] - self.PICK_DEPTH
+        offset = -0.025 + self.bottom_offset[self.types[self.pickedObject]] + self.top_offset[self.types[self.pickedObject]] - self.PICK_DEPTH
+
         target_position = [0.7, -0.1, offset]
         PLACE_POSE = target_position + [1, 0, 0, 0]
         self.place(PLACE_POSE)

@@ -1,4 +1,4 @@
-You have a blue cube and a red one. Plase stack them
+You have 4 cubes: cube_1, cube_2, cube_3, cube_4. Plase stack them
 
 
 10/10 success rate

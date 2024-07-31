@@ -2,15 +2,27 @@
 panda_env_node:
   ros__parameters:
     objects: '{
-      "blue_cube": {
+      "cube_1": {
         "type": "blue_cube",
         "position": [0.7,0.0,0.0],
         "orientation": [1.0,0.0,0.0,0.0]
       },
 
-      "red_cube": {
+      "cube_2": {
         "type": "red_cube",
         "position": [0.6,0.0,0.0],
+        "orientation": [1.0,0.0,0.0,0.0]
+      },
+
+      "cube_3": {
+        "type": "green_cube",
+        "position": [0.8,0.0,0.0],
+        "orientation": [1.0,0.0,0.0,0.0]
+      },
+
+      "cube_4": {
+        "type": "blue_cube",
+        "position": [0.5,0.0,0.0],
         "orientation": [1.0,0.0,0.0,0.0]
       }
     }'
