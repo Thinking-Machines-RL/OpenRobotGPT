@@ -75,6 +75,8 @@ class PandaEnv(gym.Env):
 
         POSITION_GAIN = 0.8
         VELOCITY_GAIN = 1
+        TIME_STEP = 1.0 / 300.0
+        p.setTimeStep(TIME_STEP)
         p.setJointMotorControlArray(self.pandaUid, list(range(7))+[9,10], p.POSITION_CONTROL, list(jointPoses)+2*[fingers], list(jointVelocities), positionGains=list(np.ones_like(joint_positions)*POSITION_GAIN), velocityGains=list(np.ones_like(joint_positions)*VELOCITY_GAIN))
         # p.setJointMotorControlArray(self.pandaUid, list(range(7))+[9,10], p.POSITION_CONTROL, list(jointPoses)+2*[fingers])
 
@@ -203,74 +205,59 @@ class PandaEnv(gym.Env):
         crop = height_map[u_min:u_max, v_min:v_max]
         return crop
 
-
-    def reset(self, seed=None, options=None):
-        '''This method will be called to initiate a new episode.
-           You may assume that the step method will not be called before
-           the reset has been called'''
-        # We need the following line to seed self.np_random
-        super().reset(seed=seed)
-        self.step_counter = 0
-        #Reset the pybullet simulation
-        p.resetSimulation()
-        # we will enable rendering after we loaded everything
-        p.configureDebugVisualizer(p.COV_ENABLE_RENDERING,0)
+    def loadPanda(self):
         urdfRootPath=pybullet_data.getDataPath()
-        p.setGravity(0,0,-10)
-
-        #We load all the objects
-        planeUid = p.loadURDF(os.path.join(urdfRootPath,"plane.urdf"), basePosition=[0,0,-0.65])
-
         rest_poses = [0,-0.215,0,-2.57,0,2.356,2.356,0.08,0.08]
-        self.pandaUid = p.loadURDF(os.path.join(urdfRootPath, "franka_panda/panda.urdf"),useFixedBase=True)
+        objUid = p.loadURDF(os.path.join(urdfRootPath, "franka_panda/panda.urdf"),useFixedBase=True)
         for i in range(7):
-            p.resetJointState(self.pandaUid,i, rest_poses[i])
-        p.resetJointState(self.pandaUid, 9, 0.08)
-        p.resetJointState(self.pandaUid,10, 0.08)
-        tableUid = p.loadURDF(os.path.join(urdfRootPath, "table/table.urdf"),basePosition=[0.5,0,-0.65])
+            p.resetJointState(objUid,i, rest_poses[i])
+        p.resetJointState(objUid, 9, 0.08)
+        p.resetJointState(objUid,10, 0.08)
+        return objUid
 
-        trayUid = p.loadURDF(os.path.join(urdfRootPath, "tray/traybox.urdf"),basePosition=[0.65,0,0])
-        
-        #we randomize the position of the object on the table
-        #state_object= [random.uniform(0.5,0.8),random.uniform(-0.2,0.2),0.05]
-        #state_object= [0.6,0.1,0.05]
-        #self.objectUid = p.loadURDF(os.path.join(urdfRootPath, "cube_small.urdf"), basePosition=state_object)
-        
-        objects = {"red_cube":[0.6,0.1,0.05, 1, 0, 0, 0],
-                   "green_cube":[0.5,0.1,0.05, cos(pi/8), sin(pi/8), 0, 0],
-                   "blue_cube": [0.7,0.1,0.05, cos(pi/16), sin(pi/16), 0, 0],
-                   "yellow_triangle":[0.8,0.1,0.05, 1, 0, 0, 0]}
-        urdf_files = {
-                    "red_cube": "cube_red.urdf",
-                    "green_cube": "cube_green.urdf",
-                    "blue_cube": "cube_blue.urdf",
-                    "yellow_triangle": "triangle_yellow.urdf"
-                    }
-
-        self.grip_rotation = {
-            "red_cube":[0, 0, 0, 1],
-            "green_cube":[0, 0, 0, 1],
-            "blue_cube": [0, 0, 0, 1],
-            "yellow_triangle":[-1, 0, 0, 0],
-            "bin": [1, 0, 0, 0],
-            "bottle": [1, 0, 0, 0]
-        }
-
-        self.objectUid = {}
+    def loadRedCube(self, position=(0.6,0.1,0.05), orientation=(1,0,0,0)):
         urdfRootPathOurs = "/root/workspace/ros2_ws/src/panda_env/panda_env/gym_example/gym_example/envs/objects"
-
-        for object_name, pose in objects.items():
-            urdf_file = urdf_files[object_name]
-            urdf_path = os.path.join(urdfRootPathOurs, urdf_file)
-            
-            # Load the URDF file with the specified pose
-            print("pose[:3] = ", pose[:3])
-            print("pose[3:] = ", pose[3:])
-            self.objectUid[object_name] = p.loadURDF(urdf_path, basePosition=pose[:3], baseOrientation=pose[3:])
-
-        # Bin
-        pos=(0.65,-0.1,0.05)
-        rot=(0,0,0,1)
+        urdf_path = os.path.join(urdfRootPathOurs, 'cube_red.urdf')
+        objUid = p.loadURDF(urdf_path, basePosition=position, baseOrientation=orientation)
+        grip_orientation = [0,0,0,1]
+        return objUid, grip_orientation
+    
+    def loadBlueCube(self, position=(0.7,0.1,0.05), orientation=(cos(pi/16),sin(pi/16),0,0)):
+        urdfRootPathOurs = "/root/workspace/ros2_ws/src/panda_env/panda_env/gym_example/gym_example/envs/objects"
+        urdf_path = os.path.join(urdfRootPathOurs, 'cube_blue.urdf')
+        objUid = p.loadURDF(urdf_path, basePosition=position, baseOrientation=orientation)
+        grip_orientation = [0,0,0,1]
+        return objUid, grip_orientation
+    
+    def loadGreenCube(self, position=(0.5,0.1,0.05), orientation=(cos(pi/8),sin(pi/8),0,0)):
+        urdfRootPathOurs = "/root/workspace/ros2_ws/src/panda_env/panda_env/gym_example/gym_example/envs/objects"
+        urdf_path = os.path.join(urdfRootPathOurs, 'cube_green.urdf')
+        objUid = p.loadURDF(urdf_path, basePosition=position, baseOrientation=orientation)
+        grip_orientation = [0,0,0,1]
+        return objUid, grip_orientation
+    
+    def loadSamllCube(self, position=(0.7,0,0.05), orientation=(1,0,0,0)):
+        urdfRootPathOurs = "/root/workspace/ros2_ws/src/panda_env/panda_env/gym_example/gym_example/envs/objects"
+        urdf_path = os.path.join(urdfRootPathOurs, 'cube_small.urdf')
+        objUid = p.loadURDF(urdf_path, basePosition=position, baseOrientation=orientation)
+        grip_orientation = [0,0,0,1]
+        return objUid, grip_orientation
+    
+    def loadCube(self, position=(0.7,0,0.05), orientation=(1,0,0,0)):
+        urdfRootPathOurs = "/root/workspace/ros2_ws/src/panda_env/panda_env/gym_example/gym_example/envs/objects"
+        urdf_path = os.path.join(urdfRootPathOurs, 'cube.urdf')
+        objUid = p.loadURDF(urdf_path, basePosition=position, baseOrientation=orientation)
+        grip_orientation = [0,0,0,1]
+        return objUid, grip_orientation
+    
+    def loadYellowTriangle(self, position=(0.8,0.1,0.05), orientation=(1,0,0,0)):
+        urdfRootPathOurs = "/root/workspace/ros2_ws/src/panda_env/panda_env/gym_example/gym_example/envs/objects"
+        urdf_path = os.path.join(urdfRootPathOurs, 'triangle_yellow.urdf')
+        objUid = p.loadURDF(urdf_path, basePosition=position, baseOrientation=orientation)
+        grip_orientation = [-1,0,0,0]
+        return objUid, grip_orientation
+    
+    def loadBin(self, position=(0.65,-0.1,0.05), orientation=(0,0,0,1)):
         size=(0.2, 0.2, 0.05)
         thickness=0.005
 
@@ -292,8 +279,8 @@ class PandaEnv(gym.Env):
         bin_id = p.createMultiBody(baseMass=0,
                                     baseCollisionShapeIndex=bottom_collision,
                                     baseVisualShapeIndex=bottom_visual,
-                                    basePosition=pos,
-                                    baseOrientation=rot,
+                                    basePosition=position,
+                                    baseOrientation=orientation,
                                     linkMasses=[1, 1, 1, 1],
                                     linkCollisionShapeIndices=[front_collision, back_collision, left_collision, right_collision],
                                     linkVisualShapeIndices=[front_visual, back_visual, left_visual, right_visual],
@@ -309,18 +296,49 @@ class PandaEnv(gym.Env):
                                     linkJointAxis=[[0, 0, 1], [0, 0, 1], [0, 0, 1], [0, 0, 1]]
         )
 
-        self.objectUid["bin"] = bin_id
+        grip_orientation = [1,0,0,0,]
+        return bin_id, grip_orientation
+    
+    def loadBottle(self, position=(0.65,-0.1,0.05), orientation=(0,0,0,1)):
+        urdfRootPathOurs = "/root/workspace/ros2_ws/src/panda_env/panda_env/gym_example/gym_example/envs/objects"
+        urdf_path = os.path.join(urdfRootPathOurs, 'bottle1.urdf')
+        objUid = p.loadURDF(urdf_path, basePosition=position, baseOrientation=orientation)
+        grip_orientation = [1,0,0,0]
+        return objUid, grip_orientation
 
-        # Bottles
+    def reset(self, seed=None, options=None):
+        '''This method will be called to initiate a new episode.
+           You may assume that the step method will not be called before
+           the reset has been called'''
+        # We need the following line to seed self.np_random
+        super().reset(seed=seed)
+        self.step_counter = 0
+        #Reset the pybullet simulation
+        p.resetSimulation()
+        # we will enable rendering after we loaded everything
+        p.configureDebugVisualizer(p.COV_ENABLE_RENDERING,0)
+        urdfRootPath=pybullet_data.getDataPath()
+        p.setGravity(0,0,-10)
 
-        urdf_filepath = os.path.join(urdfRootPathOurs, 'bottle1.urdf')
-        scale = 1
-        pos=(0.65,-0.1,0.05)
-        rot=(0,0,0,1)
-        bottle_id = p.loadURDF(urdf_filepath, basePosition=pos, baseOrientation=rot, globalScaling=scale)
-
-        self.objectUid["bottle"] = bottle_id
+        #We load all the objects
+        planeUid = p.loadURDF(os.path.join(urdfRootPath,"plane.urdf"), basePosition=[0,0,-0.65])
+        tableUid = p.loadURDF(os.path.join(urdfRootPath, "table/table.urdf"),basePosition=[0.5,0,-0.65])
+        # trayUid = p.loadURDF(os.path.join(urdfRootPath, "tray/traybox.urdf"),basePosition=[0.65,0,0])
+        self.pandaUid = self.loadPanda()
         
+        objects = {}
+        self.grip_rotation = {}
+        self.objectUid = {}
+
+            
+        self.objectUid["red_cube"], self.grip_rotation["red_cube"] = self.loadRedCube()
+        self.objectUid["green_cube"], self.grip_rotation["green_cube"] = self.loadGreenCube()
+        self.objectUid["blue_cube"], self.grip_rotation["blue_cube"] = self.loadBlueCube()
+        self.objectUid["yellow_triangle"], self.grip_rotation["yellow_triangle"] = self.loadYellowTriangle()
+        self.objectUid["bin"], self.grip_rotation["bin"] = self.loadBin()
+        self.objectUid["bottle"], self.grip_rotation["bottle"] = self.loadBottle()
+        
+        # Log object positionand orientation
         self.objects = {}
         for obj in self.objectUid.keys():
             position, orientation = p.getBasePositionAndOrientation(self.objectUid[obj]) 

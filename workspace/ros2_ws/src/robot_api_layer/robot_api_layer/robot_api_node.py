@@ -43,22 +43,24 @@ class RobotAPINode(Node):
         self.pickedObject = None
 
         self.top_offset = {
-            "red_cube": 0.025,
-            "green_cube": 0.025,
-            "blue_cube": 0.025,
-            "yellow_triangle": 0.025,
-            "bin": 0.025,
-            "bottle": 0.155
+            "red_cube": 0,
+            "green_cube": 0,
+            "blue_cube": 0,
+            "yellow_triangle": 0,
+            "bin": 0.05,
+            "bottle": 0.12
         }
 
         self.bottom_offset = {
-            "red_cube": 0.025,
-            "green_cube": 0.025,
-            "blue_cube": 0.025,
-            "yellow_triangle": 0.025,
+            "red_cube": 0.05,
+            "green_cube": 0.05,
+            "blue_cube": 0.05,
+            "yellow_triangle": 0.05,
             "bin": 0.05,
             "bottle": 0
         }
+
+        self.PICK_DEPTH = 0.025
 
         #CHATGPT client and service -----
         self.code_subscriber = self.create_subscription(CodeExecutionM, 'chat_gpt_bot/test_code', self.task_callback, 10)
@@ -130,7 +132,7 @@ class RobotAPINode(Node):
         assert object in self.objStates.keys(), f"pickUp({object}): '{object}' is not an object."
         assert not self.pickedObject, f"You already picked the object {self.pickedObject}, but you didn't place it"
         PICK_POSE = self.objStates[object]
-        PICK_POSE[2] = PICK_POSE[2] + self.top_offset[object] - 0.05
+        PICK_POSE[2] += self.top_offset[object] - self.PICK_DEPTH
         self.objStates.pop(object)
         self.pickedObject = object
         self.pick(PICK_POSE)
@@ -141,13 +143,13 @@ class RobotAPINode(Node):
         assert self.pickedObject, "placeObjectOn({object}): No object has been picked yet."
         assert object in self.objStates.keys(), f"placeOnObject({object}): '{object}' is not an object."
         # BLOCK_HEIGHT = 0.05
-        offset = self.top_offset[object] + self.bottom_offset[self.pickedObject] + self.top_offset[self.pickedObject] - 0.05
+        offset = self.top_offset[object] + self.bottom_offset[self.pickedObject] + self.top_offset[self.pickedObject] - self.PICK_DEPTH
         PLACE_POSE = copy.deepcopy(self.objStates[object])
         PLACE_POSE[0] += dx
         PLACE_POSE[1] += dy
         PLACE_POSE[2] += offset
         self.place(PLACE_POSE)
-        new_z = PLACE_POSE[2] + 0.05 - self.top_offset[object]
+        new_z = PLACE_POSE[2] + self.PICK_DEPTH - self.top_offset[object]
         self.objStates[self.pickedObject] = copy.deepcopy(PLACE_POSE)
         self.objStates[self.pickedObject][2] = new_z
         self.pickedObject = None
@@ -177,9 +179,10 @@ class RobotAPINode(Node):
     def isOnTop(self, object_A, object_B, dx=0, dy=0):
         ''' Checks whether an object A is on top of an object B '''
         offset = self.top_offset[object_B] + self.bottom_offset[object_A]
-        TOLERANCE = 0.01
+        TOLERANCE = 0.02
         position_A = self.objStates[object_A]
         position_B = self.objStates[object_B]
+
         if abs(position_A[0] - position_B[0] - dx) < TOLERANCE and \
            abs(position_A[1] - position_B[1] - dy) < TOLERANCE and \
            abs(position_A[2] - (position_B[2] + offset)) < TOLERANCE:
