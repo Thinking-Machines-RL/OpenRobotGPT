@@ -52,3 +52,8 @@ The node to launch are in order:
 - the trajectory node (ex. MoveNodebasic, MoveIt).
 - robot_api_node
 - code_node
+
+## Launching and environment
+```bash
+ros2 run panda_env GymNode --ros-args --params-file <task>.yaml
+```
